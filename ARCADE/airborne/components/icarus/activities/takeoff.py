@@ -9,12 +9,13 @@ from logging import debug as log_debug, info as log_info, warning as log_warn, e
 class TakeoffActivity(Activity, StabMixIn):
 
    LOW_ALT_SETPOINT = -10.0
-   STD_HOVERING_ALT = 0.0
+   STD_HOVERING_ALT = 3.0
 
 
    def __init__(self, fsm, icarus):
       Activity.__init__(self, icarus)
       self.canceled = False
+      self.fsm = fsm
 
 
    def _cancel(self):

@@ -1,12 +1,37 @@
 
+#
+# Priority Constraints:
+# """""""""""""""""""""
+# Core > ICARUS
+# Core > GPS
+# GPS > ICARUS
+# ICARUS > PowerMan
+# ICARUS > Mission
+# Mission > PowerMan
+# PowerMan > MAVLink
+#
+# Resulting Priorities:
+# """""""""""""""""""""
+# Core: 98
+# GPS: 97
+# ICARUS: 96
+# Mission: 95
+# PowerMan: 94
+# MAVLink: 93
+#
+
+
+
 sensors:
    gps:
+      priority: 97
       serial_path: "/dev/ttyACM0"
       serial_speed: 57600
       min_sats: 4
 
 
 powerman:
+   priority: 94
    gpio_i2c_bus: 3
    gpio_i2c_address: 0x11
    gpio_power_pin: 0
@@ -21,14 +46,19 @@ powerman:
    adc_2_current: 'lambda x: (2.5 - x / 1024.0) / 0.028'
 
 icarus:
+   priority: 96
+
    takeoff:
       standard_rel_z: 4.0
+
    landing:
       motors_off_z: 0.4
       z_low: 0.5
 
 
 core:
+   priority: 98
+
    logger:
       level: 3
       details: 2
@@ -50,8 +80,8 @@ core:
       altitude:
          manual: false
          speed_p: 0.1
-         speed_i: 0.4
-         speed_imax: 100.0
+         speed_i: 0.05
+         speed_imax: 1.0
          init_setpoint: 2.0
          init_mode_is_ground: True
 
@@ -63,7 +93,7 @@ core:
          speed_slope: 1.0
          speed_p: 0.24
          speed_i: 0.7
-         speed_imax: 100.0
+         speed_imax: 0.5
 
       navigation:
          speed_p: 0.4

@@ -1,0 +1,14 @@
+
+message SensorData
+{
+   optional int32 node_id = 1;
+   optional int32 count = 2;
+   optional float temperature = 3;
+   optional float humidity = 4;
+   optional int32 light_par = 5;
+   optional int32 light_tsr = 6;
+   optional float voltage = 7;
+   optional int32 lqi = 9;
+   required int32 rssi = 8;
+}
+

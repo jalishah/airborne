@@ -237,7 +237,7 @@ class ICARUS:
       self.activity.cancel_and_join()
       self.powerman.flight_power()
       self.yaw_setpoint = self.mon_data.yaw
-      self.activity = TakeoffActivity(self)
+      self.activity = TakeoffActivity(self.fsm, self)
       self.activity.start()
 
 
@@ -269,6 +269,6 @@ def main(name):
    await_signal()
 
 
-#main('icarus')
-daemonize('icarus', main)
+main('icarus')
+#daemonize('icarus', main)
 

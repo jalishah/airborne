@@ -22,7 +22,6 @@
 #include "threadsafe_types.h"
 
 
-
 static pid_controller_t controller;
 
 /* following thread-safe variables are initialized by pid_init: */
@@ -94,9 +93,12 @@ float z_ctrl_step(float *z_err, float ground_z_pos, float z_pos, float speed, fl
    else
    {
       /* TODO: figure out hovering gas value */
-      val = 0.5f + pid_control(&controller, spd_err, dt);
+      val = 0.55f + pid_control(&controller, spd_err, dt);
    }
    *z_err = _z_err;
+   EVERY_N_TIMES(10, printf("%f, %f, %f, %f, %f, %f, %f, %f\n", val, *z_err, ground_z_pos, tsfloat_get(&setpoint), spd_err, spd_sp, speed, z_pos));
+   
+
    return val;
 }
 
