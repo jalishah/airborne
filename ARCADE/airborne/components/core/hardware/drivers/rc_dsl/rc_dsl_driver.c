@@ -112,7 +112,7 @@ int rc_dsl_driver_calibrate(void)
    float _pitch_bias;
    float _roll_bias;
    float _yaw_bias;
-   int max_count = 500;
+   int max_count = 100;
    int valid_count = 0;
 
    /* collect raw samples:  */
@@ -127,6 +127,7 @@ int rc_dsl_driver_calibrate(void)
          _yaw_bias += yaw_raw;
       }
       pthread_mutex_unlock(&mutex);
+      msleep(10);
    }
 
    /* if we have enough valid samples, set bias values: */

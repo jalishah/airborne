@@ -30,11 +30,6 @@ from misc import daemonize, Hysteresis, user_data_dir
 from hardware import ADC, GPIO_Bank
 
 
-class ICARUS:
-
-   def __init__(self, sockets):
-      self.flight_time = 0
-
 class PowerMan:
 
    def __init__(self, name):
@@ -56,7 +51,7 @@ class PowerMan:
       self.capacity = self.opcd.get('battery_capacity')
       self.low_battery_voltage = self.cells * self.low_cell_voltage
       self.critical = False
-      self.gpio_mosfet.write()
+      #self.gpio_mosfet.write()
       self.warning_started = False
 
       # start threads:
@@ -64,6 +59,7 @@ class PowerMan:
       self.adc_thread = start_daemon_thread(self.adc_reader)
       self.emitter_thread = start_daemon_thread(self.power_state_emitter)
       self.request_thread = start_daemon_thread(self.request_handler)
+      print 'running'
       log_info('powerman running')
 
 
@@ -72,11 +68,15 @@ class PowerMan:
       msg = 'CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED'
       log_warn(msg)
       system('echo "%s" | wall' % msg)
+      beeper_enabled = self.opcd.get('beeper_enabled')
       while True:
-         self.gpio_mosfet.set_gpio(5, False)
-         sleep(0.1)
-         self.gpio_mosfet.set_gpio(5, True)
-         sleep(0.1)
+         if beeper_enabled:
+            self.gpio_mosfet.set_gpio(5, False)
+            sleep(0.1)
+            self.gpio_mosfet.set_gpio(5, True)
+            sleep(0.1)
+         else:
+            sleep(1.0)
 
 
    def adc_reader(self):

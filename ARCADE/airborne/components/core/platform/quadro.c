@@ -92,7 +92,7 @@ platform_t *quadro_create(void)
    {
       rc_data_t data;
       rc_dsl_driver_read(&data);
-      printf("%f %f %f %f %f\n", data.gas, data.pitch, data.roll, data.yaw, data.rssi);
+      //printf("%f %f %f %f %f\n", data.gas, data.pitch, data.roll, data.yaw, data.rssi);
       sleep(1);
    }
    //plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);

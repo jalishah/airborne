@@ -14,7 +14,7 @@ class GPIO_Bank:
    def __init__(self, bus, dev):
       self.bus = bus
       self.dev = int(dev)
-      self.state = 0
+      self.state = 1
 
    def set_gpio(self, id, state):
       id = int(id)
