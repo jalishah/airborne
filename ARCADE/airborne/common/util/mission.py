@@ -2,7 +2,6 @@
 from icarus_pb2 import *
 from icarus_pb2 import _STATE
 from icarus_interface import ICARUS_Client, ICARUS_MissionFactory
-from state_reader import StateEventMap
 from threading import Thread, Event
 
 
@@ -80,10 +79,10 @@ executor = MissionExecutor(map['ctrl'], map['state'])
 f = ICARUS_MissionFactory()
 
 def mission():
-   while True:# for x in [0, 1]:
-      x = 0
+   for x in [0, 1]:
       for y in [0, 1]:
          yield f.move_xy(x, y)
+   yield f.land()
 
 executor.run(mission())
 

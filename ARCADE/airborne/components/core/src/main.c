@@ -104,7 +104,7 @@ void _main(int argc, char *argv[])
    ahrs_init();
    motors_init();
    voltage_reader_start();
-   //gps_init();
+   gps_init();
    
    LOG(LL_INFO, "initializing model/controller");
    model_init();
