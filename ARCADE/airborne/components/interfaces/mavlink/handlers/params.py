@@ -3,6 +3,7 @@ from mavlinkv10 import MAVLINK_TYPE_FLOAT, MAVLINK_TYPE_INT32_T
 from opcd_interface import OPCD_Interface
 from threading import Thread
 import re
+from scl import generate_map
 
 
 class ParamHandler(Thread):
@@ -10,7 +11,7 @@ class ParamHandler(Thread):
    def __init__(self, dispatcher):
       Thread.__init__(self)
       self.dispatcher = dispatcher
-      self.opcd_interface = OPCD_Interface('mavlink')
+      self.opcd_interface = OPCD_Interface(generate_map('mavlink')['ctrl'])
       self.param_map = {}
       self.param_name_map = {}
       list = self.opcd_interface.get('')

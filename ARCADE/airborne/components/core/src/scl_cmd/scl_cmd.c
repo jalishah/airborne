@@ -255,17 +255,6 @@ SIMPLE_THREAD_BEGIN(thread_func)
                spin_down();
                break;
 
-            case REQUEST_TYPE__SPIN_UP:
-               LOG(LL_DEBUG, "SPIN_UP");
-               spin_up(&reply);
-               break;
-
-            case REQUEST_TYPE__SPIN_DOWN:
-               LOG(LL_DEBUG, "SPIN_DOWN");
-               spin_down();
-               break;
-
-
             case REQUEST_TYPE__RESET_CTRL:
                LOG(LL_DEBUG, "RESET_CTRL");
                ctrl_reset();

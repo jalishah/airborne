@@ -14,9 +14,13 @@ icarus:
 gps_sensor:
   binary: 'sensors/gps_sensor/gps_sensor'
 
+powerman:
+  binary: 'powerman/powerman.py'
+  depends: [opcd]
+
 core:
   binary: 'core/src/core'
-  #depends: [opcd, gps_sensor]
+  depends: [opcd, gps_sensor]
 
 opcd:
   binary: 'opcd/opcd.py'

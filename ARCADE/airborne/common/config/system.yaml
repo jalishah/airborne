@@ -59,6 +59,8 @@ components:
       - hlsm: pub
       - core: req
       - ctrl: rep
+      - power_ctrl: req
+      - power_mon: sub
 
    - name: netscan
      gates:
@@ -87,6 +89,12 @@ components:
       - icarus_ctrl: req
       - hlsm: sub
 
+   - name: powerman
+     gates:
+      - ctrl: rep
+      - mon: pub
+      - opcd_ctrl: req
+
    - name: opcd
      gates:
       - ctrl: rep
@@ -107,24 +115,27 @@ connections:
    - [ opcd.ctrl,                core.opcd_ctrl       ]
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
    - [ opcd.ctrl,                opcd_shell.ctrl      ]
+   - [ opcd.ctrl,                powerman.opcd_ctrl   ]
    - [ localizer.mon,            core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
    - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
-   - [ mavlink.hlsm,             icarus.hlsm         ]
+   - [ mavlink.hlsm,             icarus.hlsm          ]
    - [ remote.ctrl,              core.ctrl            ]
    - [ localizer.networks,       netscan.networks     ]
    - [ core_logger.log,          core.log             ]
    - [ gps_sensor.gps,           core.gps             ]
    - [ gps_sensor.gps,           mavlink.gps          ]
-   - [ icarus.ctrl,             ferry_ctrl.ctrl      ]
-   - [ ferry_ctrl.hlsm,          icarus.hlsm         ]
-   - [ blackbox.state_machine,   icarus.hlsm         ]
+   - [ icarus.ctrl,              ferry_ctrl.ctrl      ]
+   - [ icarus.power_ctrl,        powerman.ctrl        ]
+   - [ icarus.power_mon,         powerman.mon         ]
+   - [ ferry_ctrl.hlsm,          icarus.hlsm          ]
+   - [ blackbox.state_machine,   icarus.hlsm          ]
    - [ blackbox.core_log,        core.log             ]
-   - [ icarus.hlsm,             localizer.hlsm       ]
-   - [ icarus.ctrl,             cmdshell.ctrl        ]
-   - [ core.ctrl,                icarus.core         ]
-   - [ core.mon,                 icarus.mon          ]
+   - [ icarus.hlsm,              localizer.hlsm       ]
+   - [ icarus.ctrl,              cmdshell.ctrl        ]
+   - [ core.ctrl,                icarus.core          ]
+   - [ core.mon,                 icarus.mon           ]
    - [ gpx_logger.gps,           gps_sensor.gps       ]
    - [ gps_sensor.gps,           gps_test.gps         ]
    

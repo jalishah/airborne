@@ -4,7 +4,7 @@ import os
 import readline
 import pprint
 from opcd_interface import OPCD_Interface
-
+from scl import generate_map
 
 # set-up command history:
 _history = os.path.expanduser("~/.ARCADE_opcd_shell_history")
@@ -17,7 +17,7 @@ atexit.register(_save_history)
 
 
 #initialize and define interface:
-_interface = OPCD_Interface('opcd_shell')
+_interface = OPCD_Interface(generate_map('opcd_shell')['ctrl'])
 _pp = pprint.PrettyPrinter(indent = 3)
 
 
