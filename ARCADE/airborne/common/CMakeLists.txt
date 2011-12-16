@@ -1,2 +1,0 @@
-ADD_SUBDIRECTORY(messages)
-ADD_SUBDIRECTORY(util)

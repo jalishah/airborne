@@ -1,2 +1,0 @@
-#!/bin/sh
-PYTHONSTARTUP=$PROJECT_HOME/components/interfaces/cmdctrl/cmd_interface.py python
