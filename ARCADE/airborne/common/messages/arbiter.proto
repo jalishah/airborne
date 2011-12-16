@@ -1,0 +1,82 @@
+
+/*
+ * File: arbiter.proto
+ * Purpose: high-level control protocol between arbiter and user program
+ *
+ * Author: Tobias Simon, Ilmenau University of Technology
+ */
+
+
+enum RequestType 
+{
+   TAKEOFF = 1; 
+   LAND = 2;
+   MOVE = 3; 
+   STOP = 4; 
+   ROT = 5; 
+}
+
+
+message Request
+{
+ 
+   required RequestType type = 1;
+   repeated float pos = 2;
+   optional float speed = 3;
+   optional bool rel = 4;
+
+   /*
+    * if type == TAKEOFF:
+    *    assert len(pos) == 1
+    *    if pos[0] available:
+    *       start altitude
+    *    if speed available:
+    *       interpret speed as maximum takeoff speed
+    * elif type == LAND:
+    *    assert len(pos) == 0
+    *    if speed available:
+    *       interpret speed as maximum landing speed
+    * 
+    * elif type == MOVE:
+    *    assert len(pos) in [2, 3]
+    *    if rel:
+    *       interpret pos[0,1] as x, y
+    *    else:
+    *       interpret pos[0,1] as lon, lat
+    *    if len(pos) == 3:
+    *       interpret pos[2] as target altitude
+    *    if speed available:
+    *       interpret speed as maximum gps traveling speed
+    *
+    * elif type == STOP:
+    *    assert len(pos) == 0
+    *    assert speed not set
+    *
+    * else:
+    *    assert type == ROT
+    *    if len(pos) == 1:
+    *       pos[0] denotes fixed angle
+    *       if rel:
+    *          pos[0] is in [-PI, PI]
+    *       else:
+    *          pos[0] is in [0, 2PI]
+    *    else:
+    *       pos[0,1] denotes fixed POI
+    *       assert len(pos) == 2
+    *       if rel:
+    *          interpret pos[0,1] as x, y
+    *       else:
+    *          interpret pos[0,1] as lon, lat
+    *    if speed available:
+    *       maximum rotation speed
+    */
+
+}
+ 
+ 
+message Reply /* arbiter reply */
+{
+   required int32 status = 1;
+   optional string message = 2;
+}
+ 

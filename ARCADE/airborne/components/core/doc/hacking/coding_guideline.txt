@@ -1,0 +1,24 @@
+###########################
+# LOCAL CODING GUIDELINES #
+###########################
+
+Indentation:
+************
+- use 3 spaces for indentation and omit tabs
+  [see: http://www.jwz.org/doc/tabs-vs-spaces.html]
+
+Naming Conventions:
+*******************
+- constants, macros and enumerators: UPPERCASE
+- type names: CamelCase
+- variables and functions: lower_case
+
+Namespaces:
+***********
+- public functions should begin with a "prefix_"
+- nonpublic functions, variables and functions should be declared as static
+
+Object Orientation:
+*******************
+- use C object orientation
+

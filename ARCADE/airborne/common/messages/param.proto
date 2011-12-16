@@ -1,0 +1,32 @@
+
+/*
+ * message format for param get/set requests
+ */
+
+message ParamRequest
+{
+   enum Type { GET = 1; 
+               SET = 2; }
+
+   required Type type = 1;
+   required string key = 2; /* if len(key) == 0, a list of parameters is requested */
+   optional float val = 3; /* set, if: (type == SET) */
+}
+
+
+message ParamReply
+{
+   enum Status { OK  =  0; 
+                 ERR = -1; }
+
+   required Status status = 1;
+   optional float val = 2; /* set, if:
+                                 previous request was GET
+                              && len(key) != 0
+                              && status = OK */
+
+   optional string desc = 3; /* set, if:
+                                   previous request was GET
+                                && len(key) == 0 */
+}
+

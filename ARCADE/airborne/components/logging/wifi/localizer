@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+import sys
+import zmq
+from kalman_pb2 import KalmanData
+from networks_pb2 import Networks, Network
+from zmq_ipc import generate_map
+from time import sleep, time
+from threading import Thread, Event
+from named_daemon import daemonize
+from mission import HLSM_Reader
+
+
+class KalmanReader(Thread):
+
+   """
+   reads kalman-filtered GPS positions
+   """
+
+   def __init__(self, socket):
+      Thread.__init__(self)
+      self.daemon = True
+      self.socket = socket
+      self.event = Event()
+
+   def run(self):
+      while True:
+         data = KalmanData()
+         data.ParseFromString(self.socket.recv())
+         self.data = data
+         self.event.set()
+
+
+class NetworksReader(Thread):
+
+   """
+   reads WiFi network information
+   """
+
+   def __init__(self, socket):
+      Thread.__init__(self)
+      self.daemon = True
+      self.socket = socket
+      self.event = Event()
+
+   def run(self):
+      while True:
+         data = Networks()
+         data.ParseFromString(self.socket.recv())
+         self.data = data
+         self.event.set()
+
+
+class Writer(Thread):
+
+   def __init__(self, name):
+      Thread.__init__(self)
+      self.daemon = True
+      self.name = name
+
+   def run(self):
+      map = generate_map(self.name)
+      kalman_reader = KalmanReader(map['kalman'])
+      networks_reader = NetworksReader(map['networks'])
+      kalman_reader.start()
+      networks_reader.start()
+      
+      hlsm_reader = HLSM_Reader(map['hlsm'])
+      hlsm_reader.daemon = True
+      hlsm_reader.start()
+      netfile = open('/tmp/network_scan.txt', 'w')
+      #hlsm_reader.hovering_event.wait()
+      while True:
+         kalman_reader.event.wait()
+         kalman_reader.event.clear()
+         networks_reader.event.wait()
+         networks_reader.event.clear()
+         tstamp = time()
+         for network in networks_reader.data.networks:
+            netfile.write('%f; %f; %f; %s; %s; %s\n' % (tstamp, kalman_reader.data.lat, kalman_reader.data.lon, network.essid, network.cell_id, network.rssi))
+         netfile.flush()
+
+
+def main(name):
+   writer = Writer(name)
+   writer.start()
+
+daemonize('localizer', main)
+

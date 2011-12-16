@@ -1,0 +1,26 @@
+
+message Message
+{
+   required uint32 dest = 1;
+   required uint32 src = 2;
+   optional float timestamp = 3;
+   optional string payload = 4;
+}
+
+
+message Envelope
+{
+   enum Type
+   {
+      REQ_PULL = 1; // no data required
+      REQ_PUSH = 2; // data required
+      REP_OK = 3;   // if previous was push: no data required
+                    // if previous was pull: data required
+      REP_ERR = 4;  // if previous was push: buffer full
+                    // if previous was pull: buffer empty
+   };
+   
+   required Type type = 1;
+   optional Message message = 2;
+}
+

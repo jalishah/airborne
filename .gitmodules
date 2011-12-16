@@ -1,9 +1,6 @@
 [submodule "common"]
 	path = common
 	url = git@github.com:MOBICOM/common.git
-[submodule "ARCADE/airborne"]
-	path = ARCADE/airborne
-	url = git@github.com:ARCADE-UAV/airborne.git
 [submodule "ARCADE/common"]
 	path = ARCADE/common
 	url = git@github.com:ARCADE-UAV/common.git

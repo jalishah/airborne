@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import time
+from zmq_ipc import generate_map
+from mission import MissionExecutor
+
+
+class ScanMission:
+
+   def __init__(self):
+      self.run_time = 60.0 * 10.0
+
+
+   def generate_scan_points(self, xmin = -10, xmax = 10, ymin = -10, ymax = 10):
+      ydir = 1
+      for x in range(xmin, xmax):
+         if ydir == -1: ydir = 1
+         else: ydir= -1
+         yield x, ymin
+         yield x, ymax
+
+
+   def generator(self):
+      yield 'takeoff',
+      start_time = time.time()
+      for x, y in self.generate_scan_points():
+         if time.time() - start_time > self.run_time:
+            break
+         time.sleep(15.0)
+         yield 'moverel', x, y
+      time.sleep(10.0)
+      yield 'land',
+
+
+executor = MissionExecutor(generate_map('ferry_ctrl'))
+executor.execute(ScanMission().generator())

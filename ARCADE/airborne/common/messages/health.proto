@@ -1,0 +1,10 @@
+
+/*
+ * message format for system health monitoring
+ */
+
+message health_data
+{
+  required float voltage = 1;
+}
+

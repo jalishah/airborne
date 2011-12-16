@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+# WiFi network scanner using wlan0
+
+
+import sys
+from networks_pb2 import Networks
+from zmq_ipc import generate_map
+from daemon import DaemonContext
+import os
+from threading import Thread
+import time
+from named_daemon import daemonize
+import pcap
+import struct
+
+
+def _unpack(fmt, data):
+   l = struct.calcsize(fmt)
+   return struct.unpack(fmt, data[:l])
+
+
+# Not correct! but works in most cases...
+def parse_radiotap(data):
+   _HDR = [
+      (0x01, 'Q'),
+      (0x02, 'B'),
+      (0x04, 'B'),
+      (0x08, 'Hxx'),
+      (0x10, 'H'),
+      (0x20, 'b'),
+      (0x40, 'b')
+   ]
+
+   fmt = '<bbHL'
+   hdr = _unpack(fmt, data)
+   
+   args = filter(lambda x: hdr[3] & x[0], _HDR)
+   fmt = reduce(lambda x, y: x + y[1], args, fmt)
+
+   hdr = _unpack(fmt, data)
+
+   return hdr[2], hdr[6], hdr[7]
+
+
+# Also not correct but enough ;)
+def parse_ieee(data):
+   _BEACON = 0x80
+   _ESSID  = 0x00
+   _RATES  = 0x01
+   _DS     = 0x03
+
+   fmt = 'B'
+   bcn = _unpack(fmt, data)
+
+   if (bcn[0] & 0xf0) != _BEACON:
+      return
+   
+   fmt += 'BHBBBBBBBBBBBBBBBBBBHQHHBB'
+   bcn = _unpack(fmt, data)
+
+   if(bcn[25] != _ESSID): 
+      return
+
+   fmt += str(bcn[26]) + 'sBB'
+   bcn = _unpack(fmt, data)
+  
+   if bcn[28] != _RATES:
+      return
+
+   fmt += str(bcn[29]) + 'xBBB'
+   bcn = _unpack(fmt, data)
+
+   if bcn[30] != _DS:
+      return
+
+   return ('%.2X:' * 5 + '%.2X') % bcn[15:21], bcn[27], bcn[32]
+
+
+def parse_pkt(pktlen, data, timestamp):
+   tap = parse_radiotap(data)
+   bcn = parse_ieee(data[tap[0]:])
+   if(bcn):
+      out = tap[1:] + bcn
+      out += not (((out[0] - 2412)/5 + 1) != out[-1]),
+      if out[5]:
+         pb_networks = Networks()
+         pb_network = pb_networks.networks.add()
+         pb_network.essid = out[3]
+         pb_network.cell_id = out[2]
+         pb_network.rssi = out[1]
+         socket.send(pb_networks.SerializeToString())
+
+
+class ChannelHopper(Thread):
+
+   def __init__(self):
+      Thread.__init__(self)
+      self.daemon = True
+
+   def hop_seq(self):
+      while True:
+         for c in [3, 11]:
+            yield c
+
+   def run(self):
+      for channel in self.hop_seq():
+         os.system('iwconfig wlan1 channel %d' % channel)
+         time.sleep(0.2)
+
+
+def main(name):
+   os.system('ifconfig wlan1 down')
+   os.system('iwconfig wlan1 mode monitor')
+   os.system('ifconfig wlan1 up')
+   os.system('iwconfig wlan1 channel 11')
+   #ch = ChannelHopper()
+   #ch.start()
+   global socket
+   socket = generate_map(name)['networks']
+   p = pcap.pcapObject()
+   dev = 'wlan1'
+   p.open_live(dev, 1500, 1, 500)
+   while True:
+      p.dispatch(1, parse_pkt);
+
+
+daemonize('netscan', main)
+
