@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import time, zmq, socket, os, sys
+from threading import Thread
+import control_pb2
+from named_daemon import daemonize
+from zmq_ipc import generate_map
+from mission import ControlInterface
+
+
+UDP_HOST=('0.0.0.0', 1337)
+TCP_HOST=('0.0.0.0', 1337)
+
+
+def handle_command(iface, message):
+   req = control_pb2.Request()
+   req.ParseFromString(message)
+   return iface.send(message)
+ 
+
+class UDPReader(Thread):
+   
+   def __init__(self, iface):
+      Thread.__init__(self)
+      self.daemon = True
+      self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      self.s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+      self.s.bind(UDP_HOST)
+      self.iface = iface
+
+   def run(self):
+      print 'UDPReader running'
+      while True:
+         message, address = self.s.recvfrom(8192)
+         print 'UDPReader got command'
+         handle_command(self.iface, message)
+
+
+class TCPReader(Thread):
+   
+   def __init__(self, iface):
+      Thread.__init__(self)
+      self.daemon = True
+      self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.s.bind(TCP_HOST)
+      self.s.listen(1)
+      self.iface = iface
+      
+   def run(self):
+      print 'TCPReader running'
+      while True:
+         conn, addr = self.s.accept()
+         print 'TCPReader connection from:', addr
+         while True:
+            try:
+               message = conn.recv(8192)
+               print 'TCPReader got command'
+               reply = handle_command(self.iface, message)
+               conn.send(reply)
+            except:
+               break
+         conn.close()
+
+
+def main(name):
+   ctrl_interface = ControlInterface(generate_map(name))
+   tcp_reader = TCPReader(ctrl_interface)
+   udp_reader = UDPReader(ctrl_interface)
+   tcp_reader.start()
+   udp_reader.start()
+
+
+daemonize('remote', main)
+

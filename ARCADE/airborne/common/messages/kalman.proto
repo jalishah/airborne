@@ -1,0 +1,7 @@
+
+message KalmanData
+{
+   required float lat = 1;
+   required float lon = 2;
+}
+

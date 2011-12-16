@@ -1,0 +1,16 @@
+
+enum State
+{
+   STANDING = 1;
+   TAKING_OFF = 2;
+   HOVERING = 3;
+   LANDING = 4;
+   MOVING = 5;
+}
+
+
+message StateUpdate
+{
+   required State state = 1;
+}
+

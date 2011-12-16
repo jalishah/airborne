@@ -1,0 +1,2 @@
+#!/bin/sh
+PYTHONSTARTUP=$PROJECT_HOME/components/interfaces/param/param_interface.py python

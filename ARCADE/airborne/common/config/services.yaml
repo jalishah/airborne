@@ -1,0 +1,34 @@
+
+#
+# SYSTEM SERVICES CONFIGURATION FILE
+# ##################################
+#
+# purpose: definition of services by name and their project-relative executable paths
+# 
+
+
+#
+# component definitions:
+# - each component needs to define:
+#    - its name
+#    -  a list of gates
+# - every gate consists of a name mapped to a type 
+#   [pub, sub, req, rep]
+#
+
+- name: gps_sensor
+  binary: 'sensors/gps/gps_sensor'
+
+- name: remote
+  binary: 'interfaces/remote/remote'
+
+- name: netscan
+  binary: 'sensors/wifi/netscan'
+
+- name: localizer
+  binary: 'logging/wifi/localizer'
+
+- name: core
+  binary: 'core/build/bin/core'
+  args: '-f $COMPONENTS_HOME/core/config/core.conf'
+

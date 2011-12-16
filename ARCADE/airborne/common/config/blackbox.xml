@@ -1,0 +1,12 @@
+
+<!-- incoming connections: -->
+<inConnection name = "arbiter_state_machine" address = "state_machine" type = "scl"/>
+<inConnection name = "core_log" address = "core_log" type = "scl"/>
+<inConnection name = "udp" type = "udp" port = "6666"/>
+<inConnection name = "kernel" type = "kernellog"/>
+
+<!-- outgoing connections: -->
+<outConnection type = "file" fileName = "test.blackboxdata" fileSize = "200"/>
+<outConnection type = "udp" host = "10.0.0.2" port = "7777"/>
+<outConnection type = "console"/>
+

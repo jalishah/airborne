@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import time
+from threading import Thread, Lock, Condition
+import zmq
+import control_pb2
+import swarm_data_pb2
+import os, sys
+import socket
+from zmq_ipc import generate_map
+from mission import ControlInterface
+from daemon import pidfile, DaemonContext
+from signal import signal, SIGTERM
+
+
+def main():
+   ctrl_interface = ControlInterface(generate_map('n900_follow'))
+
+   HOST = '10.0.1.255'
+   PORT = 1337
+   ADDRESS = (HOST, PORT)
+   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+   s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+   s.bind(ADDRESS)
+
+
+   while True:
+      # read data from swarm sender:
+      message, address = s.recvfrom(8192)
+      swarm_data = swarm_data_pb2.SwarmData()
+      swarm_data.ParseFromString(message)
+      # send moveto request:
+      req_data = control_pb2.Request()
+      req_data.type = control_pb2.Request.MOVETO
+      req_data.moveto_data.lat = swarm_data.lat
+      req_data.moveto_data.lon = swarm_data.lon
+      ctrl_interface.request(req_data)
+
+
+name = 'n900_follow'
+pidf = pidfile.PIDLockFile('/var/run/' + name + '.pid')
+
+try:
+   pidf.acquire(timeout = 1.0)
+   pidf.release()
+   with DaemonContext(pidfile = pidf):
+      main()
+except:
+   sys.exit(1)
+

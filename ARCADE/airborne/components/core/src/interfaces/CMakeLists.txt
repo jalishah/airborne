@@ -1,0 +1,4 @@
+FIND_PACKAGE(Glib REQUIRED)
+INCLUDE_DIRECTORIES(${Glib_INCLUDE_DIRS})
+
+ADD_LIBRARY(scl_interfaces STATIC cmd.c params.c)
