@@ -10,18 +10,24 @@ import copy
 import os
 
 
+
+
 class ConfigError(Exception):
 
    def __init__(self, msg):
+      assert isinstance(msg, str)
       self.msg = msg
 
-   def __repr__(self):
-      return repr(self.msg)
+   def __str__(self):
+      return self.msg
+
+
 
 
 class Config:
 
    def __init__(self, config_prefix):
+      self.LEAF_TYPES = [bool, int, float, str]
       assert isinstance(config_prefix, str)
       # build config paths from prefix:
       self.config_prefix = config_prefix
@@ -35,53 +41,38 @@ class Config:
          self.overlay = {}
       # check single document integrity:
       for doc in self.base, self.overlay:
-         self._check(doc)
+         self._check_tree(doc)
       # check inter-document integrity:
-      for section, entry in self.overlay.items():
-         for key, val in entry.items():
-            assert val.__class__ == self.overlay[section][key].__class__
+      for key in self._get_all_keys(self.overlay):
+         overlay_class = self._find_entry(self.overlay, key).__class__
+         try:
+            base_class = self._find_entry(self.base, key).__class__
+         except:
+            raise ConfigError('overlay defines key "' + key + '", which does not exist in base')
+         if overlay_class != base_class:
+            raise ConfigError('different data types for overlay (' + str(overlay_class) + ') and base (' + str(base_class) + ') for key: ' + key)
 
 
-   def _check(self, doc):
-      assert isinstance(doc, dict)   
-      for section, entry in doc.items():
-         assert isinstance(section, str)
-         assert isinstance(entry, dict)
-         for key, val in entry.items():
-            assert isinstance(key, str)
-            assert val.__class__ in [str, int, float]
-
-
-   def set(self, section, key, val):
+   def set(self, key, val):
       '''
-      set attribute [section, key] to val
+      set attribute identified by key to val
       '''
-      if section not in self.base or key not in self.base[section]:
-         raise ValueError('base attribute not known to config file: ' + section + '.' + key)
-      # add attribut to overlay:
-      if section not in self.overlay:
-         self.overlay[section] = {}
-      else:
-         assert val.__class__ == self.overlay[section][key].__class__
-      self.overlay[section][key] = val
-      # remove attribute from overlay if equal:
-      if self.base[section][key] == self.overlay[section][key]:
-         del(self.overlay[section][key])
-         if len(self.overlay[section]) == 0:
-            del self.overlay[section]
+      if not self._find_entry_or_none(self.base, key):
+         raise ConfigError('cannot override unknown attribute "' + key + '"')
+      self._insert_val(self.overlay, key, val)
 
 
-   def get(self, section, key):
+   def get(self, key):
       '''
-      get attribute using section, key
+      get attribute using key
       '''
       try:
-         return self.overlay[section][key]
+         return self._find_entry(self.overlay, key)
       except KeyError:
          try:
-            return self.base[section][key]
+            return self._find_entry(self.base, key)
          except KeyError:
-            raise ConfigError(section + '.' + key + ' was undefined in base config')
+            raise ConfigError(key + ' was not found in base config')
 
 
    def persist(self): 
@@ -100,9 +91,75 @@ class Config:
          overlay_file.close()
 
 
+   def _check_tree(self, node):
+      if isinstance(node, dict):
+         for key, node in node.iteritems():
+            if not isinstance(key, str) and not '.' in key:
+               raise ConfigError('key ' + key + ' must not contain a dot (.) character')
+            self._check_tree(node)
+      else:
+         if node.__class__ not in self.LEAF_TYPES:
+            raise ConfigError('node ' + str(node) + ' must be one of: ' + str(self.LEAF_TYPES))
+
+
+   def _insert_val(self, node, key, val):
+      if isinstance(node, dict):
+         head, tail = self._split_key(key)
+         if not tail:
+            node[head] = val
+         else:
+            if head not in node.keys():
+               node[head] = {}
+            node = node[head]
+            self._insert_val(node, tail, val)
+
+
+   def _get_all_keys(self, node):
+      if isinstance(node, dict):
+         list = []
+         for key, node in node.iteritems():
+            if not isinstance(node, dict):
+               list.append(key)
+            else:
+               sub_list = self._get_all_keys(node)
+               list.extend(map(lambda x : key + '.' + x, sub_list))
+         return list
+
+
+   def _find_entry_or_none(self, node, key):
+      try:
+         return self._find_entry(node, key)
+      except KeyError:
+         return
+
+
+   def _split_key(self, key):
+      if '.' in key:
+         pos = key.find('.')
+         head = key[0 : pos]
+         tail = key[pos + 1 : ]
+      else:
+         head = key
+         tail = None
+      return head, tail
+
+
+   def _find_entry(self, node, key):
+      if isinstance(node, dict):
+         head, tail = self._split_key(key)
+         node = node[head]
+         return self._find_entry(node, tail)
+      else:
+         assert node.__class__ in self.LEAF_TYPES
+         return node
+
+
+
+
 if __name__ == '__main__':
-   conf = Config('config')
-   conf.set('kalman', 'process', 1.0e-1)
-   conf.get('kalman', 'process')
-   conf.persist()
+   try:
+      conf = Config('config')
+      conf.set('core.kalman.sensor', 1.34)
+   except ConfigError, e:
+      print e
 

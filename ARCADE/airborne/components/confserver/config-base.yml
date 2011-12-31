@@ -1,5 +1,5 @@
-kalman:
-   process: 1.0e-1
-   sensor: 10.0e+1
-xyz:
-   bla: 10
+core:
+   kalman:
+      process: 1.0e-1
+      sensor: 10.0e+1
+   bla: 1.3
