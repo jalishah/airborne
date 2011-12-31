@@ -10,10 +10,6 @@ from config_pb2 import CtrlReq, CtrlRep, Value
 from scl import generate_map
 
 
-def split_identifier(id):
-   return id.split('.')
-
-
 # load config base/overlay:
 conf = Config('config')
 
@@ -35,8 +31,7 @@ while True:
    
    if req.type == CtrlReq.GET:
       try:
-         category, key = split_identifier(req.id)
-         val = conf.get(category, key)
+         val = conf.get(req.id)
          if isinstance(val, str):
             rep.val.str_val = val
          elif isinstance(val, int):
@@ -50,7 +45,6 @@ while True:
          rep.status = CtrlRep.MALFORMED_ID
    
    elif req.type == CtrlReq.SET:
-      category, key = split_identifier(req.id)
       if req.val.str_val:
          val = req.val.str_val
       elif req.val.int_val:
@@ -58,7 +52,7 @@ while True:
       else:
          assert req.val.dbl_val
          val = req.val.dbl_val
-      conf.set(category, key, req.val)
+      conf.set(req.id, req.val)
       update_socket.send()
 
    else:
