@@ -143,10 +143,40 @@ class Config:
          tail = None
       return head, tail
 
+   
+   def _delete_key(self, node, key):
+      if isinstance(node, dict):
+         head, tail = self._split_key(key)
+         next_node = node[head]
+         return self._delete_key(next_node, tail) + [(node, head)]
+      else:
+         return []
+
+
+   def _clean_overlay(self):
+      keys = self._get_all_keys(self.overlay)
+      for key in keys:
+         overlay_val = self._find_entry(self.overlay, key)
+         base_val = self._find_entry(self.base, key)
+         if overlay_val == base_val:
+            l = self._delete_key(self. overlay, key)
+            i = l[0]
+            del i[0][i[1]]
+            prev_i = i[0]
+            for i in l[1:]:
+               if len(prev_i) == 0:
+                  del i[0][i[1]]
+               else:
+                  break
+               prev_i = i[0]
+
 
    def _find_entry(self, node, key):
       if isinstance(node, dict):
-         head, tail = self._split_key(key)
+         try:
+            head, tail = self._split_key(key)
+         except TypeError:
+            return node
          node = node[head]
          return self._find_entry(node, tail)
       else:
@@ -159,7 +189,11 @@ class Config:
 if __name__ == '__main__':
    try:
       conf = Config('config')
-      conf.set('core.kalman.sensor', 1.34)
+      #print conf._find_entry(conf.overlay, 'core.kalman.process')
+      #conf.set('core.model.lateral_measurement_noise', 1.34)
+      #print conf.overlay
+      conf._clean_overlay()
+      print conf.overlay
    except ConfigError, e:
       print e
 
