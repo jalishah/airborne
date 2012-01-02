@@ -1,2 +1,3 @@
 #!/bin/sh
-PYTHONSTARTUP=$PROJECT_HOME/components/interfaces/cmdctrl/cmd_interface.py python
+
+PYTHONSTARTUP=$MOBICOM_SUBPROJECT_PATH/components/interfaces/cmdctrl/cmd_interface.py python

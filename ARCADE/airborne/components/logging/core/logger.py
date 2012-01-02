@@ -26,6 +26,7 @@ def signal_handler(signal, frame):
 
 socket = generate_map('core_logger')['log']
 signal.signal(signal.SIGINT, signal_handler)
+
 while True:
     try:
        log_data = log_data_pb2.log_data()

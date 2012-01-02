@@ -93,8 +93,8 @@ void _main(int argc, char *argv[])
    baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
-   /*leds_overo_initialize();
-   gps_init();*/
+   leds_overo_initialize();
+   gps_init();
    
    LOG(LL_INFO, "initializing model/controller");
    model_init();

@@ -44,7 +44,7 @@ void daemon_main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-#if 0
+#if 1
    if (check_pid(pid_path))
    {
       exit(EXIT_FAILURE);

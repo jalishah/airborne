@@ -67,9 +67,3 @@ def stop():
    """stop UAV at current position"""
    _interface.execute(Stop()._req)
 
-
-def help():
-   for func in [takeoff, land, move, rotate_fixed, rotate_poi, stop]:
-      print func.__name__ + '(' + ', '.join(func.func_code.co_varnames) + '):'
-      print ' ' * 3 + func.__doc__ + '\n'
-

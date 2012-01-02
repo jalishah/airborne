@@ -16,10 +16,13 @@
 #   [pub, sub, req, rep]
 #
 
+- name: arbiter
+  binary: 'arbiter/src/arbiter.py'
+
 - name: gps_sensor
   binary: 'sensors/gps/src/gps_sensor.py'
 
 - name: core
   binary: 'core/src/core'
-  args: '-f $MOBICOM_SUBPROJECT_PATH/core/config/core.conf'
+  args: '-f $MOBICOM_SUBPROJECT_PATH/components/core/config/core.conf'
 
