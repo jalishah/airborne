@@ -8,19 +8,10 @@
 
 message Value
 {
-   enum Type
-   {
-      STR = 0;
-      INT = 1;
-      DBL = 2;
-      BOOL = 3;
-   }
-   
-   required Type type = 1;
-   optional string str_val = 2;
-   optional int32 int_val = 3;
-   optional double dbl_val = 4;
-   optional bool bool_val = 5;
+   optional string str_val = 1;
+   optional int32 int_val = 2;
+   optional double dbl_val = 3;
+   optional bool bool_val = 4;
 }
 
 
@@ -39,6 +30,13 @@ message CtrlReq
 }
 
 
+message Pair
+{
+   required string id = 1;
+   required Value val = 2;
+}
+
+
 message CtrlRep
 {
    enum Status
@@ -51,7 +49,7 @@ message CtrlRep
    }
 
    required Status status = 1;
-   optional Value val = 2;
+   repeated Pair pairs = 2;
 }
 
 

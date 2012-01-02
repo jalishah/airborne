@@ -10,7 +10,7 @@
 
 
 from config import Config, ConfigError
-from config_pb2 import CtrlReq, CtrlRep, Value
+from config_pb2 import CtrlReq, CtrlRep, Value, Pair
 from scl import generate_map
 #from named_daemon import daemonize
 from sys import argv
@@ -34,20 +34,29 @@ def main(name):
       # process request and prepare reply:
       rep = CtrlRep()
       rep.status = CtrlRep.OK
+
       if req.type == CtrlReq.GET:
-         try:
-            val = conf.get(req.id)
-            if isinstance(val, str):
-               rep.val.str_val = val
-            elif isinstance(val, int):
-               rep.val.int_val = val
-            else:
-               assert isinstance(val, float)
-               rep.val.dbl_val = val
-         except ConfigError:
-            rep.status = CtrlRep.PARAM_UNKNOWN
-         except ValueError:
-            rep.status = CtrlRep.MALFORMED_ID
+         matches = []
+         for key in conf.get_all_keys(conf.base):
+            if key.find(req.id) == 0:
+               try:
+                  val = conf.get(key)
+                  pair = rep.pairs.add()
+                  pair.id = key
+                  if isinstance(val, str):
+                     pair.val.str_val = val
+                  elif isinstance(val, int):
+                     pair.val.int_val = val
+                  elif isinstance(val, float):
+                     pair.val.dbl_val = val
+                  else:
+                     assert isinstance(val, bool)
+                     pair.val.bool_val = val
+               except ConfigError:
+                  rep.status = CtrlRep.PARAM_UNKNOWN
+               except ValueError:
+                  rep.status = CtrlRep.MALFORMED_ID
+                  print conf.get(match)
       
       elif req.type == CtrlReq.SET:
          map = {Value.STR: ('str_val', str),

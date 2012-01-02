@@ -43,7 +43,7 @@ class Config:
       for doc in self.base, self.overlay:
          self._check_tree(doc)
       # check inter-document integrity:
-      for key in self._get_all_keys(self.overlay):
+      for key in self.get_all_keys(self.overlay):
          overlay_class = self._find_entry(self.overlay, key).__class__
          try:
             base_class = self._find_entry(self.base, key).__class__
@@ -119,14 +119,14 @@ class Config:
             self._insert_val(node, tail, val)
 
 
-   def _get_all_keys(self, node):
+   def get_all_keys(self, node):
       if isinstance(node, dict):
          list = []
          for key, node in node.iteritems():
             if not isinstance(node, dict):
                list.append(key)
             else:
-               sub_list = self._get_all_keys(node)
+               sub_list = self.get_all_keys(node)
                list.extend(map(lambda x : key + '.' + x, sub_list))
          return list
 
@@ -160,7 +160,7 @@ class Config:
 
 
    def _clean_overlay(self):
-      keys = self._get_all_keys(self.overlay)
+      keys = self.get_all_keys(self.overlay)
       for key in keys:
          overlay_val = self._find_entry(self.overlay, key)
          base_val = self._find_entry(self.base, key)

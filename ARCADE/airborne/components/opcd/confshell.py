@@ -28,16 +28,13 @@ class OPCD_Interface:
       req.id = id
       rep = self._send_and_recv(req)
       assert rep.status == 0
-      if rep.val.str_val != None:
-         val = rep.val.str_val
-      elif rep.val.int_val != None:
-         val = rep.val.int_val
-      elif rep.val.dbl_val != None:
-         val = rep.val.dbl_val
-      else:
-         assert rep.val.bool_val != None
-         val = rep.val.bool_val
-      return val
+      pairs = []
+      for pair in rep.pairs:
+         for type in ['str_val', 'int_val', 'dbl_val', 'bool_val']:
+            if pair.val.HasField(type):
+               pairs.append((pair.id.encode('ascii'), getattr(pair.val, type)))
+               break
+      return pairs
 
 
    def set(self, id, val):
@@ -62,8 +59,5 @@ class OPCD_Interface:
 
 if __name__ == '__main__':
    opcdi = OPCD_Interface('opcd_shell')
-   opcdi.set('core.controllers.yaw.manual', False)
-   opcdi.set('core.controllers.yaw.speed_p', 1.0)
-   opcdi.set('core.logger.level', 0)
-   opcdi.persist()
+   print opcdi.get('core.controllers.yaw.speed_i')
 
