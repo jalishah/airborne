@@ -79,6 +79,7 @@ class Config:
       '''
       write configuration overlay to filesystem
       '''
+      self._clean_overlay()
       if len(self.overlay) == 0:
          try:
             os.unlink(self.overlay_path)

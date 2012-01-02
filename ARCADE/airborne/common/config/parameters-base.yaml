@@ -9,7 +9,7 @@ core:
       debug_host: "10.0.1.5"
       
       angle:
-         calibrate: False
+         calibrate: false
          p: 4.0
          i: 0.0
          i_max: 2.0
@@ -18,13 +18,13 @@ core:
          roll_bias: 0.03
       
       altitude:
-         manual: False
+         manual: false
          speed_p: 0.1
          speed_i: 0.4
          speed_imax: 100.0
       
       yaw:
-         manual: False
+         manual: true
          speed_min: 0.05
          speed_std: 0.1
          speed_max: 0.2
