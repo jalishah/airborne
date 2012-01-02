@@ -1,10 +1,13 @@
+
 #
-# generated file! DO NOT EDIT
+# GENERATED FILE - DO NOT EDIT!
 #
 
 core:
-  controllers:
-    angle:
-      p: 13.0
-  logger:
-    level: 0
+   controllers:
+      yaw:
+         manual: true
+         speed_p: 1.0
+   logger:
+      level: 0
+

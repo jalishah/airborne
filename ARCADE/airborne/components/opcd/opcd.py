@@ -50,14 +50,12 @@ def main(name):
             rep.status = CtrlRep.MALFORMED_ID
       
       elif req.type == CtrlReq.SET:
-         map = {Value.STR: ('str_val', str),
-                Value.INT: ('int_val', int),
-                Value.DBL: ('dbl_val', float),
-                Value.BOOL: ('bool_val', bool)}
-         item = map[req.val.type]
-         val = getattr(req.val, item[0])
-         conf.set(req.id.encode('ascii'), item[1](val))
-         print conf.overlay
+         map = {Value.STR: 'str_val',
+                Value.INT: 'int_val',
+                Value.DBL: 'dbl_val',
+                Value.BOOL: 'bool_val'}
+         val = getattr(req.val, map[req.val.type])
+         conf.set(req.id, val)
          #update_socket.send()
 
       else:

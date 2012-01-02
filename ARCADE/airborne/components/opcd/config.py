@@ -27,7 +27,7 @@ class ConfigError(Exception):
 class Config:
 
    def __init__(self, config_prefix):
-      self.LEAF_TYPES = [bool, int, float, str]
+      self.LEAF_TYPES = [str, int, float, bool]
       assert isinstance(config_prefix, str)
       # build config paths from prefix:
       self.config_prefix = config_prefix
@@ -86,8 +86,9 @@ class Config:
          except:
             pass
       else:
-         dump = '#\n# generated file! DO NOT EDIT\n#\n\n'
-         dump += yaml.dump(self.overlay, default_flow_style = False)
+         dump = '\n#\n# GENERATED FILE - DO NOT EDIT!\n#\n\n'
+         dump += yaml.safe_dump(self.overlay, indent = 3, default_flow_style = False)
+         dump += '\n'
          overlay_file = file(self.overlay_path, 'w')
          overlay_file.write(dump)
          overlay_file.close()
@@ -160,17 +161,17 @@ class Config:
       for key in keys:
          overlay_val = self._find_entry(self.overlay, key)
          base_val = self._find_entry(self.base, key)
+         print overlay_val, base_val
          if overlay_val == base_val:
             l = self._delete_key(self. overlay, key)
             i = l[0]
             del i[0][i[1]]
-            prev_i = i[0]
-            for i in l[1:]:
-               if len(prev_i) == 0:
-                  del i[0][i[1]]
-               else:
-                  break
-               prev_i = i[0]
+            #prev_i = i[0]
+            #for i in l[1:]:
+            #   if len(prev_i) == 0 and prev_i.__class__ == dict:
+            #      del i[0][i[1]]
+            #   else:
+            #      break
 
 
    def _find_entry(self, node, key):

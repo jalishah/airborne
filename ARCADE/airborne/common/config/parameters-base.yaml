@@ -7,7 +7,7 @@ core:
 
    controllers:
       debug_host: "10.0.1.5"
-      
+
       angle:
          calibrate: false
          p: 4.0
@@ -16,13 +16,13 @@ core:
          d: 0.02
          pitch_bias: -0.022
          roll_bias: 0.03
-      
+ 
       altitude:
          manual: false
          speed_p: 0.1
          speed_i: 0.4
          speed_imax: 100.0
-      
+
       yaw:
          manual: true
          speed_min: 0.05
@@ -32,22 +32,15 @@ core:
          speed_p: 1.5
          speed_i: 0.7
          speed_imax: 100.0
-      
+
       navigation:
-         # speed controller:
          speed_p: 0.4
-   
-         # speed range:
-         speed_min: 0.5 # m/s
-         speed_std: 2.0 # m/s
-         speed_max: 3.5 # m/s
-   
-         # distance function:
+         speed_min: 0.5
+         speed_std: 2.0
+         speed_max: 3.5
          sqrt_shift: 3.0
          sqrt_scale: 0.3
          square_shift: 0.5
-         
-         # position i controller:
          pos_i: 0.015
          pos_i_max: 5.0
          ortho_p: 0.0
@@ -57,7 +50,6 @@ core:
       baro_noise: 1.0e-2
       gps_noise: 4.0e-3
       process_noise: 1.0e-6
-
 
    actuators:
       mk_fc:

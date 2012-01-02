@@ -63,6 +63,7 @@ class OPCD_Interface:
 if __name__ == '__main__':
    opcdi = OPCD_Interface('opcd_shell')
    opcdi.set('core.controllers.yaw.manual', True)
+   opcdi.set('core.controllers.yaw.speed_p', 1.0)
    opcdi.set('core.logger.level', 0)
    opcdi.persist()
 
