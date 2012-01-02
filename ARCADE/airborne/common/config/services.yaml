@@ -17,18 +17,9 @@
 #
 
 - name: gps_sensor
-  binary: 'sensors/gps/gps_sensor'
-
-- name: remote
-  binary: 'interfaces/remote/remote'
-
-- name: netscan
-  binary: 'sensors/wifi/netscan'
-
-- name: localizer
-  binary: 'logging/wifi/localizer'
+  binary: 'sensors/gps/src/gps_sensor.py'
 
 - name: core
-  binary: 'core/build/bin/core'
-  args: '-f $COMPONENTS_HOME/core/config/core.conf'
+  binary: 'core/src/core'
+  args: '-f $MOBICOM_SUBPROJECT_PATH/core/config/core.conf'
 

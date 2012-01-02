@@ -1,1 +1,5 @@
-INSTALL(FILES arbiter_interface.py  mission.py state_reader.py arbiter_requests.py named_daemon.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+PYTHON_INSTALL(arbiter_interface.py ${CMAKE_CURRENT_BINARY_DIR})
+PYTHON_INSTALL(mission.py ${CMAKE_CURRENT_BINARY_DIR})
+PYTHON_INSTALL(state_reader.py ${CMAKE_CURRENT_BINARY_DIR})
+PYTHON_INSTALL(arbiter_requests.py ${CMAKE_CURRENT_BINARY_DIR})
+PYTHON_INSTALL(named_daemon.py ${CMAKE_CURRENT_BINARY_DIR})
