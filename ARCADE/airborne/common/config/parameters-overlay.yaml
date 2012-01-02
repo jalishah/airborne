@@ -6,7 +6,7 @@
 core:
    controllers:
       yaw:
-         manual: true
+         manual: false
          speed_p: 1.0
    logger:
       level: 0

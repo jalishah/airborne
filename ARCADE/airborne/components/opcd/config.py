@@ -47,6 +47,8 @@ class Config:
          overlay_class = self._find_entry(self.overlay, key).__class__
          try:
             base_class = self._find_entry(self.base, key).__class__
+         except AssertionError:
+            raise
          except:
             raise ConfigError('overlay defines key "' + key + '", which does not exist in base')
          if overlay_class != base_class:
@@ -148,6 +150,7 @@ class Config:
 
    
    def _delete_key(self, node, key):
+      print node, key
       if isinstance(node, dict):
          head, tail = self._split_key(key)
          next_node = node[head]
@@ -161,17 +164,16 @@ class Config:
       for key in keys:
          overlay_val = self._find_entry(self.overlay, key)
          base_val = self._find_entry(self.base, key)
-         print overlay_val, base_val
          if overlay_val == base_val:
-            l = self._delete_key(self. overlay, key)
+            l = self._delete_key(self.overlay, key)
             i = l[0]
             del i[0][i[1]]
-            #prev_i = i[0]
-            #for i in l[1:]:
-            #   if len(prev_i) == 0 and prev_i.__class__ == dict:
-            #      del i[0][i[1]]
-            #   else:
-            #      break
+            prev_i = i[0]
+            for i in l[1:]:
+               if len(prev_i) == 0:
+                  del i[0][i[1]]
+               else:
+                  break
 
 
    def _find_entry(self, node, key):
@@ -185,15 +187,4 @@ class Config:
       else:
          assert node.__class__ in self.LEAF_TYPES
          return node
-
-
-
-
-if __name__ == '__main__':
-   try:
-      conf = Config('config')
-      conf._clean_overlay()
-      print conf.overlay
-   except ConfigError, e:
-      print e
 
