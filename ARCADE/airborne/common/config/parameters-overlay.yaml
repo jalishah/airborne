@@ -2,9 +2,11 @@
 # generated file! DO NOT EDIT
 #
 
-!!python/unicode 'core':
-  !!python/unicode 'controllers':
-    !!python/unicode 'angle':
-      !!python/unicode 'p': !!python/unicode ''
-  !!python/unicode 'logger':
-    !!python/unicode 'level': !!python/unicode ''
+core:
+  controllers:
+    angle:
+      p: 13.0
+    yaw:
+      manual: true
+  logger:
+    level: 0

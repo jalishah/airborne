@@ -57,7 +57,7 @@ class Config:
       '''
       set attribute identified by key to val
       '''
-      if not self._find_entry_or_none(self.base, key):
+      if self._find_entry_or_none(self.base, key) == None:
          raise ConfigError('cannot override unknown attribute "' + key + '"')
       self._insert_val(self.overlay, key, val)
 

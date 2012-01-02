@@ -12,7 +12,7 @@
 from config import Config, ConfigError
 from config_pb2 import CtrlReq, CtrlRep, Value
 from scl import generate_map
-from named_daemon import daemonize
+#from named_daemon import daemonize
 from sys import argv
 
 
@@ -50,16 +50,14 @@ def main(name):
             rep.status = CtrlRep.MALFORMED_ID
       
       elif req.type == CtrlReq.SET:
-         if hasattr(req.val, 'str_val'):
-            val = req.val.str_val
-         elif hasattr(req.val, 'int_val'):
-            val = req.val.int_val
-         elif hasattr(req.val, 'dbl_val'):
-            val = req.val.dbl_val
-         else:
-            assert hasattr(req.val.bool_val)
-            val = req.val.bool_val
-         conf.set(req.id, val)
+         map = {Value.STR: ('str_val', str),
+                Value.INT: ('int_val', int),
+                Value.DBL: ('dbl_val', float),
+                Value.BOOL: ('bool_val', bool)}
+         item = map[req.val.type]
+         val = getattr(req.val, item[0])
+         conf.set(req.id.encode('ascii'), item[1](val))
+         print conf.overlay
          #update_socket.send()
 
       else:

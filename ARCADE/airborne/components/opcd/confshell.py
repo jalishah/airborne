@@ -28,15 +28,15 @@ class OPCD_Interface:
       req.id = id
       rep = self._send_and_recv(req)
       assert rep.status == 0
-      if rep.val.str_val:
+      if rep.val.str_val != None:
          val = rep.val.str_val
-      elif rep.val.int_val:
+      elif rep.val.int_val != None:
          val = rep.val.int_val
-      elif rep.val.dbl_val:
+      elif rep.val.dbl_val != None:
          val = rep.val.dbl_val
       else:
+         assert rep.val.bool_val != None
          val = rep.val.bool_val
-         assert val
       return val
 
 
@@ -44,8 +44,12 @@ class OPCD_Interface:
       req = CtrlReq()
       req.type = CtrlReq.SET
       req.id = id
-      map = {str: 'str_val', int: 'int_val', float: 'dbl_val', bool: 'bool_val'}
-      setattr(req.val, map[val.__class__], val)
+      map = {str: (Value.STR, 'str_val'),
+             int: (Value.INT, 'int_val'),
+             float: (Value.DBL, 'dbl_val'),
+             bool: (Value.BOOL, 'bool_val')}
+      req.val.type =  map[val.__class__][0]
+      setattr(req.val, map[val.__class__][1], val)
       print req
       return self._send_and_recv(req).status
 
@@ -58,7 +62,7 @@ class OPCD_Interface:
 
 if __name__ == '__main__':
    opcdi = OPCD_Interface('opcd_shell')
-   print opcdi.set('core.controllers.angle.p', 13.0)
-   print opcdi.set('core.logger.level', 0)
-   print opcdi.persist()
+   opcdi.set('core.controllers.yaw.manual', True)
+   opcdi.set('core.logger.level', 0)
+   opcdi.persist()
 

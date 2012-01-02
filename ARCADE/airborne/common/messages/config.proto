@@ -8,10 +8,19 @@
 
 message Value
 {
-   optional string str_val = 1;
-   optional int32 int_val = 2;
-   optional double dbl_val = 3;
-   optional bool bool_val = 4;
+   enum Type
+   {
+      STR = 0;
+      INT = 1;
+      DBL = 2;
+      BOOL = 3;
+   }
+   
+   required Type type = 1;
+   optional string str_val = 2;
+   optional int32 int_val = 3;
+   optional double dbl_val = 4;
+   optional bool bool_val = 5;
 }
 
 
