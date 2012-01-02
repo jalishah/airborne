@@ -1,5 +1,0 @@
-core:
-   kalman:
-      process: 1.0e-1
-      sensor: 10.0e+1
-abc: 2

@@ -7,6 +7,7 @@ from protocols.arbiter_driver import ArbiterProtocolDriver
 from protocols.core_interface import CoreInterface
 from protocols.state_update_interface import StateUpdateInterface
 
+
 def main(name):
    sockets = generate_map(name)
    core = CoreInterface(sockets['core'])
@@ -14,6 +15,7 @@ def main(name):
    disp = Dispatcher(core, sui)
    apd = ArbiterProtocolDriver(sockets['ctrl'], disp)
    apd.run()
+
 
 daemonize('arbiter', main)
 

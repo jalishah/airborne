@@ -31,8 +31,8 @@ class Config:
       assert isinstance(config_prefix, str)
       # build config paths from prefix:
       self.config_prefix = config_prefix
-      self.base_path = config_prefix + '-base.yml'
-      self.overlay_path = config_prefix + '-overlay.yml'
+      self.base_path = config_prefix + '-base.yaml'
+      self.overlay_path = config_prefix + '-overlay.yaml'
       # load base config and overlay of present:
       self.base = yaml.load(file(self.base_path))
       if os.path.isfile(self.overlay_path):
@@ -85,7 +85,8 @@ class Config:
          except:
             pass
       else:
-         dump = yaml.dump(self.overlay, default_flow_style = False)
+         dump = '#\n# generated file! DO NOT EDIT\n#\n\n'
+         dump += yaml.dump(self.overlay, default_flow_style = False)
          overlay_file = file(self.overlay_path, 'w')
          overlay_file.write(dump)
          overlay_file.close()
@@ -94,8 +95,8 @@ class Config:
    def _check_tree(self, node):
       if isinstance(node, dict):
          for key, node in node.iteritems():
-            if not isinstance(key, str) and not '.' in key:
-               raise ConfigError('key ' + key + ' must not contain a dot (.) character')
+            if isinstance(key, str) and '.' in key:
+               raise ConfigError('key ' + str(key) + ' must not contain a dot (.) character')
             self._check_tree(node)
       else:
          if node.__class__ not in self.LEAF_TYPES:
@@ -189,9 +190,6 @@ class Config:
 if __name__ == '__main__':
    try:
       conf = Config('config')
-      #print conf._find_entry(conf.overlay, 'core.kalman.process')
-      #conf.set('core.model.lateral_measurement_noise', 1.34)
-      #print conf.overlay
       conf._clean_overlay()
       print conf.overlay
    except ConfigError, e:

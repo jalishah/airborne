@@ -8,9 +8,10 @@
 
 message Value
 {
-   optional double dbl_val = 1;
+   optional string str_val = 1;
    optional int32 int_val = 2;
-   optional string str_val = 3;
+   optional double dbl_val = 3;
+   optional bool bool_val = 4;
 }
 
 

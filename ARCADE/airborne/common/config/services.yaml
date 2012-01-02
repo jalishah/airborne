@@ -26,3 +26,7 @@
   binary: 'core/src/core'
   args: '-f $MOBICOM_SUBPROJECT_PATH/components/core/config/core.conf'
 
+- name: opcd
+  binary: 'opcd/opcd.py'
+  args: '$MOBICOM_SUBPROJECT_PATH/common/config/parameters'
+
