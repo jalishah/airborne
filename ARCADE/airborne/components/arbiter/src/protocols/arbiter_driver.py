@@ -2,7 +2,7 @@
 # arbiter protcol driver
 
 
-from arbiter_pb2 import ArbiterRequest, ArbiterReply
+from arbiter_pb2 import Request, Reply
 from dispatcher import StateMachineError
 from core_interface import CoreError
 
@@ -19,9 +19,9 @@ class ArbiterProtocolDriver:
       """ receives, parses and executes arbiter command requests using the submited handler object"""
       while True:
          try:
-            req = ArbiterRequest()
+            req = Request()
             req.ParseFromString(self._socket.recv())
-            rep_data = ArbiterReply()
+            rep_data = Reply()
             self._handler.handle(req)
             self._send_ok()
          except ValueError, e: # may be raised by handler methods on invalid parameter values
@@ -37,13 +37,13 @@ class ArbiterProtocolDriver:
    
    def _send_ok(self):
       """reply with OK message"""
-      rep = ArbiterReply()
+      rep = Reply()
       rep.status = 0
       self._send_rep(rep)
 
    def _send_err(self, code, msg):
       """reply with error code and message"""
-      rep = ArbiterReply()
+      rep = Reply()
       rep.status = code
       rep.message = msg
       self._send_rep(rep)

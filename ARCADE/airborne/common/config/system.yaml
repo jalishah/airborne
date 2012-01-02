@@ -18,26 +18,108 @@
 
 components:
 
-   - name: confserver
+   - name: gps_sensor
+     path: 'sensors/gps/gps_sensor'
      gates:
-      - ctrl: rep
-      - update: pub
+      - gps: pub
 
-   - name: core
+   - name: gps_test
      gates:
-      - update: sub
+      - gps: sub
 
-   - name: confshell
+   - name: gpx_logger
+     gates:
+      - gps: sub
+
+   - name: core_logger
+     gates:
+      - log: sub
+
+   - name: remote
+     path: 'interfaces/remote/remote'
+     gates:
+      - ctrl: req
+
+   - name: ferry_ctrl
+     gates:
+      - hlsm: sub
+      - ctrl: req
+   
+   - name: cmdshell
      gates:
       - ctrl: req
    
+   - name: blackbox
+     gates:
+      - state_machine: sub
+      - core_log: sub
+
+   - name: param_shell
+     gates:
+      - params: req
+
+   - name: arbiter
+     path: 'arbiter/arbiter'
+     gates:
+      - hlsm: pub
+      - health: sub
+      - core: req
+      - ctrl: rep
+
+   - name: netscan
+     path: 'sensors/wifi/netscan'
+     gates:
+      - networks: pub
+
+   - name: localizer
+     path: 'logging/wifi/localizer'
+     gates:
+      - networks: sub
+      - kalman: sub
+      - hlsm: sub
+   
+   - name: dlr_logger
+     path: 'logging/dlr_logger/dlr_logger'
+     gates:
+      - gps: sub
+      - kalman: sub
+      - hlsm: sub
+
+   - name: core
+     path: 'core/build/bin/core -f /root/ARCADE_UAV/components/core/config/core.conf'
+     gates:
+      - log: pub
+      - gps: sub
+      - hlsm: pub
+      - ctrl: rep
+      - kalman: pub
+      - params: rep
+      - health: pub
+
+
 #
 # component connections (component_a.gate_x -- component_b.gate_y)
 #
 
 connections:
 
-#   - [ confserver.ctrl,     core.ctrl          ]
-   - [ confserver.update,   core.update        ]
-   - [ confshell.ctrl,      confserver.ctrl    ]
+   - [ localizer.kalman,    core.kalman        ]
+   - [ dlr_logger.kalman,   core.kalman        ]
+   - [ remote.ctrl,         core.ctrl          ]
+   - [ localizer.networks,  netscan.networks   ]
+   - [ core_logger.log,     core.log           ]
+   - [ gps_sensor.gps,      core.gps           ]
+   - [ arbiter.ctrl,        ferry_ctrl.ctrl    ]
+   - [ ferry_ctrl.hlsm,     arbiter.hlsm       ]
+   - [ blackbox.state_machine,    arbiter.hlsm ]
+   - [ blackbox.core_log,   core.log           ]
+   - [ core.hlsm,           localizer.hlsm     ]
+   - [ core.hlsm,           dlr_logger.hlsm    ]
+   - [ arbiter.ctrl,        cmdshell.ctrl      ]
+   - [ core.health,         arbiter.health     ]
+   - [ core.ctrl,           arbiter.core       ]
+   - [ core.params,         param_shell.params ]
+   - [ gpx_logger.gps,      gps_sensor.gps     ]
+   - [ dlr_logger.gps,      gps_sensor.gps     ]
+   - [ gps_sensor.gps,      gps_test.gps       ]
    
