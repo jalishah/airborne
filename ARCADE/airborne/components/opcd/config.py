@@ -44,21 +44,14 @@ class Config:
          self._check_tree(doc)
       # check inter-document integrity:
       for key in self.get_all_keys(self.overlay):
-         overlay_class = self._find_entry(self.overlay, key).__class__
-         try:
-            base_class = self._find_entry(self.base, key).__class__
-         except AssertionError:
-            raise
-         except:
-            raise ConfigError('overlay defines key "' + key + '", which does not exist in base')
-         if overlay_class != base_class:
-            raise ConfigError('different data types for overlay (' + str(overlay_class) + ') and base (' + str(base_class) + ') for key: ' + key)
+         self._validate_overlay_key(key)
 
 
    def set(self, key, val):
       '''
       set attribute identified by key to val
       '''
+      self._validate_overlay_key_against(key, val)
       if self._find_entry_or_none(self.base, key) == None:
          raise ConfigError('cannot override unknown attribute "' + key + '"')
       self._insert_val(self.overlay, key, val)
@@ -150,7 +143,6 @@ class Config:
 
    
    def _delete_key(self, node, key):
-      print node, key
       if isinstance(node, dict):
          head, tail = self._split_key(key)
          next_node = node[head]
@@ -174,6 +166,31 @@ class Config:
                   del i[0][i[1]]
                else:
                   break
+   
+
+   def _validate_overlay_key_against(self, key, val):
+      cls = val.__class__
+      try:
+         base_class = self._find_entry(self.base, key).__class__
+      except AssertionError:
+         raise
+      except:
+         raise ConfigError('overlay defines key "' + key + '", which does not exist in base')
+      if cls != base_class:
+         raise ConfigError('different data types for overlay (' + str(cls) + ') and base (' + str(base_class) + ') for key: ' + key)
+
+
+
+   def _validate_overlay_key(self, key):
+      overlay_class = self._find_entry(self.overlay, key).__class__
+      try:
+         base_class = self._find_entry(self.base, key).__class__
+      except AssertionError:
+         raise
+      except:
+         raise ConfigError('overlay defines key "' + key + '", which does not exist in base')
+      if overlay_class != base_class:
+         raise ConfigError('different data types for overlay (' + str(overlay_class) + ') and base (' + str(base_class) + ') for key: ' + key)
 
 
    def _find_entry(self, node, key):

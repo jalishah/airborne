@@ -1,7 +1,7 @@
 
 #
-# file: confserver.py
-# purpose: overridable configuration fil based on yaml
+# file: opcd_interface.py
+# purpose: OPCD interface class
 #
 
 
@@ -14,6 +14,7 @@ class OPCD_Interface:
 
    def __init__(self, name):
       self.socket = generate_map(name)['ctrl']
+      self.map = {str: 'str_val', int: 'int_val', float: 'dbl_val', bool: 'bool_val'}
 
    def _send_and_recv(self, req):
       self.socket.send(req.SerializeToString())
@@ -30,24 +31,26 @@ class OPCD_Interface:
       assert rep.status == 0
       pairs = []
       for pair in rep.pairs:
-         for type in ['str_val', 'int_val', 'dbl_val', 'bool_val']:
+         for type in self.map.values():
             if pair.val.HasField(type):
-               pairs.append((pair.id.encode('ascii'), getattr(pair.val, type)))
+               val = getattr(pair.val, type)
+               if type == 'str_val':
+                  val = val.encode('ascii')
+               pairs.append((pair.id.encode('ascii'), val))
                break
-      return pairs
+      if len(pairs) == 0:
+         return
+      elif len(pairs) == 1:
+         return pairs[0][1]
+      else:
+         return pairs
 
 
    def set(self, id, val):
       req = CtrlReq()
       req.type = CtrlReq.SET
       req.id = id
-      map = {str: (Value.STR, 'str_val'),
-             int: (Value.INT, 'int_val'),
-             float: (Value.DBL, 'dbl_val'),
-             bool: (Value.BOOL, 'bool_val')}
-      req.val.type =  map[val.__class__][0]
-      setattr(req.val, map[val.__class__][1], val)
-      print req
+      setattr(req.val, self.map[val.__class__], val)
       return self._send_and_recv(req).status
 
 
@@ -55,9 +58,4 @@ class OPCD_Interface:
       req = CtrlReq()
       req.type = CtrlReq.PERSIST
       return self._send_and_recv(req).status
-
-
-if __name__ == '__main__':
-   opcdi = OPCD_Interface('opcd_shell')
-   print opcdi.get('core.controllers.yaw.speed_i')
 
