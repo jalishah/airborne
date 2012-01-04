@@ -54,10 +54,13 @@ static sliding_avg_t *output_avg[NUM_AVG];
 #include "util/threads/threadsafe_types.h"
 
 threadsafe_int_t test;
+char *test2 = NULL;
+
 
 opcd_param_t params[] =
 {
    {"core.logger.level", &test},
+   {"core.actuators.mk_fc.serial_port", &test2},
    OPCD_PARAMS_END
 };
 
@@ -84,6 +87,7 @@ void _main(int argc, char *argv[])
    opcd_params_init();
    opcd_params_apply(params);
    printf("%d\n", threadsafe_int_get(&test));
+   printf("got back: %s\n", test2);
    exit(0);
    params_init();
 

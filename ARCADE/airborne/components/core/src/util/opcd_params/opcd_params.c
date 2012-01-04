@@ -4,6 +4,9 @@
  */
 
 
+#include <glib.h>
+
+
 #include "opcd_params.h"
 
 
@@ -15,17 +18,135 @@
 #include "../threads/threadsafe_types.h"
 
 
+#define THREAD_NAME     "opcd_event_handler"
+#define THREAD_PRIORITY 1
+
+
 static void *ctrl_socket = NULL;
 static void *event_socket = NULL;
+static GHashTable *params_ht = NULL;
+static simple_thread_t thread;
 
 
-void opcd_params_init(void)
+typedef enum
 {
-   ASSERT_ONCE();
-   ctrl_socket = scl_get_socket("opcd_ctrl");
-   ASSERT_NOT_NULL(ctrl_socket);
-   event_socket = scl_get_socket("opcd_event");
-   ASSERT_NOT_NULL(event_socket);
+   TYPE_STR,
+   TYPE_INT,
+   TYPE_FLOAT,
+   TYPE_BOOL
+}
+var_type_t;
+
+
+typedef struct
+{
+   var_type_t type;
+   void *data;
+}
+ht_entry_t;
+
+
+static var_type_t get_data_type(Value *val)
+{
+   var_type_t type;
+
+   if (val->str_val)
+   {
+      type = TYPE_STR;
+   }
+   else if (val->has_int_val)
+   {
+      type = TYPE_INT;
+   }
+   else if (val->has_dbl_val)
+   {
+      type = TYPE_FLOAT;
+   }
+   else 
+   {
+      assert(val->has_bool_val);
+      type = TYPE_BOOL;
+   }
+
+   return type;
+}
+
+
+static void init_param(Value *val, opcd_param_t *param)
+{
+   var_type_t type = get_data_type(val);
+   
+   /* copy initial data: */
+   switch (type)
+   {
+      case TYPE_STR:
+      {
+         /* NOTE: strings are not updated online */
+         char *mem = malloc(strlen(val->str_val) + 1);
+         strcpy(mem, val->str_val);
+         *(char **)param->data = mem;
+         break;
+      }
+      case TYPE_INT:
+      {
+         threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
+         break;
+      }
+      case TYPE_FLOAT:
+      {
+         threadsafe_float_init((threadsafe_float_t *)param->data, val->dbl_val);
+         break;
+      }
+      case TYPE_BOOL:
+      {
+         threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
+         break;
+      }
+   }
+
+   /* insert param into hash table for later use in event handler thread: */
+   char *id = param->id;
+   if (g_hash_table_lookup(params_ht, id) != NULL)
+   {
+      LOG(LL_ERROR, "parameter already registered: %s", id);
+      exit(1);
+   }
+
+   ht_entry_t *entry = malloc(sizeof(ht_entry_t));
+   entry->type = type;
+   entry->data = param->data;
+   g_hash_table_insert(params_ht, id, entry);
+}
+
+
+static void update_param(void *data, Pair *pair)
+{
+   Value *val = pair->val;
+   var_type_t type = get_data_type(val);
+
+   switch (type)
+   {
+      case TYPE_STR:
+      {
+         LOG(LL_WARNING, "not going to update string parameter %s", pair->id);
+         break;
+      }
+      case TYPE_INT:
+      {
+         threadsafe_int_set((threadsafe_int_t *)data, val->int_val);
+         break;
+      }
+      case TYPE_FLOAT:
+      {
+         threadsafe_float_set((threadsafe_float_t *)data, val->dbl_val);
+         break;
+      }
+      case TYPE_BOOL:
+      {
+         threadsafe_int_set((threadsafe_int_t *)data, val->int_val);
+         break;
+      }
+   }
 }
 
 
@@ -48,27 +169,7 @@ void opcd_params_apply(opcd_param_t *params)
       {
          if (rep->status == CTRL_REP__STATUS__OK)
          {
-            Value *val = rep->pairs[0]->val;
-            if (val->str_val)
-            {
-               threadsafe_string_init((threadsafe_string_t *)param->data, val->str_val);
-            }
-            else if (val->has_int_val)
-            {
-               threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
-            }
-            else if (val->has_dbl_val)
-            {
-               threadsafe_float_init((threadsafe_float_t *)param->data, val->dbl_val);
-            }
-            else if (val->has_bool_val)
-            {
-               threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
-            }
-            else
-            {
-               assert(0);   
-            }
+            init_param(rep->pairs[0]->val, param);
          }
          else
          {
@@ -86,19 +187,34 @@ void opcd_params_apply(opcd_param_t *params)
 }
 
 
-
-#define THREAD_NAME     "opc_client"
-#define THREAD_PRIORITY 1
-
-
-static simple_thread_t thread;
-
-
 SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
+      Pair *pair;
+      SCL_RECV_AND_UNPACK_DYNAMIC(pair, event_socket, pair);
+      ht_entry_t *entry = (ht_entry_t *)g_hash_table_lookup(params_ht, pair->id);
+      if (entry != NULL)
+      {
+         update_param(entry->data, pair);
+      }
+      SCL_FREE(pair, pair);
    }
    SIMPLE_THREAD_LOOP_END
 }
 SIMPLE_THREAD_END
+
+
+void opcd_params_init(void)
+{
+   ASSERT_ONCE();
+   ctrl_socket = scl_get_socket("opcd_ctrl");
+   ASSERT_NOT_NULL(ctrl_socket);
+   event_socket = scl_get_socket("opcd_event");
+   ASSERT_NOT_NULL(event_socket);
+   params_ht = g_hash_table_new(g_str_hash, g_str_equal);
+   ASSERT_NOT_NULL(params_ht);
+
+   //simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
+}
+
