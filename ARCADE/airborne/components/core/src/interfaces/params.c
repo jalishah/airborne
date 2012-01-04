@@ -169,11 +169,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          }
          param_request__free_unpacked(request, NULL);
       }
-      unsigned int reply_data_len = param_reply__get_packed_size(&reply);
-      void *buffer = malloc(reply_data_len);
-      ASSERT_NOT_NULL(buffer);
-      param_reply__pack(&reply, buffer);
-      scl_send_dynamic(socket, buffer, reply_data_len, 0);
+      SCL_PACK_AND_SEND_DYNAMIC(socket, param_reply, reply);
    }
    SIMPLE_THREAD_LOOP_END
 }

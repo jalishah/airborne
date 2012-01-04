@@ -72,8 +72,11 @@
    }
 
 
+typedef char * string;
+
 DECLARE_THREADSAFE_TYPE(float);
 DECLARE_THREADSAFE_TYPE(int);
+DECLARE_THREADSAFE_TYPE(string);
 
 
 #endif /* THREADSAFE_TYPES_H */

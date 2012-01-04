@@ -39,7 +39,7 @@ chr_6dm
 # generic algorithms:
 algorithms
 # sensor actor support:
-i2c gpio twl4030_madc serial logger threads ltime lmath scl config
+i2c gpio twl4030_madc serial logger opcd_params threads ltime lmath scl config
 # ARCADE libraries
 util network_messages
 scl_messages

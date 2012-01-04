@@ -18,6 +18,7 @@
 #include "util.h"
 #include "util/logger/logger.h"
 #include "util/config/config.h"
+#include "util/opcd_params/opcd_params.h"
 #include "interfaces/cmd.h"
 #include "interfaces/params.h"
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
@@ -50,27 +51,42 @@ enum
 
 static sliding_avg_t *output_avg[NUM_AVG];
 
+#include "util/threads/threadsafe_types.h"
+
+threadsafe_int_t test;
+
+opcd_param_t params[] =
+{
+   {"core.logger.level", &test},
+   OPCD_PARAMS_END
+};
+
 
 void _main(int argc, char *argv[])
 {
-
+   handle_cmd_line(argc, argv);
+   
    syslog(LOG_INFO, "initializing core");
+   syslog(LOG_INFO, "initializing signaling and communication link (SCL)");
+   
    if (scl_init("core") != 0)
    {
       syslog(LOG_CRIT, "could not init scl module");
       exit(EXIT_FAILURE);
    }
-   params_init();
-
-   syslog(LOG_CRIT, "%d %s", argc, argv[2]);
-   handle_cmd_line(argc, argv);
    syslog(LOG_CRIT, "opening logger");
-
    if (logger_open() != 0)
    {
       syslog(LOG_CRIT, "could not open logger");
       exit(EXIT_FAILURE);
    }
+
+   opcd_params_init();
+   opcd_params_apply(params);
+   printf("%d\n", threadsafe_int_get(&test));
+   exit(0);
+   params_init();
+
    sleep(1);
 
    LOG(LL_INFO, "+------------------+");

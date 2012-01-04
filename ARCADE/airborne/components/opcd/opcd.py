@@ -58,9 +58,13 @@ class OPCD:
                self._pairs_add(req.id, rep)
             else:
                # try substring matches:
+               found = False
                for key in all_keys:
                   if key.find(req.id) == 0:
                      self._pairs_add(key, rep)
+                     found = True
+               if not found:
+                  rep.status = CtrlRep.PARAM_UNKNOWN
 
          # SET REQUEST:
          elif req.type == CtrlReq.SET:
