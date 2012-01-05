@@ -1,15 +1,12 @@
-
 #
 # file: config.py
-# purpose: overridable configuration fil based on yaml
+# purpose: overridable configuration file based on yaml
+# author: Tobias Simon, Ilmenau University of Technology
 #
-
 
 import yaml
 import copy
 import os
-
-
 
 
 class ConfigError(Exception):
@@ -20,8 +17,6 @@ class ConfigError(Exception):
 
    def __str__(self):
       return self.msg
-
-
 
 
 class Config:
