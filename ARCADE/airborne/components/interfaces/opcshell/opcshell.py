@@ -2,6 +2,7 @@
 import atexit
 import os
 import readline
+import pprint
 
 from arbiter_requests import Takeoff, Land, Move, RotateFixed, RotatePOI, Stop
 from arbiter_interface import ArbiterInterface
@@ -20,13 +21,15 @@ atexit.register(_save_history)
 
 #initialize and define interface:
 _interface = OPCD_Interface('opcd_shell')
+_pp = pprint.PrettyPrinter(indent = 3)
 
-def get(key):
-   return _interface.get(key)
+
+def get(key = ''):
+   _pp.pprint(_interface.get(key))
 
 def set(key, val):
-   return _interface.set(key, val)
+   print 'status:', _interface.set(key, val)
 
 def persist():
-   return _interface.persist()
+   print 'status:', _interface.persist()
 

@@ -93,12 +93,11 @@ void _main(int argc, char *argv[])
    }
 
    omap_i2c_bus_init();
-   
+   leds_overo_initialize();
    baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
-   leds_overo_initialize();
-   gps_init();
+   //gps_init();
    
    LOG(LL_INFO, "initializing model/controller");
    model_init();

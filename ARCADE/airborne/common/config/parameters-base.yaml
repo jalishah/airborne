@@ -51,6 +51,10 @@ core:
       baro_noise: 1.0e-2
       gps_noise: 4.0e-3
       process_noise: 1.0e-6
+      acc_avg_update_s: 60
+      x_acc_avg: 0.0
+      y_acc_avg: 0.0
+      z_acc_avg: -9.81
 
    actuators:
       mk_fc:

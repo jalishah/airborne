@@ -25,6 +25,13 @@ opcd_param_t;
  */
 void opcd_params_init(char *prefix);
 
+
+/*
+ * sets a float param to identfied by id to val
+ */
+void opcd_float_param_set(char *id, float val);
+
+
 /*
  * 1) retrieves the configuration value from OPCD and store this value
  * 2) registers the parameter for online updates

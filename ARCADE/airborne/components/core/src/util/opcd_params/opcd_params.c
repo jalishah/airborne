@@ -157,8 +157,6 @@ static void update_param(void *data, Pair *pair)
 }
 
 
-
-
 void opcd_params_apply(char *_prefix, opcd_param_t *params)
 {
    for (opcd_param_t *param = params;
@@ -196,6 +194,37 @@ void opcd_params_apply(char *_prefix, opcd_param_t *params)
          printf("could not communicate with opcd"); 
          exit(1);
       }
+   }
+}
+
+
+void opcd_float_param_set(char *id, float val)
+{
+   /* build and send request: */
+   CtrlReq req = CTRL_REQ__INIT;
+   req.type = CTRL_REQ__TYPE__SET;
+   req.id = id;
+   req.val = malloc(sizeof(Value));
+   value__init(req.val);
+   req.val->has_dbl_val = 1;
+   req.val->dbl_val = val;
+   SCL_PACK_AND_SEND_DYNAMIC(ctrl_socket, ctrl_req, req);
+   free(req.val);
+
+   /* receive and parse reply: */
+   CtrlRep *rep;
+   SCL_RECV_AND_UNPACK_DYNAMIC(rep, ctrl_socket, ctrl_rep);
+   if (rep != NULL)
+   {
+      if (rep->status != CTRL_REP__STATUS__OK)
+      {
+         printf("could not override or find float parameter: %s", req.id);   
+      }
+      SCL_FREE(ctrl_rep, rep);
+   }
+   else
+   {
+      printf("could not communicate with opcd"); 
    }
 }
 

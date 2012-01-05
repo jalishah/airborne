@@ -5,7 +5,7 @@
 #
 
 
-from config_pb2 import CtrlReq, CtrlRep, Value
+from opcd_pb2 import CtrlReq, CtrlRep, Value
 from scl import generate_map
 
 

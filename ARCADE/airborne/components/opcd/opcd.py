@@ -12,7 +12,7 @@
 from config import Config, ConfigError
 from opcd_pb2 import CtrlReq, CtrlRep, Pair
 from scl import generate_map
-#from named_daemon import daemonize
+from named_daemon import daemonize
 from sys import argv
 
 
@@ -77,7 +77,6 @@ class OPCD:
                pair = Pair(id = req.id, val = req.val)
                self.event_socket.send(pair.SerializeToString())
             except ConfigError, e:
-               print str(e)
                rep.status = CtrlRep.PARAM_UNKNOWN
 
          # PERSIST REQUEST:
@@ -100,6 +99,5 @@ def main(name):
 
 if len(argv) != 2:
    print 'expected configuration file prefix as first argument'
-#daemonize('opcd', main)
-main('opcd')
+daemonize('opcd', main)
 
