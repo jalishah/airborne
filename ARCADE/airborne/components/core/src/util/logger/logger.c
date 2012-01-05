@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <zmq.h>
+#include <syslog.h>
 
 #include "logger.h"
 #include "log_data.pb-c.h"
@@ -17,18 +18,17 @@ static threadsafe_int_t loglevel;
 static threadsafe_int_t details;
 
 
-
-
 int logger_open(void)
 {
    ASSERT_ONCE();
-   static opcd_param_t params[] =
+   
+   opcd_param_t params[] =
    {
       {"level", &loglevel},
       {"details", &details},
       OPCD_PARAMS_END
    };
-   opcd_params_apply("logger", params);
+   opcd_params_apply("logger.", params);
    
    socket = scl_get_socket("log");
    if (socket == NULL)
@@ -64,14 +64,14 @@ void logger_write(char *file, loglevel_t level, unsigned int line, char *format,
       /* publish: */
       unsigned int log_data_len = (unsigned int)log_data__get_packed_size(&log_data);
       void *buffer = malloc(log_data_len);
-      if (buffer)
+      if (buffer != NULL)
       {
          log_data__pack(&log_data, buffer);
          scl_send_dynamic(socket, buffer, log_data_len, ZMQ_NOBLOCK);
       }
       else
       {
-         printf("could not write to logger"); // TODO: syslog
+         syslog(LOG_CRIT, "malloc() failed in module logger");
       }
    }
 }

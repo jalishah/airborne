@@ -10,7 +10,7 @@
 
 
 from config import Config, ConfigError
-from config_pb2 import CtrlReq, CtrlRep, Pair
+from opcd_pb2 import CtrlReq, CtrlRep, Pair
 from scl import generate_map
 #from named_daemon import daemonize
 from sys import argv

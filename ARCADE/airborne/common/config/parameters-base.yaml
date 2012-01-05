@@ -3,7 +3,7 @@ core:
 
    logger:
       level: 3
-      etails: 2
+      details: 2
 
    controllers:
       debug_host: "10.0.1.5"

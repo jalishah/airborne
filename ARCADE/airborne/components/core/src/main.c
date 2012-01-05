@@ -72,6 +72,7 @@ void _main(int argc, char *argv[])
       syslog(LOG_CRIT, "could not open logger");
       exit(EXIT_FAILURE);
    }
+   syslog(LOG_CRIT, "logger opened");
 
 
    sleep(1);

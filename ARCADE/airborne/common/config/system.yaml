@@ -52,10 +52,6 @@ components:
       - state_machine: sub
       - core_log: sub
 
-   - name: param_shell
-     gates:
-      - params: req
-
    - name: arbiter
      gates:
       - hlsm: pub
@@ -77,13 +73,11 @@ components:
      gates:
       - log: pub
       - gps: sub
-      - hlsm: pub
       - ctrl: rep
       - kalman: pub
-      - params: rep
       - health: pub
-      - opcd_event: sub
       - opcd_ctrl: req
+      - opcd_event: sub
 
 
    - name: opcd
@@ -114,11 +108,10 @@ connections:
    - [ ferry_ctrl.hlsm,          arbiter.hlsm       ]
    - [ blackbox.state_machine,   arbiter.hlsm       ]
    - [ blackbox.core_log,        core.log           ]
-   - [ core.hlsm,                localizer.hlsm     ]
+   - [ arbiter.hlsm,             localizer.hlsm     ]
    - [ arbiter.ctrl,             cmdshell.ctrl      ]
    - [ core.health,              arbiter.health     ]
    - [ core.ctrl,                arbiter.core       ]
-   - [ core.params,              param_shell.params ]
    - [ gpx_logger.gps,           gps_sensor.gps     ]
    - [ gps_sensor.gps,           gps_test.gps       ]
    
