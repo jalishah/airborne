@@ -1,15 +1,13 @@
 
 /*
- * online parameter configuration client implementation
+ * opcd params implementation
+ * author: Tobias Simon, Ilmenau University of Technology
  */
 
 
 #include <glib.h>
 
-
 #include "opcd_params.h"
-
-
 #include "util.h"
 #include "config.pb-c.h"
 #include "../logger/logger.h"
@@ -22,6 +20,7 @@
 #define THREAD_PRIORITY 1
 
 
+static char *prefix = NULL;
 static void *ctrl_socket = NULL;
 static void *event_socket = NULL;
 static GHashTable *params_ht = NULL;
@@ -44,6 +43,15 @@ typedef struct
    void *data;
 }
 ht_entry_t;
+
+
+static char *append_str(char *prefix, char *suffix)
+{
+   char *str = malloc(strlen(prefix) + strlen(suffix) + 1);
+   strcpy(str, prefix);
+   strcat(str, suffix);
+   return str;
+}
 
 
 static var_type_t get_data_type(Value *val)
@@ -105,7 +113,7 @@ static void init_param(Value *val, opcd_param_t *param)
    }
 
    /* insert param into hash table for later use in event handler thread: */
-   char *id = param->id;
+   char *id = append_str(prefix, param->id);
    if (g_hash_table_lookup(params_ht, id) != NULL)
    {
       LOG(LL_ERROR, "parameter already registered: %s", id);
@@ -150,6 +158,8 @@ static void update_param(void *data, Pair *pair)
 }
 
 
+
+
 void opcd_params_apply(opcd_param_t *params)
 {
    for (opcd_param_t *param = params;
@@ -159,9 +169,9 @@ void opcd_params_apply(opcd_param_t *params)
       /* build and send request: */
       CtrlReq req = CTRL_REQ__INIT;
       req.type = CTRL_REQ__TYPE__GET;
-      req.id = param->id;
+      req.id = append_str(prefix, param->id);
       SCL_PACK_AND_SEND_DYNAMIC(ctrl_socket, ctrl_req, req);
-      
+
       /* receive and parse reply: */
       CtrlRep *rep;
       SCL_RECV_AND_UNPACK_DYNAMIC(rep, ctrl_socket, ctrl_rep);
@@ -173,16 +183,17 @@ void opcd_params_apply(opcd_param_t *params)
          }
          else
          {
-            LOG(LL_ERROR, "could not find parameter: %s", param->id);   
+            LOG(LL_ERROR, "could not find parameter: %s", req.id);   
             exit(1);
          }
          SCL_FREE(ctrl_rep, rep);
       }
       else
       {
-         LOG(LL_ERROR, "could not communicate with opc daemon"); 
+         LOG(LL_ERROR, "could not communicate with opcd"); 
          exit(1);
       }
+      free(req.id);
    }
 }
 
@@ -193,28 +204,37 @@ SIMPLE_THREAD_BEGIN(thread_func)
    {
       Pair *pair;
       SCL_RECV_AND_UNPACK_DYNAMIC(pair, event_socket, pair);
-      ht_entry_t *entry = (ht_entry_t *)g_hash_table_lookup(params_ht, pair->id);
-      if (entry != NULL)
+      if (pair != NULL)
       {
-         update_param(entry->data, pair);
+         ht_entry_t *entry = (ht_entry_t *)g_hash_table_lookup(params_ht, pair->id);
+         if (entry != NULL)
+         {
+            update_param(entry->data, pair);
+         }
+         SCL_FREE(pair, pair);
       }
-      SCL_FREE(pair, pair);
+      else
+      {
+         LOG(LL_WARNING, "could not receive event from opcd");  
+         sleep(1);
+      }
    }
    SIMPLE_THREAD_LOOP_END
 }
 SIMPLE_THREAD_END
 
 
-void opcd_params_init(void)
+void opcd_params_init(char *_prefix)
 {
    ASSERT_ONCE();
+   ASSERT_NOT_NULL(_prefix);
+   prefix = _prefix;
    ctrl_socket = scl_get_socket("opcd_ctrl");
    ASSERT_NOT_NULL(ctrl_socket);
    event_socket = scl_get_socket("opcd_event");
    ASSERT_NOT_NULL(event_socket);
    params_ht = g_hash_table_new(g_str_hash, g_str_equal);
    ASSERT_NOT_NULL(params_ht);
-
-   //simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
+   simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 }
 

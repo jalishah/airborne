@@ -1,11 +1,12 @@
 
 /*
- * online parameter configuration client interface
+ * opcd params implementation
+ * author: Tobias Simon, Ilmenau University of Technology
  */
 
 
-#ifndef __OPC_INTERFACE_H__
-#define __OPC_INTERFACE_H__
+#ifndef __OPCD_PARAMS_H__
+#define __OPCD_PARAMS_H__
 
 
 typedef struct
@@ -18,8 +19,11 @@ opcd_param_t;
 
 #define OPCD_PARAMS_END {NULL, NULL}
 
-
-void opcd_params_init(void);
+/*
+ * initialize OPCD params
+ * prefix is added before all keys defined in the opcd_param_t's
+ */
+void opcd_params_init(char *prefix);
 
 /*
  * 1) retrieves the configuration value from OPCD and store this value
@@ -28,5 +32,5 @@ void opcd_params_init(void);
 void opcd_params_apply(opcd_param_t *params);
 
 
-#endif /* __OPC_INTERFACE_H__ */
+#endif /* __OPCD_PARAMS__ */
 

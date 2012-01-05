@@ -55,12 +55,14 @@ static sliding_avg_t *output_avg[NUM_AVG];
 
 threadsafe_int_t test;
 char *test2 = NULL;
+threadsafe_float_t test3;
 
 
 opcd_param_t params[] =
 {
-   {"core.logger.level", &test},
-   {"core.actuators.mk_fc.serial_port", &test2},
+   {"logger.level", &test},
+   {"actuators.mk_fc.serial_port", &test2},
+   {"controllers.yaw.speed_p", &test3},
    OPCD_PARAMS_END
 };
 
@@ -84,10 +86,16 @@ void _main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   opcd_params_init();
+   opcd_params_init("core.");
    opcd_params_apply(params);
-   printf("%d\n", threadsafe_int_get(&test));
-   printf("got back: %s\n", test2);
+   while (1)
+   {
+      printf("%d\n", threadsafe_int_get(&test));
+      printf("%s\n", test2);
+      printf("%f\n", threadsafe_float_get(&test3));
+      sleep(5);
+   }
+   
    exit(0);
    params_init();
 

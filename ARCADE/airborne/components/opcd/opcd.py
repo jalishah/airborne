@@ -22,7 +22,7 @@ class OPCD:
    def __init__(self, name, conf_prefix):
       map = generate_map(name)
       self.ctrl_socket = map['ctrl']
-      self.update_socket = map['event']
+      self.event_socket = map['event']
       self.conf = Config(conf_prefix)
       self.map = {str: 'str_val', int: 'int_val', float: 'dbl_val', bool: 'bool_val'}
 
@@ -74,7 +74,8 @@ class OPCD:
                      val = getattr(req.val, attr)
                      self.conf.set(req.id.encode('ascii'), type(val))
                      break
-               #update_socket.send()
+               pair = Pair(id = req.id, val = req.val)
+               self.event_socket.send(pair.SerializeToString())
             except ConfigError, e:
                print str(e)
                rep.status = CtrlRep.PARAM_UNKNOWN
