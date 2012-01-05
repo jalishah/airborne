@@ -6,10 +6,11 @@
 
 
 #include <glib.h>
+#include <unistd.h>
 
 #include "opcd_params.h"
 #include "util.h"
-#include "config.pb-c.h"
+#include "opcd.pb-c.h"
 #include "../logger/logger.h"
 #include "../threads/simple_thread.h"
 #include "../../../../../common/scl/src/sclhelper.h"
@@ -80,7 +81,7 @@ static var_type_t get_data_type(Value *val)
 }
 
 
-static void init_param(Value *val, opcd_param_t *param)
+static void init_param(Value *val, char *id, void *data)
 {
    var_type_t type = get_data_type(val);
    
@@ -92,37 +93,35 @@ static void init_param(Value *val, opcd_param_t *param)
          /* NOTE: strings are not updated online */
          char *mem = malloc(strlen(val->str_val) + 1);
          strcpy(mem, val->str_val);
-         *(char **)param->data = mem;
+         *(char **)data = mem;
          break;
       }
       case TYPE_INT:
       {
-         threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
+         threadsafe_int_init((threadsafe_int_t *)data, val->int_val);
          break;
       }
       case TYPE_FLOAT:
       {
-         threadsafe_float_init((threadsafe_float_t *)param->data, val->dbl_val);
+         threadsafe_float_init((threadsafe_float_t *)data, val->dbl_val);
          break;
       }
       case TYPE_BOOL:
       {
-         threadsafe_int_init((threadsafe_int_t *)param->data, val->int_val);
+         threadsafe_int_init((threadsafe_int_t *)data, val->int_val);
          break;
       }
    }
 
    /* insert param into hash table for later use in event handler thread: */
-   char *id = append_str(prefix, param->id);
    if (g_hash_table_lookup(params_ht, id) != NULL)
    {
-      LOG(LL_ERROR, "parameter already registered: %s", id);
+      printf("parameter already registered: %s", id);
       exit(1);
    }
-
    ht_entry_t *entry = malloc(sizeof(ht_entry_t));
    entry->type = type;
-   entry->data = param->data;
+   entry->data = data;
    g_hash_table_insert(params_ht, id, entry);
 }
 
@@ -136,7 +135,7 @@ static void update_param(void *data, Pair *pair)
    {
       case TYPE_STR:
       {
-         LOG(LL_WARNING, "not going to update string parameter %s", pair->id);
+         printf("not going to update string parameter %s", pair->id);
          break;
       }
       case TYPE_INT:
@@ -160,7 +159,7 @@ static void update_param(void *data, Pair *pair)
 
 
 
-void opcd_params_apply(opcd_param_t *params)
+void opcd_params_apply(char *_prefix, opcd_param_t *params)
 {
    for (opcd_param_t *param = params;
         param->id != NULL;
@@ -169,7 +168,10 @@ void opcd_params_apply(opcd_param_t *params)
       /* build and send request: */
       CtrlReq req = CTRL_REQ__INIT;
       req.type = CTRL_REQ__TYPE__GET;
-      req.id = append_str(prefix, param->id);
+      char *prefixes = append_str(prefix, _prefix);
+      char *full_id = append_str(prefixes, param->id);
+      req.id = full_id;
+      free(prefixes);
       SCL_PACK_AND_SEND_DYNAMIC(ctrl_socket, ctrl_req, req);
 
       /* receive and parse reply: */
@@ -179,21 +181,21 @@ void opcd_params_apply(opcd_param_t *params)
       {
          if (rep->status == CTRL_REP__STATUS__OK)
          {
-            init_param(rep->pairs[0]->val, param);
+            /* NOTE: hash table takes care of full_id memory */
+            init_param(rep->pairs[0]->val, full_id, param->data);
          }
          else
          {
-            LOG(LL_ERROR, "could not find parameter: %s", req.id);   
+            printf("could not find parameter: %s", req.id);   
             exit(1);
          }
          SCL_FREE(ctrl_rep, rep);
       }
       else
       {
-         LOG(LL_ERROR, "could not communicate with opcd"); 
+         printf("could not communicate with opcd"); 
          exit(1);
       }
-      free(req.id);
    }
 }
 
@@ -215,7 +217,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       }
       else
       {
-         LOG(LL_WARNING, "could not receive event from opcd");  
+         printf("could not receive event from opcd");  
          sleep(1);
       }
    }

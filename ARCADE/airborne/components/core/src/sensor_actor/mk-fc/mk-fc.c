@@ -20,7 +20,7 @@
 #include "../../algorithms/average.h"
 #include "../../util/logger/logger.h"
 #include "../../util/serial/serial.h"
-#include "../../util/config/config.h"
+#include "../../util/opcd_params/opcd_params.h"
 #include "../../util/math/lmath.h"
 #include "../../util/time/ltime.h"
 #include "../../util/threads/threadsafe_types.h"
@@ -34,12 +34,6 @@ static int setting;
 
 static const char *serial_port;
 
-static config_t options[] =
-{
-   {"serial_port", &serial_port},
-   {"setting", &setting},
-   {NULL, NULL}
-};
 
 #define DREQ_THREAD_TIMEOUT_MS 1000
 #define DREQ_THREAD_NAME       "debug-requester"
@@ -298,7 +292,13 @@ int fc_init(void)
 {
    if (!is_initialized)
    {
-      config_apply("mk_fc", options);
+      opcd_param_t params[] =
+      {
+         {"serial_port", &serial_port},
+         {"setting", &setting},
+      OPCD_PARAMS_END
+      };
+      opcd_params_apply("actuators.mk_fc.", params);
 
       int ret;
       is_initialized = 1;

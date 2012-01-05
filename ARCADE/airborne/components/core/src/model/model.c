@@ -26,24 +26,16 @@
 #include "../algorithms/sliding_avg.h"
 #include "../util/math/lmath.h"
 #include "../util/time/ltime.h"
-#include "../util/config/config.h"
+#include "../util/opcd_params/opcd_params.h"
 #include "../util/threads/threadsafe_types.h"
 #include "../../../../../common/scl/src/sclhelper.h"
 
 
-static float process_noise;
-static float srf_measurement_noise;
-static float baro_measurement_noise;
-static float lateral_measurement_noise;
+static threadsafe_float_t process_noise;
+static threadsafe_float_t ultra_noise;
+static threadsafe_float_t baro_noise;
+static threadsafe_float_t gps_noise;
 
-static config_t options[] =
-{
-   {"process_noise", &process_noise},
-   {"srf_measurement_noise", &srf_measurement_noise},
-   {"baro_measurement_noise", &baro_measurement_noise},
-   {"lateral_measurement_noise", &lateral_measurement_noise},
-   {NULL, NULL}
-};
 
 
 /* kalman filters: */
@@ -70,7 +62,16 @@ static void *socket = NULL;
 void model_init(void)
 {
    ASSERT_ONCE();
-   config_apply("model", options);
+   opcd_param_t params[] =
+   {
+      {"process_noise", &process_noise},
+      {"ultra_noise", &ultra_noise},
+      {"baro_noise", &baro_noise},
+      {"gps_noise", &gps_noise},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("model.", params);
+   
    socket = scl_get_socket("kalman");
 
    /*
@@ -78,9 +79,9 @@ void model_init(void)
     */
 
    kalman_out_t kalman_state = {0, 0};
-   kalman_config_t alt_kalman_config = {process_noise, srf_measurement_noise};
-   kalman_config_t baro_kalman_config = {process_noise, baro_measurement_noise};
-   kalman_config_t lateral_kalman_config = {process_noise, lateral_measurement_noise};
+   kalman_config_t alt_kalman_config = {threadsafe_float_get(&process_noise), threadsafe_float_get(&ultra_noise)};
+   kalman_config_t baro_kalman_config = {threadsafe_float_get(&process_noise), threadsafe_float_get(&baro_noise)};
+   kalman_config_t lateral_kalman_config = {threadsafe_float_get(&process_noise), threadsafe_float_get(&gps_noise)};
 
    y_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
    x_kalman = kalman_create(&lateral_kalman_config, &kalman_state);

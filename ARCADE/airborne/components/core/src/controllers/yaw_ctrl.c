@@ -14,42 +14,25 @@
 #include "pid.h"
 #include "util.h"
 #include "../util/logger/logger.h"
-#include "../util/config/config.h"
-#include "../interfaces/params.h"
-
-
-static int manual;
-
-static threadsafe_float_t pos; /* yaw position */
-static threadsafe_float_t speed; /* yaw speed */
-
-static float speed_slope;
-static float speed_min;
-static float speed_std;
-static float speed_max;
-
-static threadsafe_float_t speed_p;
-static threadsafe_float_t speed_i;
-static threadsafe_float_t speed_imax;
-
-
-static config_t options[] =
-{
-   {"speed_min", &speed_min},
-   {"speed_std", &speed_std},
-   {"speed_max", &speed_max},
-
-   {"speed_slope", &speed_slope},
-   {"speed_p", &speed_p.value},
-   {"speed_i", &speed_i.value},
-   {"speed_imax", &speed_imax.value},
-
-   {"manual", &manual},
-   {NULL, NULL}
-};
+#include "../util/opcd_params/opcd_params.h"
+#include "../util/threads/threadsafe_types.h"
 
 
 static pid_controller_t controller;
+static threadsafe_float_t pos; /* yaw position */
+static threadsafe_float_t speed; /* yaw speed */
+
+/* configurable parameters: */
+static threadsafe_float_t speed_slope;
+static threadsafe_float_t speed_min;
+static threadsafe_float_t speed_std;
+static threadsafe_float_t speed_max;
+static threadsafe_float_t speed_p;
+static threadsafe_float_t speed_i;
+static threadsafe_float_t speed_imax;
+static threadsafe_int_t manual;
+
+
 
 
 static float circle_err(float pos, float dest)
@@ -82,27 +65,26 @@ static float circle_err(float pos, float dest)
 static float speed_func(float angle)
 {
    float _speed = threadsafe_float_get(&speed);
-   return symmetric_limit(speed_slope * angle, _speed);
+   return symmetric_limit(threadsafe_float_get(&speed_slope) * angle, _speed);
 }
 
 
 void yaw_ctrl_init(void)
 {
    ASSERT_ONCE();
-   
-   threadsafe_float_init(&pos, 0.0);
-   threadsafe_float_init(&speed, 0.0);
-   threadsafe_float_init(&speed_p, 0.0);
-   threadsafe_float_init(&speed_i, 0.0);
-   threadsafe_float_init(&speed_imax, 0.0);
-   
-   param_add("yaw_pos_setpoint", &pos);
-   param_add("yaw_speed_setpoint", &speed);
-   param_add("yaw_speed_p", &speed_p);
-   param_add("yaw_speed_i", &speed_i);
-   param_add("yaw_speed_imax", &speed_imax);
-   
-   config_apply("yaw_ctrl", options);
+   opcd_param_t params[] =
+   {
+      {"speed_min", &speed_min},
+      {"speed_std", &speed_std},
+      {"speed_max", &speed_max},
+      {"speed_slope", &speed_slope},
+      {"speed_p", &speed_p.value},
+      {"speed_i", &speed_i.value},
+      {"speed_imax", &speed_imax.value},
+      {"manual", &manual},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("controllers.yaw.", params);
    
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
 }
@@ -128,9 +110,12 @@ float yaw_ctrl_get_pos(void)
 
 int yaw_ctrl_set_speed(float _speed)
 {
-   if ((_speed < speed_min) || (_speed > speed_max))
+   float _speed_min = threadsafe_float_get(&speed_min);
+   float _speed_max = threadsafe_float_get(&speed_max);
+   if ((_speed < _speed_min) || (_speed > _speed_max))
    {
-      LOG(LL_ERROR, "invalid yaw speed: %f, out of bounds: (%f, %f)", _speed, speed_min, speed_max);
+      LOG(LL_ERROR, "invalid yaw speed: %f, out of bounds: (%f, %f)",
+          _speed, _speed_min, _speed_max);
       return -1;
    }
    threadsafe_float_set(&speed, _speed);
@@ -146,7 +131,7 @@ float yaw_ctrl_get_speed(void)
 
 void yaw_ctrl_std_speed(void)
 {
-   threadsafe_float_set(&speed, speed_std);
+   threadsafe_float_set(&speed, threadsafe_float_get(&speed_std));
 }
 
 
@@ -154,7 +139,7 @@ float yaw_ctrl_step(float *err_out, float yaw, float _speed, float dt)
 {
    float err;
    float yaw_ctrl;
-   if (manual)
+   if (threadsafe_int_get(&manual))
    {
       yaw_ctrl = 0.0f;
       err = 0; /* we control nothing, so the error is always 0 */

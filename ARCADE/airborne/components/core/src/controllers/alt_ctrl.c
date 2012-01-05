@@ -10,8 +10,8 @@
 #include "alt_ctrl.h"
 #include "pid.h"
 #include "../util/util.h"
-#include "../util/config/config.h"
-#include "../interfaces/params.h"
+#include "../util/opcd_params/opcd_params.h"
+#include "../util/threads/threadsafe_types.h"
 
 
 static pid_controller_t controller;
@@ -19,17 +19,9 @@ static threadsafe_float_t speed_p;
 static threadsafe_float_t speed_i;
 static threadsafe_float_t speed_imax;
 static threadsafe_float_t setpoint;
-static int manual;
+static threadsafe_int_t manual;
 
 
-static config_t options[] =
-{
-   {"speed_p", &speed_p.value},
-   {"speed_i", &speed_i.value},
-   {"speed_imax", &speed_imax.value},
-   {"manual", &manual},
-   {NULL, NULL}
-};
 
 
 static float speed_func(float dist)
@@ -56,7 +48,7 @@ float alt_ctrl_step(float alt, float speed, float dt)
    float spd_sp = speed_func(alt_err);
    float spd_err = spd_sp - speed;
    float gas;
-   if (manual)
+   if (threadsafe_int_get(&manual))
    {
       gas = 1.0f;
    }
@@ -71,18 +63,17 @@ float alt_ctrl_step(float alt, float speed, float dt)
 void alt_ctrl_init(void)
 {
    ASSERT_ONCE();
-
-   threadsafe_float_init(&speed_p, 0.0);
-   threadsafe_float_init(&speed_i, 0.0);
-   threadsafe_float_init(&speed_imax, 0.0);
-   param_add("alt_speed_p", &speed_p);
-   param_add("alt_speed_i", &speed_i);
-   param_add("alt_speed_imax", &speed_imax);
-
-   config_apply("alt_ctrl", options);
+   opcd_param_t params[] =
+   {
+      {"speed_p", &speed_p},
+      {"speed_i", &speed_i},
+      {"speed_imax", &speed_imax},
+      {"manual", &manual},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("controllers.altitude.", params);
 
    threadsafe_float_init(&setpoint, 0.0f);
-
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
 }
 

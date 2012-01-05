@@ -18,11 +18,12 @@
 #include "chr-6dm_commands.h"
 #include "chr-6dm_util.h"
 #include "../../util/threads/simple_thread.h"
+#include "../../util/threads/threadsafe_types.h"
 #include "../../util/math/lmath.h"
 #include "../../util/time/ltime.h"
 #include "../../util/logger/logger.h"
 #include "../../util/serial/serial.h"
-#include "../../util/config/config.h"
+#include "../../util/opcd_params/opcd_params.h"
 
 
 #undef CHR6DM_DEBUG
@@ -51,24 +52,11 @@ static pthread_cond_t new_data_cond = PTHREAD_COND_INITIALIZER;
 
 static char *device_conf_file;
 static char *serial_port;
-static float process_covar;
-static float mag_covar;
-static float acc_covar;
-static int auto_acc_ref;
-static int auto_mag_ref;
+static threadsafe_float_t process_covar;
+static threadsafe_float_t mag_covar;
+static threadsafe_float_t acc_covar;
 
 
-static config_t options[] =
-{
-   {"device_conf_file", &device_conf_file},
-   {"process_covar", &process_covar},
-   {"mag_covar", &mag_covar},
-   {"acc_covar", &acc_covar},
-   {"auto_acc_ref", &auto_acc_ref},
-   {"auto_mag_ref", &auto_mag_ref},
-   {"serial_port", &serial_port},
-   {NULL, NULL}
-};
 
 
 #define CHR6DM_COMMAND_COMPLETE          (0xB0)
@@ -508,7 +496,16 @@ SIMPLE_THREAD_END
 
 int chr6dm_init(void)
 {
-   config_apply("chr_6dm", options);
+   static opcd_param_t params[] =
+   {
+      {"serial_port", &serial_port},
+      {"device_conf_file", &device_conf_file},
+      {"process_covar", &process_covar},
+      {"mag_covar", &mag_covar},
+      {"acc_covar", &acc_covar},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("sensors.chr_6dm.", params);
 
    char *home = getenv("MOBICOM_SUBPROJECT_PATH");
    ASSERT_NOT_NULL(home);
@@ -544,56 +541,6 @@ int chr6dm_init(void)
    LOG(LL_INFO, "initializing chr-6dm");
    simple_thread_start(&chr6dm_thread, chr6dm_thread_func, CHR6DM_THREAD_NAME, CHR6DM_THREAD_PRIORITY, NULL);
 
-   if (auto_acc_ref)
-   {
-      chr6dm_reset_factory(&port);
-      //unsigned short vec[3] = {0, 0, 6000};
-      //chr6dm_set_acc_ref(&port, vec);
-      chr6dm_write_to_flash(&port);
-      exit(1);
-      //delay_execution(1, 0);
-      //LOOP_WHILE_COND_NOT_TRUE(chr6dm_ekf_reset(&port), command_complete);
-      //delay_execution(1, 0);
-   }
-
-   if (auto_mag_ref)
-   {
-      //chr6dm_reset_factory(&port);
-      chr6dm_auto_set_mag_ref(&port);
-      chr6dm_write_to_flash(&port);
-      exit(1);
-      //delay_execution(1, 0);
-      //LOOP_WHILE_COND_NOT_TRUE(chr6dm_ekf_reset(&port), command_complete);
-      //delay_execution(1, 0);
-   }
-
-#if 0
-   LOG(LL_DEBUG, "enabling silent mode");
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_silent_mode(&port), command_complete);
-
-   LOG(LL_DEBUG, "requesting process covariance");
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_get_process_covar(&port), process_covar_reported);
-
-   LOG(LL_DEBUG, "calibrating rate gyros");
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_zero_gyros(&port), gyro_bias_reported);
-
-   LOG(LL_DEBUG, "setting acc biases: %d, %d, %d", (short)bias_acc_pitch, (short)bias_acc_roll, (short)bias_acc_yaw);
-   unsigned short biases[3] = {bias_acc_yaw, bias_acc_roll, bias_acc_pitch};
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_biases(&port, biases), command_complete);
-
-   LOG(LL_DEBUG, "activating channels");
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_active_channels(&port, CHR6DM_ALL_CHANNELS), command_complete)
-
-
-   /*LOG(LL_DEBUG, "setting mag ref vector: %d, %d, %d", (short)mag_ref_x, (short)mag_ref_y, (short)mag_ref_z);
-   unsigned short mag_ref_vector[3] = {mag_ref_x, mag_ref_y, mag_ref_z};
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_ref_vector(&port, mag_ref_vector), command_complete);
-   */
-   LOG(LL_DEBUG, "reading mag ref vector");
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_get_mag_ref_vector(&port), mag_ref_vector_reported);
-
-#endif
-
    LOG(LL_DEBUG, "enabling silent mode");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_silent_mode(&port), command_complete, 1);
    
@@ -603,14 +550,14 @@ int chr6dm_init(void)
    LOG(LL_DEBUG, "calibrating rate gyros");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_zero_gyros(&port), gyro_bias_reported, 10);
 
-   LOG(LL_DEBUG, "setting process covariance to %f", process_covar);
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_process_covar(&port, process_covar), command_complete, 1);
+   LOG(LL_DEBUG, "setting process covariance to %f", threadsafe_float_get(&process_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_process_covar(&port, threadsafe_float_get(&process_covar)), command_complete, 1);
 
-   LOG(LL_DEBUG, "setting mag covariance to %f", mag_covar);
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, mag_covar), command_complete, 1);
+   LOG(LL_DEBUG, "setting mag covariance to %f", threadsafe_float_get(&mag_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, threadsafe_float_get(&mag_covar)), command_complete, 1);
    
-   LOG(LL_DEBUG, "setting acc covariance to %f", acc_covar);
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_covar(&port, acc_covar), command_complete, 1);
+   LOG(LL_DEBUG, "setting acc covariance to %f", threadsafe_float_get(&acc_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_covar(&port, threadsafe_float_get(&acc_covar)), command_complete, 1);
 
    LOG(LL_DEBUG, "resetting extended kalman filter");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_ekf_reset(&port), command_complete, 1);

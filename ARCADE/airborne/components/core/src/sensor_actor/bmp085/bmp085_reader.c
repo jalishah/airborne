@@ -17,7 +17,6 @@
 #include "util.h"
 #include "../lib/i2c/omap_i2c_bus.h"
 #include "../../algorithms/sliding_avg.h"
-#include "../../util/config/config.h"
 #include "../../util/time/ltime.h"
 #include "../../util/threads/simple_thread.h"
 #include "../../util/threads/threadsafe_types.h"

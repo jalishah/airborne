@@ -7,7 +7,8 @@ core:
 
    controllers:
       debug_host: "10.0.1.5"
-
+      debug_port: 5555
+      
       angle:
          calibrate: false
          p: 4.0
@@ -54,14 +55,17 @@ core:
    actuators:
       mk_fc:
          serial_port: "/dev/ttyUSB2"
-         setting: 4
+         setting: 4,
 
    sensors:
-      serial_port: "/dev/ttyUSB0"
-      device_conf_file: "config/chr-6dm.conf"
-      process_covar: 1.0e-6
-      mag_covar: 1.0e-3
-      acc_covar: 1000.0
-      auto_acc_ref: 0
-      auto_mag_ref: 0
+      
+      rc_dsl:
+         serial_port: "/dev/ttyUSB3"
+      
+      chr_6dm:
+         serial_port: "/dev/ttyUSB0"
+         device_conf_file: "config/chr-6dm.conf"
+         process_covar: 1.0e-6
+         mag_covar: 1.0e-3
+         acc_covar: 1000.0
 

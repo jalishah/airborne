@@ -17,10 +17,8 @@
 
 #include "util.h"
 #include "util/logger/logger.h"
-#include "util/config/config.h"
 #include "util/opcd_params/opcd_params.h"
 #include "interfaces/cmd.h"
-#include "interfaces/params.h"
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
 #include "sensor_actor/flight_gear/fg_reader.h"
 #include "sensor_actor/interfaces/altimeter.h"
@@ -51,53 +49,30 @@ enum
 
 static sliding_avg_t *output_avg[NUM_AVG];
 
-#include "util/threads/threadsafe_types.h"
-
-threadsafe_int_t test;
-char *test2 = NULL;
-threadsafe_float_t test3;
-
-
-opcd_param_t params[] =
-{
-   {"logger.level", &test},
-   {"actuators.mk_fc.serial_port", &test2},
-   {"controllers.yaw.speed_p", &test3},
-   OPCD_PARAMS_END
-};
-
 
 void _main(int argc, char *argv[])
 {
-   handle_cmd_line(argc, argv);
-   
+   (void)argc;
+   (void)argv;
    syslog(LOG_INFO, "initializing core");
-   syslog(LOG_INFO, "initializing signaling and communication link (SCL)");
    
+   syslog(LOG_INFO, "initializing signaling and communication link (SCL)");
    if (scl_init("core") != 0)
    {
       syslog(LOG_CRIT, "could not init scl module");
       exit(EXIT_FAILURE);
    }
-   syslog(LOG_CRIT, "opening logger");
+   
+   syslog(LOG_INFO, "initializing opcd interface");
+   opcd_params_init("core.");
+   
+   syslog(LOG_INFO, "opening logger");
    if (logger_open() != 0)
    {
       syslog(LOG_CRIT, "could not open logger");
       exit(EXIT_FAILURE);
    }
 
-   opcd_params_init("core.");
-   opcd_params_apply(params);
-   while (1)
-   {
-      printf("%d\n", threadsafe_int_get(&test));
-      printf("%s\n", test2);
-      printf("%f\n", threadsafe_float_get(&test3));
-      sleep(5);
-   }
-   
-   exit(0);
-   params_init();
 
    sleep(1);
 
@@ -130,7 +105,6 @@ void _main(int argc, char *argv[])
    
    LOG(LL_INFO, "initializing cmd/params interface");
    cmd_init();
-   params_thread_start();
    
    for(int n = 0; n < NUM_AVG; n++)
    {

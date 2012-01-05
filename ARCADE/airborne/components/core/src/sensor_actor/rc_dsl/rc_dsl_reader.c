@@ -2,7 +2,7 @@
 #include "util.h"
 #include "../../util/serial/serial.h"
 #include "../../util/threads/simple_thread.h"
-#include "../../util/config/config.h"
+#include "../../util/opcd_params/opcd_params.h"
 #include "../../util/time/ltime.h"
 
 
@@ -17,7 +17,8 @@ static simple_thread_t thread;
 
 
 static serialport_t port;
-rc_dsl_t *rc_dsl = NULL;
+static rc_dsl_t *rc_dsl = NULL;
+static char *dev_path = NULL;
 
 
 SIMPLE_THREAD_BEGIN(thread_func)
@@ -34,7 +35,14 @@ SIMPLE_THREAD_END
 
 void rc_dsl_reader_start(void)
 {
-   serial_open(&port, "/dev/ttyUSB3", B38400, 0, 0, 0);
+   opcd_param_t params[] =
+   {
+      {"serial_port", &dev_path},
+      OPCD_PARAMS_END   
+   };
+   opcd_params_apply("sensors.rc_dsl.", params);
+   
+   serial_open(&port, dev_path, B38400, 0, 0, 0);
    rc_dsl = rc_dsl_create();
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 }

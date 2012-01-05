@@ -8,27 +8,28 @@
 #include "log_data.pb-c.h"
 #include "util.h"
 #include "../../../../../../../common/scl/src/sclhelper.h"
-#include "../config/config.h"
+#include "../threads/threadsafe_types.h"
+#include "../opcd_params/opcd_params.h"
 
 
 static void *socket = NULL;
-static int loglevel;
-static int details;
+static threadsafe_int_t loglevel;
+static threadsafe_int_t details;
 
 
-static config_t options[] =
-{
-   {"level", &loglevel},
-   {"details", &details},
-   {NULL, NULL}
-};
 
 
 int logger_open(void)
 {
-   ASSERT_NULL(socket);
-
-   config_apply("logger", options);
+   ASSERT_ONCE();
+   static opcd_param_t params[] =
+   {
+      {"level", &loglevel},
+      {"details", &details},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("logger", params);
+   
    socket = scl_get_socket("log");
    if (socket == NULL)
    {
@@ -40,11 +41,7 @@ int logger_open(void)
 
 void logger_write(char *file, loglevel_t level, unsigned int line, char *format, ...)
 {
-   ASSERT_NOT_NULL(socket);
-   ASSERT_NOT_NULL(file);
-   ASSERT_NOT_NULL(format);
-
-   if (level <= (unsigned int)loglevel)
+   if (level <= (unsigned int)threadsafe_int_get(&loglevel))
    {
       LogData log_data = LOG_DATA__INIT;
 
@@ -52,7 +49,7 @@ void logger_write(char *file, loglevel_t level, unsigned int line, char *format,
       log_data.level = level;
       log_data.file = file;
       log_data.line = line;
-      log_data.details = (unsigned int)details;
+      log_data.details = (unsigned int)threadsafe_int_get(&details);
 
       /* set-up buffer for varg-message: */
       char message_buffer[1024];
@@ -67,10 +64,15 @@ void logger_write(char *file, loglevel_t level, unsigned int line, char *format,
       /* publish: */
       unsigned int log_data_len = (unsigned int)log_data__get_packed_size(&log_data);
       void *buffer = malloc(log_data_len);
-      ASSERT_NOT_NULL(buffer);
-
-      log_data__pack(&log_data, buffer);
-      scl_send_dynamic(socket, buffer, log_data_len, ZMQ_NOBLOCK);
+      if (buffer)
+      {
+         log_data__pack(&log_data, buffer);
+         scl_send_dynamic(socket, buffer, log_data_len, ZMQ_NOBLOCK);
+      }
+      else
+      {
+         printf("could not write to logger"); // TODO: syslog
+      }
    }
 }
 

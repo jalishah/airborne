@@ -22,10 +22,10 @@
 #include "../util/util.h"
 #include "../util/logger/logger.h"
 #include "../util/time/ltime.h"
-#include "../util/config/config.h"
+#include "../util/opcd_params/opcd_params.h"
 #include "../sensor_actor/interfaces/gps.h"
 #include "../util/threads/periodic_thread.h"
-#include "../interfaces/params.h"
+#include "../util/threads/threadsafe_types.h"
 
 
 typedef struct
@@ -59,13 +59,13 @@ static threadsafe_float_t angle_p;
 static threadsafe_float_t angle_i;
 static threadsafe_float_t angle_i_max;
 static threadsafe_float_t angle_d;
+static threadsafe_float_t pitch_bias;
+static threadsafe_float_t roll_bias;
+static threadsafe_int_t angle_cal;
+static char *debug_host;
+static threadsafe_int_t debug_port;
 
-static float pitch_bias;
-static float roll_bias;
-
-static int angle_cal;
-
-static char debug_host[32];
+static pthread_mutex_t ctrl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 static struct
@@ -79,25 +79,6 @@ static struct
 } 
 override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
 
-static pthread_mutex_t ctrl_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-
-
-static config_t options[] =
-{
-   {"angle_p", &angle_p.value},
-   {"angle_i", &angle_i.value},
-   {"angle_i_max", &angle_i_max.value},
-   {"angle_d", &angle_d.value},
-
-   {"angle_pitch_bias", &pitch_bias},
-   {"angle_roll_bias", &roll_bias},
-
-   {"debug_host", &debug_host},
-   {"angle_cal", &angle_cal},
-
-   {NULL, NULL}
-};
 
 
 int ctrl_set_yaw_setpoint(float pos, float *speed)
@@ -242,7 +223,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    navi_output_t navi_output;
    navigator_run(&navi_output, &navi_input);
 
-   if (angle_cal)
+   if (threadsafe_int_get(&angle_cal))
    {
       navi_output.pitch = 0.0;
       navi_output.roll = 0.0;
@@ -251,11 +232,11 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    /* run pitch/roll angle controllers: */
    float pitch_ctrl_val = pid_control(&pitch_controller,
                              model_state->pitch.angle + symmetric_limit(navi_output.pitch, 0.17)
-                             + pitch_bias, dt);
+                             + threadsafe_float_get(&pitch_bias), dt);
 
    float roll_ctrl_val = -pid_control(&roll_controller,
                              -model_state->roll.angle + symmetric_limit(navi_output.roll, 0.17)
-                             + roll_bias, dt);
+                             + threadsafe_float_get(&roll_bias), dt);
 
    pthread_mutex_unlock(&ctrl_mutex);
 
@@ -339,15 +320,21 @@ void ctrl_init(void)
 {
    ASSERT_ONCE();
 
-   threadsafe_float_init(&angle_p, 0.0);
-   threadsafe_float_init(&angle_i, 0.0);
-   threadsafe_float_init(&angle_i_max, 0.0);
-   threadsafe_float_init(&angle_d, 0.0);
-   param_add("angle_p", &angle_p);
-   param_add("angle_i", &angle_i);
-   param_add("angle_i_max", &angle_i_max);
-   param_add("angle_d", &angle_d);
-   config_apply("controller", options);
+   /* load parameters: */
+   opcd_param_t params[] =
+   {
+      {"debug_host", &debug_host},
+      {"debug_port", &debug_port},
+      {"angle.p", &angle_p.value},
+      {"angle.i", &angle_i.value},
+      {"angle.i_max", &angle_i_max.value},
+      {"angle.d", &angle_d.value},
+      {"angle.pitch_bias", &pitch_bias},
+      {"angle.roll_bias", &roll_bias},
+      {"angle.calibrate", &angle_cal},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("controllers.", params);
 
    /* initialize setpoints: */
    threadsafe_float_init(&sp.alt, 0.0f);
@@ -362,7 +349,7 @@ void ctrl_init(void)
 
 
    /* create debug connection: */
-   udp_socket = udp_socket_create("10.0.0.255", 5555, 1, 0);
+   udp_socket = udp_socket_create(debug_host, threadsafe_int_get(&debug_port), 1, 0);
    debug_buffer = debug_buffer_create(128);
    const struct timespec debug_thread_period = {0, 100 * NSEC_PER_MSEC};
    periodic_thread_start(&debug_thread, debug_thread_func, "debug_thread", 0, debug_thread_period, NULL);

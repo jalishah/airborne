@@ -29,7 +29,7 @@ void opcd_params_init(char *prefix);
  * 1) retrieves the configuration value from OPCD and store this value
  * 2) registers the parameter for online updates
  */
-void opcd_params_apply(opcd_param_t *params);
+void opcd_params_apply(char *prefix, opcd_param_t *params);
 
 
 #endif /* __OPCD_PARAMS__ */

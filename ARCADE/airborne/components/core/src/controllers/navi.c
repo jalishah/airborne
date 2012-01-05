@@ -7,11 +7,9 @@
 #include "navi.h"
 #include "rot2d.h"
 #include "debug_data.pb-c.h"
-#include "../interfaces/params.h"
-#include "../util/config/config.h"
+#include "../util/opcd_params/opcd_params.h"
 #include "../util/threads/threadsafe_types.h"
 #include "../util/math/vector2d.h"
-
 
 
 /* configurable parameters: */
@@ -26,21 +24,6 @@ static threadsafe_float_t pos_i;
 static threadsafe_float_t pos_i_max;
 static threadsafe_float_t ortho_p;
 
-
-static config_t options[] =
-{
-   {"speed_p", &speed_p.value},
-   {"sqrt_shift", &sqrt_shift.value},
-   {"sqrt_scale", &sqrt_scale.value},
-   {"square_shift", &square_shift},
-   {"speed_min", &speed_min.value},
-   {"speed_std", &speed_std.value},
-   {"speed_max", &speed_max.value},
-   {"pos_i", &pos_i.value},
-   {"pos_i_max", &pos_i_max.value},
-   {"ortho_p", &ortho_p.value},
-   {NULL, NULL}
-};
 
 /* vectors for use in navigation algorithm: */
 static vector2d_t dest_pos;
@@ -96,31 +79,22 @@ float desired_speed(float dist)
 void navigator_init(void)
 {
    ASSERT_ONCE();
-
-   threadsafe_float_init(&speed_p, 0.0f);
-   threadsafe_float_init(&speed_min, 0.0f);
-   threadsafe_float_init(&speed_max, 0.0f);
-   threadsafe_float_init(&speed_std, 0.0f);
-   threadsafe_float_init(&sqrt_shift, 0.0f);
-   threadsafe_float_init(&sqrt_scale, 0.0f);
-   threadsafe_float_init(&square_shift, 0.0f);
-   threadsafe_float_init(&pos_i, 0.0f);
-   threadsafe_float_init(&pos_i_max, 0.0f);
-   threadsafe_float_init(&ortho_p, 0.0f);
-
-   config_apply("navi", options);
+   opcd_param_t params[] =
+   {
+      {"speed_p", &speed_p},
+      {"sqrt_shift", &sqrt_shift},
+      {"sqrt_scale", &sqrt_scale},
+      {"square_shift", &square_shift},
+      {"speed_min", &speed_min},
+      {"speed_std", &speed_std},
+      {"speed_max", &speed_max},
+      {"pos_i", &pos_i},
+      {"pos_i_max", &pos_i_max},
+      {"ortho_p", &ortho_p},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("controllers.navigation.", params);
    
-   param_add("navi_speed_p", &speed_p);
-   param_add("navi_speed_min", &speed_min);
-   param_add("navi_speed_max", &speed_max);
-   param_add("navi_speed_std", &speed_std);
-   param_add("navi_sqrt_shift", &sqrt_shift);
-   param_add("navi_sqrt_scale", &sqrt_scale);
-   param_add("navi_square_shift", &square_shift);
-   param_add("navi_pos_i", &pos_i);
-   param_add("navi_pos_i_max", &pos_i_max);
-   param_add("navi_ortho_p", &ortho_p);
-
    vector2d_alloc(&dest_pos);
    vector2d_alloc(&virt_dest_pos);
    vector2d_alloc(&curr_pos);
