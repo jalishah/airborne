@@ -16,6 +16,7 @@
 #include <syslog.h>
 
 #include "util.h"
+#include "util/daemon/daemon.h"
 #include "util/logger/logger.h"
 #include "util/opcd_params/opcd_params.h"
 #include "interfaces/cmd.h"
@@ -172,5 +173,12 @@ void _cleanup(void)
       sleep(1);
       kill(0, 9);
    }
+}
+
+
+int main(int argc, char *argv[])
+{
+   daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
+   return 0;
 }
 
