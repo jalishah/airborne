@@ -7,26 +7,18 @@
 # 
 
 
-#
-# component definitions:
-# - each component needs to define:
-#    - its name
-#    -  a list of gates
-# - every gate consists of a name mapped to a type 
-#   [pub, sub, req, rep]
-#
-
-- name: arbiter
+arbiter:
   binary: 'arbiter/src/arbiter.py'
+  depends: [core]
 
-- name: gps_sensor
+gps_sensor:
   binary: 'sensors/gps/src/gps_sensor.py'
 
-- name: core
+core:
   binary: 'core/src/core'
-  args: '-f $MOBICOM_SUBPROJECT_PATH/components/core/config/core.conf'
+  depends: [opcd, gps_sensor]
 
-- name: opcd
+opcd:
   binary: 'opcd/opcd.py'
   args: '$MOBICOM_SUBPROJECT_PATH/common/config/parameters'
 

@@ -5,7 +5,7 @@ from zmq import HWM
 from time import sleep
 from named_daemon import daemonize
 from gps_data_pb2 import GpsData
-from zmq_ipc import generate_map
+from scl import generate_map
 from nmea.gps import Gps
 from nmea.serialport import SerialPort
 

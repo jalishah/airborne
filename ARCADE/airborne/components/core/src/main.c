@@ -163,6 +163,7 @@ void _main(int argc, char *argv[])
 
 void _cleanup(void)
 {
+   leds_overo_finalize();
    static int killing = 0;
    if (!killing)
    {

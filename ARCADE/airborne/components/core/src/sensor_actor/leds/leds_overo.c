@@ -63,16 +63,18 @@ int leds_overo_initialize(void)
 {
    const struct timespec blink_period = {0, BLINK_THREAD_PERIOD * NSEC_PER_MSEC};
 
-   periodic_thread_start(&blink_thread, blink_thread_func, BLINK_THREAD_NAME,
+   gpio_mosfet_set(gpio_mosfet_singleton(), GPIO_LEDS, 1);
+   /*periodic_thread_start(&blink_thread, blink_thread_func, BLINK_THREAD_NAME,
                          BLINK_THREAD_PRIORITY, blink_period, NULL);
-
+   */
    return 0;
 }
 
 
 int leds_overo_finalize(void)
 {
-   periodic_thread_stop(&blink_thread);
+   //periodic_thread_stop(&blink_thread);
+   gpio_mosfet_set(gpio_mosfet_singleton(), GPIO_LEDS, 0);
    return 0;
 }
 
