@@ -20,8 +20,6 @@ typedef struct
 serialport_t;
 
 
-int serial_open2(serialport_t *port, const char *path, int baudrate, unsigned int oflag, unsigned int lflag, unsigned int cflag);
-
 int serial_open(serialport_t *port, const char *path, int baudrate, unsigned int oflag, unsigned int lflag, unsigned int cflag);
 
 int serial_read_line(char buffer[256], const serialport_t *port);
