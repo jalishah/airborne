@@ -16,8 +16,6 @@
 #include "./gmath.h"
 #include "./info.h"
 #include "./sentence.h"
-#include "./generate.h"
-#include "./generator.h"
 #include "./parse.h"
 #include "./parser.h"
 #include "./context.h"
