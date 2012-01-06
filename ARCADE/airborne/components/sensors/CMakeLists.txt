@@ -1,1 +1,1 @@
-ADD_SUBDIRECTORY(gps)
+ADD_SUBDIRECTORY(gps_sensor)
