@@ -22,7 +22,7 @@
 #include "../../util/math/lmath.h"
 #include "../../util/time/ltime.h"
 #include "../../util/logger/logger.h"
-#include "../../util/serial/serial.h"
+#include "../../../../../common/util/serial/serial.h"
 #include "../../util/opcd_params/opcd_params.h"
 
 

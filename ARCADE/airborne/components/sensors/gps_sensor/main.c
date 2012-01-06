@@ -3,7 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 
+
+#include "../../../../airborne/common/util/serial/serial.h"
+
 #include "nmea/nmea.h"
+
 
 int main(void)
 {
