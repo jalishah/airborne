@@ -20,7 +20,7 @@ int main(void)
    opcd_params_apply("sensors.gps_sensor.", params);
    */
    serialport_t port;
-   serial_open(&port, dev_path, B57600, 0, 0, 0);
+   serial_open(&port, dev_path, B9600, 0, 0, 0);
 
    nmeaPARSER parser;
    nmea_parser_init(&parser);
@@ -30,23 +30,24 @@ int main(void)
 
    while (1)
    {
-      nmeaPOS dpos;
       char buffer[1024];
-      int c;
       int pos = 0;
+      int c;
       do
       {
          c = serial_read_char(&port);
          if (c > 0)
          {
-            buffer[pos] = c;
+            buffer[pos++] = c;
          }
       }
       while (c != '\n');
-
       nmea_parse(&parser, buffer, pos, &info);
-      nmea_info2pos(&info, &dpos);
-      printf("lat: %f, lon: %f, sig: %d, fix: %d\n", dpos.lat, dpos.lon, info.sig, info.fix);
+      if (info.sig != 0)
+      {
+         printf("lat: %.10f, lon: %.10f, alt: %f, sats: %d, sig: %d, fix: %d\n", 
+                info.lat, info.lon, info.elv, info.satinfo.inuse, info.sig, info.fix);
+      }
    }
 
    nmea_parser_destroy(&parser);
