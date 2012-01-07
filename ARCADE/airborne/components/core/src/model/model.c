@@ -12,20 +12,21 @@
  *
  */
 
-
 #include <unistd.h>
+
+#include <util.h>
+#include <opcd_params.h>
+#include <simple_thread.h>
+#include <threadsafe_types.h>
+#include <sclhelper.h>
+#include <kalman.pb-c.h>
+
 #include "model.h"
 #include "kalman.h"
 #include "body_to_world.h"
-#include "kalman.pb-c.h"
-#include "../util/util.h"
 #include "../util/logger/logger.h"
 #include "../algorithms/sliding_avg.h"
 #include "../util/math/lmath.h"
-#include "../util/opcd_params/opcd_params.h"
-#include "../util/threads/simple_thread.h"
-#include "../util/threads/threadsafe_types.h"
-#include "../../../../../common/scl/src/sclhelper.h"
 
 
 #define THREAD_NAME       "acc_avg_updater"

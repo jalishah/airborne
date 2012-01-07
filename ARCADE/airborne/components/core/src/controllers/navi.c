@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "util.h"
+#include <util.h>
+#include <debug_data.pb-c.h>
+#include <opcd_params.h>
+#include <threadsafe_types.h>
+
 #include "navi.h"
 #include "rot2d.h"
-#include "debug_data.pb-c.h"
-#include "../util/opcd_params/opcd_params.h"
-#include "../util/threads/threadsafe_types.h"
 #include "../util/math/vector2d.h"
 
 

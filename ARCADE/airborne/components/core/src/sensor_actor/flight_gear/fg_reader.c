@@ -16,8 +16,8 @@
 
 #include "fg_reader.h"
 #include "udp4.h"
-#include "../../util/threads/simple_thread.h"
-#include "../../util/threads/threadsafe_types.h"
+#include "simple_thread.h"
+#include "threadsafe_types.h"
 
 
 

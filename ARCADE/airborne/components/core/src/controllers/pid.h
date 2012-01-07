@@ -4,7 +4,7 @@
 #define PID_H
 
 
-#include "../util/threads/threadsafe_types.h"
+#include <threadsafe_types.h>
 
 
 typedef struct

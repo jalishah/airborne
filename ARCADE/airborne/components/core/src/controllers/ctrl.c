@@ -9,23 +9,23 @@
 
 #include <malloc.h>
 #include <math.h>
+#include <opcd_params.h>
+#include <periodic_thread.h>
+#include <threadsafe_types.h>
+#include <util.h>
+#include <udp4.h>
+#include <debug_buffer.h>
+#include <debug_protobuf.h>
+#include <debug_data.pb-c.h>
 
 #include "navi.h"
 #include "ctrl.h"
 #include "pid.h"
 #include "alt_ctrl.h"
 #include "yaw_ctrl.h"
-#include "debug_buffer.h"
-#include "debug_protobuf.h"
-#include "udp4.h"
-#include "debug_data.pb-c.h"
-#include "../util/util.h"
 #include "../util/logger/logger.h"
 #include "../util/time/ltime.h"
-#include "../util/opcd_params/opcd_params.h"
 #include "../sensor_actor/interfaces/gps.h"
-#include "../util/threads/periodic_thread.h"
-#include "../util/threads/threadsafe_types.h"
 
 
 typedef struct

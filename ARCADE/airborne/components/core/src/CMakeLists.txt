@@ -1,10 +1,6 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../common/messages)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../../common/src/messages)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../../common/src/util)
-
 ADD_SUBDIRECTORY(sensor_actor)
 ADD_SUBDIRECTORY(controllers)
 ADD_SUBDIRECTORY(platform)

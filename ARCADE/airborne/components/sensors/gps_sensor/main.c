@@ -6,13 +6,14 @@
 #include <syslog.h>
 #include <math.h>
 
+#include <threadsafe_types.h>
+#include <opcd_params.h>
+#include <serial.h>
+#include <gps_data.pb-c.h>
+#include <sclhelper.h>
+#include <daemon.h>
 
 #include "nmea/nmea.h"
-#include "../../../common/util/serial/serial.h"
-#include "../../../common/util/daemon/daemon.h"
-#include "../../../../build/ARCADE/airborne/common/messages/gps_data.pb-c.h"
-#include "../../../../../common/scl/src/sclhelper.h"
-#include "../../../common/util/daemon/daemon.h"
 
 
 #define TIME_STR_LEN 20
@@ -72,14 +73,18 @@ void _main(int argc, char *argv[])
    int64_t hwm = 1;
    zmq_setsockopt(gps_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
-   char *dev_path = "/dev/ttyUSB0";
-   /*opcd_param_t params[] =
+   char *dev_path = NULL;
+   threadsafe_float_t min_sats;
+   
+   opcd_param_t params[] =
    {
       {"serial_port", &dev_path},
+      {"min_sats", &min_sats},
       OPCD_PARAMS_END
    };
-   opcd_params_apply("sensors.gps_sensor.", params);
-   */
+   opcd_params_apply("sensors.gps.", params);
+   
+   
    serialport_t port;
    serial_open(&port, dev_path, B9600, 0, 0, 0);
 

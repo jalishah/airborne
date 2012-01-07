@@ -7,11 +7,12 @@
 
 #include <glib.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "opcd_params.h"
 #include "util.h"
 #include "opcd.pb-c.h"
-#include "../logger/logger.h"
 #include "../threads/simple_thread.h"
 #include "../../../../../common/scl/src/sclhelper.h"
 #include "../threads/threadsafe_types.h"

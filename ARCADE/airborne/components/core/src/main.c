@@ -15,10 +15,13 @@
 #include <stdlib.h>
 #include <syslog.h>
 
-#include "util.h"
-#include "../../../common/util/daemon/daemon.h"
+#include <opcd_params.h>
+#include <util.h>
+#include <daemon.h>
+#include <threadsafe_types.h>
+#include <sclhelper.h>
+
 #include "util/logger/logger.h"
-#include "util/opcd_params/opcd_params.h"
 #include "interfaces/cmd.h"
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
 #include "sensor_actor/flight_gear/fg_reader.h"
@@ -27,8 +30,6 @@
 #include "sensor_actor/interfaces/ahrs.h"
 #include "sensor_actor/interfaces/gps.h"
 #include "sensor_actor/interfaces/motors.h"
-#include "../../../../common/scl/src/sclhelper.h"
-#include "util/threads/threadsafe_types.h"
 #include "util/time/ltime.h"
 #include "algorithms/sliding_avg.h"
 #include "model/model.h"

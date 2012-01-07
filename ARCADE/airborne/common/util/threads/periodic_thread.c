@@ -14,8 +14,7 @@
 
 
 #include "util.h"
-#include "../logger/logger.h"
-#include "../time/ltime.h"
+//#include "../time/ltime.h"
 #include "periodic_thread.h"
 #include "thread_config.h"
 
@@ -77,7 +76,7 @@ int periodic_thread_wait_for_next_period(periodic_thread_t *thread)
    }
    else
    {
-      LOG(LL_ERROR, "thread %s missed deadline. now: %ld sec %ld nsec next: %ld sec %ld nsec \n",
+      fprintf(stderr, "thread %s missed deadline. now: %ld sec %ld nsec next: %ld sec %ld nsec \n",
           thread->name, thread->periodic_data.now.tv_sec, thread->periodic_data.now.tv_nsec,
           thread->periodic_data.next.tv_sec, thread->periodic_data.next.tv_nsec);
       ret = 1;

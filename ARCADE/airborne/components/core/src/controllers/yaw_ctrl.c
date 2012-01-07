@@ -10,12 +10,13 @@
 #include <malloc.h>
 #include <math.h>
 
+#include <util.h>
+#include <opcd_params.h>
+#include <threadsafe_types.h>
+
 #include "yaw_ctrl.h"
 #include "pid.h"
-#include "util.h"
 #include "../util/logger/logger.h"
-#include "../util/opcd_params/opcd_params.h"
-#include "../util/threads/threadsafe_types.h"
 
 
 static pid_controller_t controller;

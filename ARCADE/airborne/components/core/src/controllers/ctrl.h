@@ -10,11 +10,11 @@
 #ifndef __CTRL_H__
 #define __CTRL_H__
 
+#include <threadsafe_types.h>
+#include <core.pb-c.h>
 
 #include "../model/model.h"
 #include "../sensor_actor/interfaces/motors.h"
-#include "../util/threads/threadsafe_types.h"
-#include "core.pb-c.h"
 
 
 typedef struct
