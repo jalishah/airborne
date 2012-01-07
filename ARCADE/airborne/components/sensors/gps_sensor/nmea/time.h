@@ -35,11 +35,6 @@ typedef struct _nmeaTIME
 
 } nmeaTIME;
 
-/**
- * \brief Get time now to nmeaTIME structure
- */
-void nmea_time_now(nmeaTIME *t);
-
 #ifdef  __cplusplus
 }
 #endif

@@ -127,14 +127,6 @@ int nmea_parser_real_push(nmeaPARSER *parser, const char *buff, int buff_sz)
 
     NMEA_ASSERT(parser && parser->buffer);
 
-    /* clear unuse buffer (for debug) */
-    /*
-    memset(
-        parser->buffer + parser->buff_use, 0,
-        parser->buff_size - parser->buff_use
-        );
-        */
-
     /* add */
     if(parser->buff_use + buff_sz >= parser->buff_size)
         nmea_parser_buff_clear(parser);

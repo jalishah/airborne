@@ -382,8 +382,8 @@ void nmea_GPGGA2info(nmeaGPGGA *pack, nmeaINFO *info)
     info->sig = pack->sig;
     info->HDOP = pack->HDOP;
     info->elv = pack->elv;
-    info->lat = ((double)((pack->ns == 'N')?pack->lat:-(pack->lat))) / 100.0;
-    info->lon = ((double)((pack->ew == 'E')?pack->lon:-(pack->lon))) / 100.0;
+    info->lat = (pack->ns == 'N')?pack->lat:-pack->lat;
+    info->lon = (pack->ew == 'E')?pack->lon:-pack->lon;
     info->smask |= GPGGA;
 }
 
@@ -477,8 +477,8 @@ void nmea_GPRMC2info(nmeaGPRMC *pack, nmeaINFO *info)
     }
 
     info->utc = pack->utc;
-    info->lat = ((double)((pack->ns == 'N')?pack->lat:-(pack->lat))) / 100.0;
-    info->lon = ((double)((pack->ew == 'E')?pack->lon:-(pack->lon))) / 100.0;
+    info->lat = (pack->ns == 'N')?pack->lat:-pack->lat;
+    info->lon = (pack->ew == 'E')?pack->lon:-pack->lon;
     info->speed = pack->speed * NMEA_TUD_KNOTS;
     info->direction = pack->direction;
     info->smask |= GPRMC;

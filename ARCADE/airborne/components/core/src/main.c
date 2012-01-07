@@ -16,7 +16,7 @@
 #include <syslog.h>
 
 #include "util.h"
-#include "util/daemon/daemon.h"
+#include "../../../common/util/daemon/daemon.h"
 #include "util/logger/logger.h"
 #include "util/opcd_params/opcd_params.h"
 #include "interfaces/cmd.h"

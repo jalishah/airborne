@@ -35,15 +35,6 @@
 extern "C" {
 #endif
 
-/**
- * Position data in fractional degrees or radians
- */
-typedef struct _nmeaPOS
-{
-    double lat;         /**< Latitude */
-    double lon;         /**< Longitude */
-
-} nmeaPOS;
 
 /**
  * Information about satellite
@@ -92,8 +83,8 @@ typedef struct _nmeaINFO
     double  HDOP;       /**< Horizontal Dilution Of Precision */
     double  VDOP;       /**< Vertical Dilution Of Precision */
 
-    double  lat;        /**< Latitude in NDEG - +/-[degree][min].[sec/60] */
-    double  lon;        /**< Longitude in NDEG - +/-[degree][min].[sec/60] */
+    double  lat;        /**< Latitude in DEG */
+    double  lon;        /**< Longitude in DEG */
     double  elv;        /**< Antenna altitude above/below mean sea level (geoid) in meters */
     double  speed;      /**< Speed over the ground in kilometers/hour */
     double  direction;  /**< Track angle in degrees True */
