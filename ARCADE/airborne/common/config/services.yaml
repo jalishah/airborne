@@ -21,4 +21,3 @@ core:
 opcd:
   binary: 'opcd/opcd.py'
   args: '$MOBICOM_SUBPROJECT_PATH/common/config/parameters'
-
