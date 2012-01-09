@@ -128,7 +128,6 @@ void _main(int argc, char *argv[])
             generate_time_str(time_str, &info.utc);
             gps_data.fix = 0;
             gps_data.time = time_str;
-            printf("%s\n", time_str);
             
             /* set position data if a minimum of satellites is seen: */
             if (info.satinfo.inuse >= threadsafe_int_get(&min_sats))
@@ -171,8 +170,7 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   _main(argc, argv);
-   //daemonize("/var/run/gps_sensor.pid", _main, _cleanup, argc, argv);
+   daemonize("/var/run/gps_sensor.pid", _main, _cleanup, argc, argv);
    return 0;
 }
 
