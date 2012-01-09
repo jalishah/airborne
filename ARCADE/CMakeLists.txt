@@ -1,5 +1,6 @@
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -pipe")
 
+FIND_PACKAGE(Glib REQUIRED)
 FIND_PACKAGE(PythonLibrary REQUIRED)
 INCLUDE(PythonMacros)
 
