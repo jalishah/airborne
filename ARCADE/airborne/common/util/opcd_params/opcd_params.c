@@ -256,17 +256,20 @@ SIMPLE_THREAD_BEGIN(thread_func)
 SIMPLE_THREAD_END
 
 
-void opcd_params_init(char *_prefix)
+void opcd_params_init(char *_prefix, int enable_events)
 {
    ASSERT_ONCE();
    ASSERT_NOT_NULL(_prefix);
    prefix = _prefix;
    ctrl_socket = scl_get_socket("opcd_ctrl");
    ASSERT_NOT_NULL(ctrl_socket);
-   event_socket = scl_get_socket("opcd_event");
-   ASSERT_NOT_NULL(event_socket);
    params_ht = g_hash_table_new(g_str_hash, g_str_equal);
    ASSERT_NOT_NULL(params_ht);
-   simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
+   if (enable_events)
+   {
+      event_socket = scl_get_socket("opcd_event");
+      ASSERT_NOT_NULL(event_socket);
+      simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
+   }
 }
 

@@ -12,7 +12,7 @@ arbiter:
   depends: [core]
 
 gps_sensor:
-  binary: 'sensors/gps/src/gps_sensor.py'
+  binary: 'sensors/gps_sensor/gps_sensor'
 
 core:
   binary: 'core/src/core'

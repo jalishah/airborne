@@ -66,7 +66,7 @@ void _main(int argc, char *argv[])
    }
    
    syslog(LOG_INFO, "initializing opcd interface");
-   opcd_params_init("core.");
+   opcd_params_init("core.", 1);
    
    syslog(LOG_INFO, "opening logger");
    if (logger_open() != 0)

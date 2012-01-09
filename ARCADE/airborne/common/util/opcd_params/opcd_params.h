@@ -23,7 +23,7 @@ opcd_param_t;
  * initialize OPCD params
  * prefix is added before all keys defined in the opcd_param_t's
  */
-void opcd_params_init(char *prefix);
+void opcd_params_init(char *prefix, int enable_events);
 
 
 /*

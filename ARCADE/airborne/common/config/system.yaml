@@ -20,6 +20,7 @@ components:
 
    - name: gps_sensor
      gates:
+      - opcd_ctrl: req
       - gps: pub
 
    - name: gps_test
@@ -98,6 +99,7 @@ connections:
 
    - [ opcd.event,               core.opcd_event    ]
    - [ opcd.ctrl,                core.opcd_ctrl     ]
+   - [ opcd.ctrl,                gps_sensor.opcd_ctrl     ]
    - [ opcd.ctrl,                opcd_shell.ctrl    ]
    - [ localizer.kalman,         core.kalman        ]
    - [ remote.ctrl,              core.ctrl          ]

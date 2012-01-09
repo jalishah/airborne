@@ -73,8 +73,8 @@ void _main(int argc, char *argv[])
    int64_t hwm = 1;
    zmq_setsockopt(gps_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
-   char *dev_path = NULL;
-   threadsafe_float_t min_sats;
+   char *dev_path = "/dev/ttyACM0";
+   threadsafe_int_t min_sats;
    
    opcd_param_t params[] =
    {
@@ -82,11 +82,12 @@ void _main(int argc, char *argv[])
       {"min_sats", &min_sats},
       OPCD_PARAMS_END
    };
-   opcd_params_apply("sensors.gps.", params);
    
+   opcd_params_init("sensors.gps.", 0);
+   opcd_params_apply("", params);
    
    serialport_t port;
-   serial_open(&port, dev_path, B9600, 0, 0, 0);
+   serial_open(&port, dev_path, B57600, 0, 0, 0);
 
    nmeaPARSER parser;
    nmea_parser_init(&parser);
@@ -104,6 +105,7 @@ void _main(int argc, char *argv[])
       do
       {
          c = serial_read_char(&port);
+         printf("%c", c);
          if (c > 0)
          {
             buffer[pos++] = c;
@@ -126,6 +128,7 @@ void _main(int argc, char *argv[])
             generate_time_str(time_str, &info.utc);
             gps_data.fix = 0;
             gps_data.time = time_str;
+            printf("%s\n", time_str);
             
             /* set position data if a minimum of satellites is seen: */
             if (info.satinfo.inuse >= MIN_SATS)
@@ -168,7 +171,8 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   daemonize("/var/run/gps_sensor.pid", _main, _cleanup, argc, argv);
+   _main(argc, argv);
+   //daemonize("/var/run/gps_sensor.pid", _main, _cleanup, argc, argv);
    return 0;
 }
 
