@@ -17,7 +17,6 @@
 
 
 #define TIME_STR_LEN 20
-#define MIN_SATS     6
 
 
 static char running = 1;
@@ -73,12 +72,14 @@ void _main(int argc, char *argv[])
    int64_t hwm = 1;
    zmq_setsockopt(gps_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
-   char *dev_path = "/dev/ttyACM0";
+   char *serial_path = "/dev/ttyACM0";
+   threadsafe_int_t serial_speed;
    threadsafe_int_t min_sats;
    
    opcd_param_t params[] =
    {
-      {"serial_port", &dev_path},
+      {"serial_path", &serial_path},
+      {"serial_speed", &serial_speed},
       {"min_sats", &min_sats},
       OPCD_PARAMS_END
    };
@@ -87,7 +88,7 @@ void _main(int argc, char *argv[])
    opcd_params_apply("", params);
    
    serialport_t port;
-   serial_open(&port, dev_path, B57600, 0, 0, 0);
+   serial_open(&port, serial_path, threadsafe_int_get(&serial_speed), 0, 0, 0);
 
    nmeaPARSER parser;
    nmea_parser_init(&parser);
@@ -105,7 +106,6 @@ void _main(int argc, char *argv[])
       do
       {
          c = serial_read_char(&port);
-         printf("%c", c);
          if (c > 0)
          {
             buffer[pos++] = c;
@@ -131,7 +131,7 @@ void _main(int argc, char *argv[])
             printf("%s\n", time_str);
             
             /* set position data if a minimum of satellites is seen: */
-            if (info.satinfo.inuse >= MIN_SATS)
+            if (info.satinfo.inuse >= threadsafe_int_get(&min_sats))
             {
                /* set data for 2d fix: */
                if (info.fix >= 2)

@@ -39,5 +39,6 @@ def main(name):
          print ex.__class__
          raise
 
+main('gps_sensor')
 daemonize('gps_sensor', main)
 

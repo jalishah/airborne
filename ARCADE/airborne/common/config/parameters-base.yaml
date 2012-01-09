@@ -1,7 +1,8 @@
 
 sensors:
    gps:
-      serial_port: "/dev/ttyACM0"
+      serial_path: "/dev/ttyACM0"
+      serial_speed: 57600
       min_sats: 6
 
 core:

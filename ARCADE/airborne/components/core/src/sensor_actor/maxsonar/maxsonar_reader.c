@@ -55,7 +55,7 @@ SIMPLE_THREAD_END
 int maxsonar_reader_init(void)
 {
    ASSERT_ONCE();
-   int status = serial_open(&port, "/dev/ttyO0", B9600, 0, 0, 0);
+   int status = serial_open(&port, "/dev/ttyO0", 9600, 0, 0, 0);
    if (status != 0)
    {
       return status;   

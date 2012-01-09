@@ -464,7 +464,7 @@ SIMPLE_THREAD_BEGIN(chr6dm_thread_func)
             {
                LOG(LL_INFO, "imu garbage detected!");
                serial_close(&port);
-               serial_open(&port, serial_port, B115200, 0, 0, 0);
+               serial_open(&port, serial_port, 115200, 0, 0, 0);
                err_count = 0;
             }*/
          }
@@ -528,7 +528,7 @@ int chr6dm_init(void)
    LOG(LL_INFO, "loaded biases: acc_pitch: %d, acc_roll: %d, acc_yaw: %d",
        bias_acc_pitch, bias_acc_roll, bias_acc_yaw);
 
-   ret = serial_open(&port, serial_port, B115200, 0, 0, 0);
+   ret = serial_open(&port, serial_port, 115200, 0, 0, 0);
    if (ret != 0)
    {
       LOG(LL_INFO, "could not open serial port");

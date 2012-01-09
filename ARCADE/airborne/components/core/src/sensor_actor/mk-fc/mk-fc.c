@@ -303,7 +303,7 @@ int fc_init(void)
       int ret;
       is_initialized = 1;
       /* perform initialization once here: */
-      if ((ret = serial_open(&port, serial_port, B57600, ICRNL, ICANON, 0)) != 0)
+      if ((ret = serial_open(&port, serial_port, 57600, ICRNL, ICANON, 0)) != 0)
       {
          return ret;
       }

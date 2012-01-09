@@ -1,14 +1,10 @@
-/*
- */
 
 
 #include <termios.h>
 
 
-#ifndef COCO_SERIAL_H
-#define COCO_SERIAL_H
-
-
+#ifndef __SERIAL_H__
+#define __SERIAL_H__
 
 
 typedef struct
