@@ -1,4 +1,9 @@
 
+sensors:
+   gps:
+      serial_port: "/dev/ttyACM0"
+      min_sats: 6
+
 core:
 
    logger:

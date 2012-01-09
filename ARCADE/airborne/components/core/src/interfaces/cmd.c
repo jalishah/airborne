@@ -5,17 +5,18 @@
 #include <math.h>
 #include <unistd.h>
 
+#include <simple_thread.h>
+#include <core.pb-c.h>
+#include <util.h>
+#include <sclhelper.h>
+
 #include "cmd.h"
-#include "core.pb-c.h"
-#include "../util/util.h"
 #include "../util/logger/logger.h"
 #include "../controllers/ctrl.h"
 #include "../model/model.h"
-#include "../util/threads/simple_thread.h"
 #include "../sensor_actor/interfaces/gpio.h"
 #include "../sensor_actor/mk-fc/mk-fc.h"
 #include "../platform/platform.h"
-#include "../../../../../common/scl/src/sclhelper.h"
 
 
 #define THREAD_NAME     "cmd_interface"

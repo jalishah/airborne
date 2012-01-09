@@ -4,7 +4,7 @@
 #include "maxsonar.h"
 
 #include "util.h"
-#include "../../util/serial/serial.h"
+#include "../../../../../common/util/serial/serial.h"
 #include "../../util/threads/simple_thread.h"
 #include "../../util/threads/threadsafe_types.h"
 #include "../../algorithms/median_filter.h"

@@ -9,9 +9,9 @@
 
 #include "alt_ctrl.h"
 #include "pid.h"
-#include "../util/util.h"
-#include "../util/opcd_params/opcd_params.h"
-#include "../util/threads/threadsafe_types.h"
+#include "util.h"
+#include "opcd_params.h"
+#include "threadsafe_types.h"
 
 
 static pid_controller_t controller;

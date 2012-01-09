@@ -5,11 +5,11 @@
 
 message GpsData
 {
-   required uint32 fix =  1; // fix type (1,2,3)
+   required uint32 fix =  1; // fix type (0,1,2,3)
    required string time = 2; // time stamp in ISO8601 format, UTC
-   optional double lat =   3; // lat in degrees: +/- signifies west/east
-   optional double lon =   4; // lon in degrees: +/- signifies north/south
-   optional double alt =   5; // altitude above sea level in meters
+   optional double lat =  3; // lat in degrees: +/- signifies west/east
+   optional double lon =  4; // lon in degrees: +/- signifies north/south
+   optional double alt =  5; // altitude above sea level in meters
    optional float hdop =  6; // horizontal dilution of precision
    optional uint32 sats = 7; // number of satellites in use
 }

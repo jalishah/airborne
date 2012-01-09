@@ -22,7 +22,7 @@
 #include "../../util/math/lmath.h"
 #include "../../util/time/ltime.h"
 #include "../../util/logger/logger.h"
-#include "../../util/serial/serial.h"
+#include "../../../../../common/util/serial/serial.h"
 #include "../../util/opcd_params/opcd_params.h"
 
 
@@ -369,9 +369,6 @@ SIMPLE_THREAD_BEGIN(chr6dm_thread_func)
    SIMPLE_THREAD_LOOP_BEGIN
    {
 #define SERIAL_BUF_SIZE 1024
-#if SERIAL_BUF_SIZE > SSIZE_MAX
-#error INVALID BUFFER SIZE!
-#endif
       static char serial_buffer[SERIAL_BUF_SIZE]; /* serial data buffer */
 
       /*

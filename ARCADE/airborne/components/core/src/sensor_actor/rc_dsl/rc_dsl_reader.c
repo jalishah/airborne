@@ -1,6 +1,6 @@
 
 #include "util.h"
-#include "../../util/serial/serial.h"
+#include "../../../../../common/util/serial/serial.h"
 #include "../../util/threads/simple_thread.h"
 #include "../../util/opcd_params/opcd_params.h"
 #include "../../util/time/ltime.h"
