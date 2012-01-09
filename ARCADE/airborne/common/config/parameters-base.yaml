@@ -6,6 +6,7 @@ sensors:
       min_sats: 6
 
 core:
+   flash_enabled: false
 
    logger:
       level: 3
