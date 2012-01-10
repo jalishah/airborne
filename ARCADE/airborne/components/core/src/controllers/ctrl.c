@@ -7,8 +7,6 @@
  */
 
 
-#include <malloc.h>
-#include <math.h>
 #include <opcd_params.h>
 #include <periodic_thread.h>
 #include <threadsafe_types.h>
@@ -65,7 +63,6 @@ static threadsafe_int_t angle_cal;
 static char *debug_host;
 static threadsafe_int_t debug_port;
 
-static pthread_mutex_t ctrl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 static struct
@@ -175,6 +172,9 @@ PERIODIC_THREAD_END
 
 void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
 {
+   /*
+    * just some shortcut definitions:
+    */
    float pos_x = model_state->x.pos;
    float pos_y = model_state->y.pos;
    float speed_x = model_state->x.speed;
@@ -183,24 +183,18 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    float acc_y = model_state->y.acc;
    float yaw = model_state->yaw.angle;
 
-
    /*
     * prepare and run controllers:
     */
    float err_x = pos_x - threadsafe_float_get(&sp.x);
    float err_y =  pos_y - threadsafe_float_get(&sp.y);
-   threadsafe_float_set(&errors.x_error, err_x);
-   threadsafe_float_set(&errors.y_error, err_y);
  
    /*
     * run controllers:
     */
-   pthread_mutex_lock(&ctrl_mutex);
-
    float yaw_error;
    float yaw_ctrl_val = yaw_ctrl_step(&yaw_error, model_state->yaw.angle,
                                       model_state->yaw.speed, dt);
-   threadsafe_float_set(&errors.yaw_error, yaw_error);
 
    float alt_err;
    if (sp.alt_mode == ALT_MODE_ULTRA)
@@ -212,7 +206,6 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       alt_err = threadsafe_float_get(&sp.alt) - model_state->baro_z.pos;
    }
    
-   threadsafe_float_set(&errors.alt_error, alt_err);
    float gas_ctrl_val = alt_ctrl_step(alt_err, model_state->baro_z.speed, dt);
 
    /* run navigator: */
@@ -238,8 +231,6 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                              -model_state->roll.angle + symmetric_limit(navi_output.roll, 0.17)
                              + threadsafe_float_get(&roll_bias), dt);
 
-   pthread_mutex_unlock(&ctrl_mutex);
-
    if (0) //debug_buffer_trylock(debug_buffer) == 0)
    {
       debug_buffer_reset(debug_buffer);
@@ -261,7 +252,13 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       debug_buffer_unlock(debug_buffer);
    }
 
-   /* set actor outputs: */
+   /* write error state variables: */
+   threadsafe_float_set(&errors.x_error, err_x);
+   threadsafe_float_set(&errors.y_error, err_y);
+   threadsafe_float_set(&errors.alt_error, alt_err);
+   threadsafe_float_set(&errors.yaw_error, yaw_error);
+
+   /* finally, set actuator outputs: */
    pthread_mutex_lock(&override_data.mutex);
    if (override_data.enabled)
    {
@@ -283,15 +280,11 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
 
 void ctrl_reset(void)
 {
-   pthread_mutex_lock(&ctrl_mutex);
-   
    yaw_ctrl_reset();
    alt_ctrl_reset();
    pid_reset(&pitch_controller);
    pid_reset(&roll_controller);
-   navigator_reset();
-   
-   pthread_mutex_unlock(&ctrl_mutex);
+   navigator_reset(); // TODO: not threadsafe
 }
 
 
@@ -346,17 +339,15 @@ void ctrl_init(void)
    threadsafe_float_init(&errors.x_error, 0.0f);
    threadsafe_float_init(&errors.y_error, 0.0f);
 
-
    /* create debug connection: */
    udp_socket = udp_socket_create(debug_host, threadsafe_int_get(&debug_port), 1, 0);
    debug_buffer = debug_buffer_create(128);
    const struct timespec debug_thread_period = {0, 100 * NSEC_PER_MSEC};
    periodic_thread_start(&debug_thread, debug_thread_func, "debug_thread", 0, debug_thread_period, NULL);
 
-   /* initialize controllers: */
+   /* initialize controllers and navi: */
    pid_init(&pitch_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
    pid_init(&roll_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
-   
    yaw_ctrl_init();
    alt_ctrl_init();
    navigator_init();

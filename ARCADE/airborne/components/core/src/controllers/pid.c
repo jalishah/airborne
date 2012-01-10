@@ -11,30 +11,33 @@ void pid_init(pid_controller_t *controller, threadsafe_float_t *p, threadsafe_fl
    controller->i = i; /* might be NULL .. */
    controller->d = d; /* ... this one as well */
    controller->max_sum_error = max_sum_error;
-   pid_reset(controller);
+   threadsafe_float_init(&controller->prev_error, 0.0f);
+   threadsafe_float_init(&controller->sum_error, 0.0f);
 }
 
 
 float pid_control(pid_controller_t *controller, float error, float dt)
 {
-   float val;
-   controller->sum_error = symmetric_limit(controller->sum_error + error, threadsafe_float_get(controller->max_sum_error));
-   val = threadsafe_float_get(controller->p) * error;
+   float sum_error = threadsafe_float_get(&controller->sum_error);
+   sum_error = symmetric_limit(sum_error + error, threadsafe_float_get(controller->max_sum_error));
+   float val = threadsafe_float_get(controller->p) * error;
    if (controller->i != NULL)
    {
-      val += threadsafe_float_get(controller->i) * dt * controller->sum_error;
+      val += threadsafe_float_get(controller->i) * dt * sum_error;
    }
    if (controller->d != NULL)
    {
-      val += threadsafe_float_get(controller->d) * (error - controller->prev_error) / dt;
+      val += threadsafe_float_get(controller->d) * (error - threadsafe_float_get(&controller->prev_error)) / dt;
    }
-   controller->prev_error = error;
+   threadsafe_float_set(&controller->sum_error, sum_error);
+   threadsafe_float_set(&controller->prev_error, error);
    return val;
 }
 
 
 void pid_reset(pid_controller_t *controller)
 {
-   controller->prev_error = 0;
-   controller->sum_error = 0;
+   threadsafe_float_set(&controller->prev_error, 0.0f);
+   threadsafe_float_set(&controller->sum_error, 0.0f);
 }
+

@@ -1,6 +1,6 @@
 
 #include <math.h>
-#include "chr-6dm_util.h"
+#include "chr_6dm_util.h"
 
 
 static const float CHR6DM_SCALE_TABLE[CHR6DM_N_CHANNELS / CHR6DM_DIMENSIONS] =

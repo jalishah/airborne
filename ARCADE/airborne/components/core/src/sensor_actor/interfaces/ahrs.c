@@ -8,7 +8,7 @@
 
 
 #include "ahrs.h"
-#include "../chr-6dm/chr-6dm.h"
+#include "../chr_6dm/chr_6dm.h"
 
 
 int ahrs_init(void)

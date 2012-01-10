@@ -15,7 +15,7 @@
 #include "../controllers/ctrl.h"
 #include "../model/model.h"
 #include "../sensor_actor/interfaces/gpio.h"
-#include "../sensor_actor/mk-fc/mk-fc.h"
+#include "../sensor_actor/holger_fc/holger_fc.h"
 #include "../platform/platform.h"
 
 

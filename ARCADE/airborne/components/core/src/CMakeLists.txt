@@ -26,7 +26,7 @@ char_queue
 platform
 # sensor/actor:
 flightgear
-mk_fc
+holger_fc
 rc_dsl
 scl_gps
 maxsonar

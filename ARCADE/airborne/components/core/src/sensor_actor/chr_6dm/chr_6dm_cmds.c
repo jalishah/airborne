@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include "chr-6dm_commands.h"
+#include "chr_6dm_cmds.h"
 
 
 typedef enum

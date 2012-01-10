@@ -5,12 +5,13 @@
 #include <zmq.h>
 #include <syslog.h>
 
+#include <sclhelper.h>
+#include <threadsafe_types.h>
+#include <opcd_params.h>
+#include <log_data.pb-c.h>
+
 #include "logger.h"
-#include "log_data.pb-c.h"
 #include "util.h"
-#include "../../../../../../../common/scl/src/sclhelper.h"
-#include "../threads/threadsafe_types.h"
-#include "../opcd_params/opcd_params.h"
 
 
 static void *socket = NULL;
@@ -41,6 +42,9 @@ int logger_open(void)
 
 void logger_write(char *file, loglevel_t level, unsigned int line, char *format, ...)
 {
+   ASSERT_NOT_NULL(socket);
+   ASSERT_NOT_NULL(file);
+
    if (level <= (unsigned int)threadsafe_int_get(&loglevel))
    {
       LogData log_data = LOG_DATA__INIT;

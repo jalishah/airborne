@@ -1,10 +1,10 @@
 
 /*
- * global logger implementation
+ * logger interface
  */
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#ifndef __LOGGER_H__
+#define __LOGGER_H__
 
 
 #include <string.h>
@@ -29,12 +29,23 @@ loglevel_t;
 #define LOG(level, format, ...) logger_write(__FILE__, level, __LINE__, format, ## __VA_ARGS__)
 
 
+/*
+ * opens the logger, sets up connection using SCL
+ */
 int logger_open(void);
 
+
+/*
+ * writes format string to logger with given log level
+ */
 void logger_write(char *file, loglevel_t level, unsigned int line, char *format, ...);
 
+
+/*
+ * closes the SCL logger connection
+ */
 int logger_close(void);
 
 
-#endif /* LOGGER_H */
+#endif /* __LOGGER_H__ */
 

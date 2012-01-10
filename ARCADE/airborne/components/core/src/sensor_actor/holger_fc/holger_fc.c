@@ -1,8 +1,11 @@
+
 /*
- * interface.h
+ * holger_fc.c
  *
- *  Created on: 15.06.2010
- *      Author: tobi
+ * link to holger's flight control
+ *
+ * Created on: 15.06.2010
+ * Author: tobi
  */
 
 
@@ -10,7 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "mk-fc.h"
+#include "holger_fc.h"
 #include "util.h"
 #include "data_formats.h"
 #include "commands.h"

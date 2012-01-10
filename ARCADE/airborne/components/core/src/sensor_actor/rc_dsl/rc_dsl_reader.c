@@ -1,7 +1,7 @@
 
 #include "util.h"
-#include "../../../../../common/util/serial/serial.h"
-#include "../../util/threads/simple_thread.h"
+#include <serial.h>
+#include <simple_thread.h>
 #include "../../util/opcd_params/opcd_params.h"
 #include "../../util/time/ltime.h"
 
@@ -42,7 +42,7 @@ void rc_dsl_reader_start(void)
    };
    opcd_params_apply("sensors.rc_dsl.", params);
    
-   serial_open(&port, dev_path, B38400, 0, 0, 0);
+   serial_open(&port, dev_path, 38400, 0, 0, 0);
    rc_dsl = rc_dsl_create();
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 }

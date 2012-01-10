@@ -2,13 +2,14 @@
 /*
  * file: kalman.c
  * 
- * author: Tobias Simon, Ilmenau University of Technology
- *
- * implements linear system:
+ * implements kalman filter for linear system:
  *
  * | 1 dt | * | p | + | 0.5 * dt ^ 2 | * | a | = | p |
  * | 0  1 | * | v |   |           dt |           | v |
- *
+ * 
+ * authors:
+ *    Jan Roemisch, Ilmenau University of Technology
+ *    Tobias Simon, Ilmenau University of Technology
  */
 
 

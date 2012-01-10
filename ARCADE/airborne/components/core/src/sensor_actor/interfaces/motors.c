@@ -16,7 +16,7 @@
 
 
 #ifdef MOTORS_FC
-#include "../mk-fc/mk-fc.h"
+#include "../holger_fc/holger_fc.h"
 #endif
 
 

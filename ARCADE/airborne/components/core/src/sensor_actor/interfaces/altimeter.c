@@ -7,7 +7,7 @@
 
 
 #include "altimeter.h"
-#include "../mk-fc/mk-fc.h"
+#include "../holger_fc/holger_fc.h"
 #include "../maxsonar/maxsonar_reader.h"
 
 

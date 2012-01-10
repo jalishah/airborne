@@ -12,11 +12,12 @@
  *
  */
 
+
 #include <unistd.h>
 
 #include <util.h>
-#include <opcd_params.h>
 #include <simple_thread.h>
+#include <opcd_params.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
 #include <kalman.pb-c.h>
@@ -187,15 +188,12 @@ void model_step(model_state_t *out, model_input_t *in)
    
    out->yaw.angle = normalize_euler_0_2pi(in->ahrs_data.yaw);
    out->yaw.speed = in->ahrs_data.yaw_rate;
-   out->yaw.acc = 0.0f;
 
    out->pitch.angle = in->ahrs_data.pitch;
    out->pitch.speed = in->ahrs_data.pitch_rate;
-   out->pitch.acc = 0.0f;
 
    out->roll.angle = in->ahrs_data.roll;
    out->roll.speed = in->ahrs_data.roll_rate;
-   out->roll.acc = 0.0f;
 
    out->x.pos = x_kalman_out.pos;
    out->x.speed = x_kalman_out.speed;
@@ -204,7 +202,6 @@ void model_step(model_state_t *out, model_input_t *in)
    out->y.pos = y_kalman_out.pos;
    out->y.speed = y_kalman_out.speed;
    out->y.acc = world_acc_y;
-   //printf("%f %f\n", out->x.pos, out->y.pos);
 
    KalmanData kalman_data = KALMAN_DATA__INIT;
    kalman_data.lon = out->x.pos; //in->gps_data.start_x;
@@ -216,7 +213,7 @@ void model_step(model_state_t *out, model_input_t *in)
                  scl_send_dynamic(socket, buffer, data_len, ZMQ_NOBLOCK);
                 );
   
-   /* set accessable outs: */
+   /* set accessable state variables: */
    threadsafe_float_set(&yaw, out->yaw.angle);
    threadsafe_float_set(&x, out->x.pos);
    threadsafe_float_set(&y, out->y.pos);
@@ -258,8 +255,15 @@ void model_init(void)
       OPCD_PARAMS_END
    };
    opcd_params_apply("model.", params);
-   socket = scl_get_socket("kalman");
+   LOG(LL_DEBUG, "process noise: %f, ultra noise: %f, baro noise: %f, gps noise: %f\n",
+       threadsafe_float_get(&process_noise),
+       threadsafe_float_get(&ultra_noise),
+       threadsafe_float_get(&baro_noise),
+       threadsafe_float_get(&gps_noise));
 
+
+   socket = scl_get_socket("kalman");
+   
    /* set-up kalman filters: */
    kalman_out_t kalman_state = {0.0, 0.0};
    
@@ -281,18 +285,13 @@ void model_init(void)
       threadsafe_float_get(&gps_noise)
    };
 
-   printf("process noise: %f, ultra noise: %f, gps noise: %f\n",
-          threadsafe_float_get(&process_noise),
-          threadsafe_float_get(&ultra_noise),
-          threadsafe_float_get(&gps_noise));
-
    /* create kalman filters: */
    y_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
    x_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
    ultra_z_kalman = kalman_create(&alt_kalman_config, &kalman_state);
    baro_z_kalman = kalman_create(&baro_kalman_config, &kalman_state);
    
-   /* initialize accessable states: */
+   /* initialize accessable state variables: */
    threadsafe_float_init(&yaw, 0.0);
    threadsafe_float_init(&baro_alt, 0.0);
    threadsafe_float_init(&ultra_alt, 0.0);

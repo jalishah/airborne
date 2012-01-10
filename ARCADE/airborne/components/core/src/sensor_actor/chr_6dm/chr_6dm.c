@@ -14,9 +14,9 @@
 #include <netinet/in.h>
 
 #include "util.h"
-#include "chr-6dm.h"
-#include "chr-6dm_commands.h"
-#include "chr-6dm_util.h"
+#include "chr_6dm.h"
+#include "chr_6dm_cmds.h"
+#include "chr_6dm_util.h"
 #include "../../util/threads/simple_thread.h"
 #include "../../util/threads/threadsafe_types.h"
 #include "../../util/math/lmath.h"

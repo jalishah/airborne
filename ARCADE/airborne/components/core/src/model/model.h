@@ -33,7 +33,6 @@ typedef struct
 {
    float angle; /* angle, in rad */
    float speed; /* in rad / s */
-   float acc; /* acceleration, in rad / s ^ 2 */
 }
 angle_state_t;
 
@@ -73,6 +72,9 @@ typedef struct
 model_input_t;
 
 
+/*
+ * state access primitives
+ */
 void model_init(void);
 
 float model_get_yaw(void);
@@ -85,6 +87,10 @@ float model_get_x(void);
 
 float model_get_y(void);
 
+
+/*
+ * model state update function
+ */
 void model_step(model_state_t *out, model_input_t *input);
 
 

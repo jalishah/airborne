@@ -13,9 +13,8 @@ typedef struct
    threadsafe_float_t *i;
    threadsafe_float_t *d;
    threadsafe_float_t *max_sum_error;
-   unsigned char flags;
-   float prev_error;
-   float sum_error;
+   threadsafe_float_t prev_error;
+   threadsafe_float_t sum_error;
 }
 pid_controller_t;
 
