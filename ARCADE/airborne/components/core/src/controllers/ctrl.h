@@ -47,9 +47,9 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state);
 
 
 /*
- * sets the setpoint for type to val
+ * sets the setpoint
  */
-int ctrl_set_setpoint(CtrlType type, float *pos, float *speed);
+int ctrl_set_setpoint(CtrlData *data);
 
 
 /*
