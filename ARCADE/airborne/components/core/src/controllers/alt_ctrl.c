@@ -22,8 +22,6 @@ static threadsafe_float_t setpoint;
 static threadsafe_int_t manual;
 
 
-
-
 static float speed_func(float dist)
 {
    return symmetric_limit(dist, 1.0f) * 0.6;
@@ -42,9 +40,8 @@ float alt_setpoint_get(void)
 }
 
 
-float alt_ctrl_step(float alt, float speed, float dt)
+float alt_ctrl_step(float alt_err, float speed, float dt)
 {
-   float alt_err = threadsafe_float_get(&setpoint) - alt;
    float spd_sp = speed_func(alt_err);
    float spd_err = spd_sp - speed;
    float gas;
@@ -73,7 +70,7 @@ void alt_ctrl_init(void)
    };
    opcd_params_apply("controllers.altitude.", params);
 
-   threadsafe_float_init(&setpoint, 0.0f);
+   threadsafe_float_init(&setpoint, 1.0f);
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
 }
 

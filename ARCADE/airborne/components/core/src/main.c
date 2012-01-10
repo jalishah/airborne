@@ -126,7 +126,7 @@ void _main(int argc, char *argv[])
    cmd_init();
    
    /* prepare main loop: */
-   for(int n = 0; n < NUM_AVG; n++)
+   for (int n = 0; n < NUM_AVG; n++)
    {
       output_avg[n] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
    }
@@ -190,7 +190,8 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
+   _main(argc, argv);
+   //daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }
 

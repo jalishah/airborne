@@ -109,7 +109,7 @@ static void init_param(Value *val, char *id, void *data)
       }
       case TYPE_BOOL:
       {
-         threadsafe_int_init((threadsafe_int_t *)data, val->int_val);
+         threadsafe_int_init((threadsafe_int_t *)data, val->bool_val);
          break;
       }
    }

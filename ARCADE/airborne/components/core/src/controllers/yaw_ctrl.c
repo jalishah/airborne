@@ -86,7 +86,10 @@ void yaw_ctrl_init(void)
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.yaw.", params);
-   
+
+   threadsafe_float_init(&pos, 0.0f);
+   threadsafe_float_init(&speed, threadsafe_float_get(&speed_std));
+
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
 }
 
@@ -143,7 +146,7 @@ float yaw_ctrl_step(float *err_out, float yaw, float _speed, float dt)
    if (threadsafe_int_get(&manual))
    {
       yaw_ctrl = 0.0f;
-      err = 0; /* we control nothing, so the error is always 0 */
+      err = 0.0; /* we control nothing, so the error is always 0 */
    }
    else
    {

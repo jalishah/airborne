@@ -281,6 +281,11 @@ void model_init(void)
       threadsafe_float_get(&gps_noise)
    };
 
+   printf("process noise: %f, ultra noise: %f, gps noise: %f\n",
+          threadsafe_float_get(&process_noise),
+          threadsafe_float_get(&ultra_noise),
+          threadsafe_float_get(&gps_noise));
+
    /* create kalman filters: */
    y_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
    x_kalman = kalman_create(&lateral_kalman_config, &kalman_state);

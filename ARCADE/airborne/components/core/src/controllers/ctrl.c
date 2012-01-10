@@ -202,18 +202,18 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                                       model_state->yaw.speed, dt);
    threadsafe_float_set(&errors.yaw_error, yaw_error);
 
-   float alt_error;
+   float alt_err;
    if (sp.alt_mode == ALT_MODE_ULTRA)
    {
-      alt_error = threadsafe_float_get(&sp.alt) - model_state->ultra_z.pos;
+      alt_err = threadsafe_float_get(&sp.alt) - model_state->ultra_z.pos;
    }
    else
    {
-      alt_error = threadsafe_float_get(&sp.alt) - model_state->baro_z.pos;
+      alt_err = threadsafe_float_get(&sp.alt) - model_state->baro_z.pos;
    }
    
-   threadsafe_float_set(&errors.alt_error, alt_error);
-   float gas_ctrl_val = alt_ctrl_step(alt_error, model_state->baro_z.speed, dt);
+   threadsafe_float_set(&errors.alt_error, alt_err);
+   float gas_ctrl_val = alt_ctrl_step(alt_err, model_state->baro_z.speed, dt);
 
    /* run navigator: */
    navi_input_t navi_input = {threadsafe_float_get(&sp.x),
@@ -240,7 +240,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
 
    pthread_mutex_unlock(&ctrl_mutex);
 
-   if (debug_buffer_trylock(debug_buffer) == 0)
+   if (0) //debug_buffer_trylock(debug_buffer) == 0)
    {
       debug_buffer_reset(debug_buffer);
       debug_buffer_add(debug_buffer, KEY_TYPE__PITCH, model_state->pitch.angle);
@@ -263,21 +263,21 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
 
    /* set actor outputs: */
    pthread_mutex_lock(&override_data.mutex);
-   if (!override_data.enabled)
-   {
-      data->pitch = pitch_ctrl_val;
-      data->roll = roll_ctrl_val;
-      data->yaw = yaw_ctrl_val;
-      data->gas = gas_ctrl_val;
-   }
-   else
+   if (override_data.enabled)
    {
       data->pitch = override_data.pitch;
       data->roll = override_data.roll;
       data->yaw = override_data.yaw;
       data->gas = override_data.gas;
    }
-
+   else
+   {
+      data->pitch = 0.0; //pitch_ctrl_val;
+      data->roll = 0.0; //roll_ctrl_val;
+      data->yaw = 0.0; //yaw_ctrl_val;
+      data->gas = gas_ctrl_val;
+      printf("%f %f\n", alt_err, data->gas);
+   }
    pthread_mutex_unlock(&override_data.mutex);
 }
 
@@ -337,7 +337,7 @@ void ctrl_init(void)
    opcd_params_apply("controllers.", params);
 
    /* initialize setpoints: */
-   threadsafe_float_init(&sp.alt, 0.0f);
+   threadsafe_float_init(&sp.alt, 1.0f);
    threadsafe_float_init(&sp.x, 0.0f);
    threadsafe_float_init(&sp.y, 0.0f);
 
