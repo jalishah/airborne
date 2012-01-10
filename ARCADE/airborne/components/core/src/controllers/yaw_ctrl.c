@@ -20,6 +20,8 @@
 
 
 static pid_controller_t controller;
+
+/* setpoints: */
 static threadsafe_float_t pos; /* yaw position */
 static threadsafe_float_t speed; /* yaw speed */
 
