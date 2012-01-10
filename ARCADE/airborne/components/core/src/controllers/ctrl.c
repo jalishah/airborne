@@ -29,14 +29,24 @@
 typedef struct
 {
    threadsafe_float_t alt;
-   threadsafe_float_t baro_alt;
    threadsafe_float_t x;
    threadsafe_float_t y;
+   
+   /* altitude setpoint data: */
    enum 
    {
       ALT_MODE_ULTRA, 
       ALT_MODE_BARO
    } alt_mode;
+   
+   /* yaw setpoint data: */
+   enum 
+   {
+      YAW_MODE_FIXED, 
+      YAW_MODE_POI
+   } yaw_mode;
+   threadsafe_float_t poi_x;
+   threadsafe_float_t poi_y;
 }
 ctrl_sp_t;
 

@@ -32,10 +32,11 @@ enum CtrlType
 }
 
 
-enum AltCtrlType
+enum YawCtrlType
 {
    RELATIVE = 1;
    ABSOLUTE = 2;
+   POI = 3;
 }
 
 
@@ -44,7 +45,7 @@ message CtrlData
    required CtrlType type = 1;
    repeated float pos = 2; /* required by CTRL_SET_SP */
    optional float speed = 3; /* required by CTRL_SET_SP */
-   optional AltCtrlType alt_type = 4; /* required if CTRL_SET_SP */
+   optional YawCtrlType yaw_type = 4; /* required if CTRL_SET_SP and type == YAW */
 }
 
 
