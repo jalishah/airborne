@@ -272,11 +272,10 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    }
    else
    {
-      data->pitch = 0.0; //pitch_ctrl_val;
-      data->roll = 0.0; //roll_ctrl_val;
-      data->yaw = 0.0; //yaw_ctrl_val;
-      data->gas = gas_ctrl_val;
-      printf("%f %f\n", alt_err, data->gas);
+      data->pitch = pitch_ctrl_val;
+      data->roll = roll_ctrl_val;
+      data->yaw = yaw_ctrl_val;
+      data->gas = 1.0; //gas_ctrl_val;
    }
    pthread_mutex_unlock(&override_data.mutex);
 }

@@ -26,6 +26,7 @@
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
 #include "sensor_actor/flight_gear/fg_reader.h"
 #include "sensor_actor/interfaces/altimeter.h"
+#include "sensor_actor/interfaces/motors.h"
 #include "sensor_actor/leds/leds_overo.h"
 #include "sensor_actor/interfaces/ahrs.h"
 #include "sensor_actor/interfaces/gps.h"
@@ -115,8 +116,10 @@ void _main(int argc, char *argv[])
    baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
+   motors_init();
    //gps_init();
    
+
    LOG(LL_INFO, "initializing model/controller");
    model_init();
    ctrl_init();
@@ -135,7 +138,7 @@ void _main(int argc, char *argv[])
    struct timespec ts_prev;
    struct timespec ts_diff;
    clock_gettime(CLOCK_REALTIME, &ts_curr);
-
+ 
    /* run model and controller: */
    while(1)
    {
@@ -161,11 +164,13 @@ void _main(int argc, char *argv[])
       mixer_in_t mixer_in;
       ctrl_step(&mixer_in, dt, &model_state);
 
-      /* write data to motors/mixer: */
+      /* set up mixer input:  */
       mixer_in.pitch = sliding_avg_calc(output_avg[AVG_PITCH], mixer_in.pitch);
       mixer_in.roll = sliding_avg_calc(output_avg[AVG_ROLL], mixer_in.roll);
       mixer_in.yaw = sliding_avg_calc(output_avg[AVG_YAW], mixer_in.yaw);
       mixer_in.gas = sliding_avg_calc(output_avg[AVG_GAS], mixer_in.gas);
+      
+      /* write data to motor mixer: */
       EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&mixer_in));
    }
 }

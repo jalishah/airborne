@@ -32,7 +32,6 @@ static int is_initialized = 0;
 static serialport_t port;
 static int setting;
 
-static const char *serial_port;
 
 
 #define DREQ_THREAD_TIMEOUT_MS 1000
@@ -292,6 +291,9 @@ int fc_init(void)
 {
    if (!is_initialized)
    {
+      is_initialized = 1;
+
+      char *serial_port;
       opcd_param_t params[] =
       {
          {"serial_port", &serial_port},
@@ -301,7 +303,6 @@ int fc_init(void)
       opcd_params_apply("actuators.mk_fc.", params);
 
       int ret;
-      is_initialized = 1;
       /* perform initialization once here: */
       if ((ret = serial_open(&port, serial_port, 57600, ICRNL, ICANON, 0)) != 0)
       {
@@ -334,8 +335,6 @@ int fc_init(void)
    {
       LOG(LL_DEBUG, "mikrokopter interface already running");
    }
-
-
    return 0;
 }
 
