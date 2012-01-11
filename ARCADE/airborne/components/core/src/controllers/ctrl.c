@@ -29,14 +29,24 @@
 typedef struct
 {
    threadsafe_float_t alt;
-   threadsafe_float_t baro_alt;
    threadsafe_float_t x;
    threadsafe_float_t y;
+   
+   /* altitude setpoint data: */
    enum 
    {
       ALT_MODE_ULTRA, 
       ALT_MODE_BARO
    } alt_mode;
+   
+   /* yaw setpoint data: */
+   enum 
+   {
+      YAW_MODE_FIXED, 
+      YAW_MODE_POI
+   } yaw_mode;
+   threadsafe_float_t poi_x;
+   threadsafe_float_t poi_y;
 }
 ctrl_sp_t;
 
@@ -78,7 +88,7 @@ override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
 
 
 
-static int ctrl_set_yaw_setpoint(float pos, float *speed)
+int ctrl_set_yaw_setpoint(float pos, float *speed)
 {
    if (speed != NULL)
    {
@@ -100,31 +110,14 @@ static int ctrl_set_yaw_setpoint(float pos, float *speed)
  * sets the setpoint for type to val
  * returns 0 on success or EINVAL
  */
-int ctrl_set_setpoint(CtrlData *data)
+int ctrl_set_setpoint(CtrlType type, float *pos, float *speed)
 {
    int status = 0;
-   switch (data->type)
+   switch (type)
    {
       case CTRL_TYPE__YAW:
-         switch (data->yaw_type)
-         {
-            case YAW_TYPE__ABSOLUTE:
-            {
-               status = ctrl_set_yaw_setpoint(data->pos[0], data->speed);
-               break;
-            }
-            case YAW_TYPE__RELATIVE:
-            {
-               float yaw_sp = yaw_ctrl_get_pos();
-               yaw_sp += data->pos[0];
-               yaw_sp = normalize_0_2pi(yaw_sp);
-               status = ctrl_set_yaw_setpoint(yaw_sp, data->speed);
-               break;
-            }
-            case YAW_TYPE__POI:
-               break;
-         }
          LOG(LL_DEBUG, "yaw setpoint update: %f", pos[0]);
+         status = ctrl_set_yaw_setpoint(pos[0], speed);
          break;
  
       case CTRL_TYPE__GPS:
