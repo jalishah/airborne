@@ -27,7 +27,6 @@ Entry { _broadcast(); }
 {
    move              moving            { _move_activity(); }
    land              landing           { _land_activity(); }
-   rotate            nil               { _rotate_activity(); }
    Default           nil               { _error(); }
 }
 
@@ -46,7 +45,6 @@ Entry { _broadcast(); }
    done              hovering          {}
    move              moving            { _move_activity(); }
    stop              stopping          { _stop_activity(); }
-   rotate            nil               { _rotate_activity(); }
    Default           nil               { _error(); }
 }
 

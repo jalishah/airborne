@@ -1,6 +1,11 @@
 
 #
-# dispatcher takes commands and executes various checks
+# the flight manager is the central component of the arbiter
+# it
+# - takes care that the UAV system is always in a valid state by using the flight state machine
+# - accepts or rejects user commands
+# - publishes state updates via SCL
+# - manages acoustic state and error signaling
 #
 
 
@@ -15,7 +20,7 @@ class StateMachineError(Exception):
    pass
 
 
-class Dispatcher:
+class FlightManager:
 
    """takes arbiter commands and translates them into core commands"""
 
@@ -41,7 +46,7 @@ class Dispatcher:
       elif req.type == ROT:
          self._fsm.rotate()
       else:
-         raise AssertionError('could not handle request type: %f' % req.type)
+         raise ValueError('could not handle request type: %f' % req.type)
 
 
    # underscore prefixed methods are 
@@ -52,7 +57,6 @@ class Dispatcher:
 
    def _broadcast(self):
       self._sui.send(self._fsm._state)
-
 
    def _save_power_activity(self):
       print 'save_power_activity'
@@ -84,6 +88,6 @@ class Dispatcher:
       self.activity = StopActivity(self._fsm, self._core)
       self.activity.start()
 
-   def _rotate_actitivy(self):
-      print 'rotate_activity'
+   def _rotate(self):
+      print 'rotate'
 
