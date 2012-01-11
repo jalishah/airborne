@@ -8,12 +8,12 @@
 
 #include <string.h>
 #include <pthread.h>
+#include <util.h>
 #include "leds_overo.h"
-#include "../../util/threads/periodic_thread.h"
+#include <periodic_thread.h>
 #include "../lib/gpio/gpio_mosfet_singleton.h"
 #include "../lib/i2c/omap_i2c_bus.h"
 #include "../../util/time/ltime.h"
-#include "util.h"
 
 
 #define BLINK_THREAD_NAME      "led-blink"

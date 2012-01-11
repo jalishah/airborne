@@ -4,6 +4,9 @@ sensors:
       serial_path: "/dev/ttyACM0"
       serial_speed: 57600
       min_sats: 6
+   
+   voltage:
+      sysfs_path: "/sys/class/hwmon/hwmon0/device/in7_input"
 
 core:
    flash_enabled: false

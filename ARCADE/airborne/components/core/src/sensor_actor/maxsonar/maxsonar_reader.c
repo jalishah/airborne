@@ -1,13 +1,14 @@
 
 
+
+#include <util.h>
+#include <serial.h>
+#include <simple_thread.h>
+#include <threadsafe_types.h>
+#include "../../algorithms/median_filter.h"
+
 #include "maxsonar_reader.h"
 #include "maxsonar.h"
-
-#include "util.h"
-#include "../../../../../common/util/serial/serial.h"
-#include "../../util/threads/simple_thread.h"
-#include "../../util/threads/threadsafe_types.h"
-#include "../../algorithms/median_filter.h"
 
 
 #define THREAD_NAME       "maxsonar"

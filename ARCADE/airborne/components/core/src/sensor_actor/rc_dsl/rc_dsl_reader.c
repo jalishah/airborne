@@ -1,8 +1,8 @@
 
-#include "util.h"
+#include <util.h>
 #include <serial.h>
 #include <simple_thread.h>
-#include "../../util/opcd_params/opcd_params.h"
+#include <opcd_params.h>
 #include "../../util/time/ltime.h"
 
 

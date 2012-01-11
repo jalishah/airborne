@@ -31,6 +31,7 @@
 #include "sensor_actor/interfaces/ahrs.h"
 #include "sensor_actor/interfaces/gps.h"
 #include "sensor_actor/interfaces/motors.h"
+#include "sensor_actor/voltage/voltage_reader.h"
 #include "util/time/ltime.h"
 #include "algorithms/sliding_avg.h"
 #include "model/model.h"
@@ -117,6 +118,7 @@ void _main(int argc, char *argv[])
    ultra_altimeter_init();
    ahrs_init();
    motors_init();
+   voltage_reader_start();
    //gps_init();
    
 
@@ -173,6 +175,7 @@ void _main(int argc, char *argv[])
 
       /* write data to motor mixer: */
       EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&mixer_in));
+      EVERY_N_TIMES(300, printf("%f\n", voltage_reader_get()));
    }
 }
 
