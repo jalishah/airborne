@@ -156,6 +156,7 @@ float yaw_ctrl_step(float *err_out, float yaw, float _speed, float dt)
       float speed_setpoint = -speed_func(err);
       float speed_err = speed_setpoint - _speed;
       yaw_ctrl = pid_control(&controller, speed_err, dt);
+      printf("%f, %f, %f\n", err, speed_setpoint, yaw_ctrl);
    }
    *err_out = err;
    return yaw_ctrl;

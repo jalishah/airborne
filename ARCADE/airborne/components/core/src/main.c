@@ -129,10 +129,11 @@ void _main(int argc, char *argv[])
    cmd_init();
    
    /* prepare main loop: */
-   for (int n = 0; n < NUM_AVG; n++)
+   for (int i = 0; i < NUM_AVG; i++)
    {
-      output_avg[n] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
+      output_avg[i] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
    }
+
    LOG(LL_INFO, "system up and running");
    struct timespec ts_curr;
    struct timespec ts_prev;
@@ -163,13 +164,13 @@ void _main(int argc, char *argv[])
       /* execute controller step: */
       mixer_in_t mixer_in;
       ctrl_step(&mixer_in, dt, &model_state);
-
+ 
       /* set up mixer input:  */
       mixer_in.pitch = sliding_avg_calc(output_avg[AVG_PITCH], mixer_in.pitch);
       mixer_in.roll = sliding_avg_calc(output_avg[AVG_ROLL], mixer_in.roll);
       mixer_in.yaw = sliding_avg_calc(output_avg[AVG_YAW], mixer_in.yaw);
       mixer_in.gas = sliding_avg_calc(output_avg[AVG_GAS], mixer_in.gas);
-      
+
       /* write data to motor mixer: */
       EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&mixer_in));
    }

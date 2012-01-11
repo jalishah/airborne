@@ -197,7 +197,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
     * prepare and run controllers:
     */
    float err_x = pos_x - threadsafe_float_get(&sp.x);
-   float err_y =  pos_y - threadsafe_float_get(&sp.y);
+   float err_y = pos_y - threadsafe_float_get(&sp.y);
  
    /*
     * run controllers:
@@ -225,7 +225,6 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                               acc_x, acc_y, dt, yaw};
    navi_output_t navi_output;
    navigator_run(&navi_output, &navi_input);
-
    if (threadsafe_int_get(&angle_cal))
    {
       navi_output.pitch = 0.0;

@@ -5,20 +5,14 @@
  * author: tobi
  */
 
-#ifndef BMP085_H
-#define BMP085_H
+#ifndef __BMP085_READER_H__
+#define __BMP085_READER_H__
 
 
-#include "../../interfaces/altimeter.h"
-#include "../../lib/i2c/interface/i2c_generic.h"
+float bmp085_reader_get_alt(void);
+
+int bmp085_reader_init(void);
 
 
-int bmp085_initialize(void);
-
-int bmp085_read(alt_t *data_out);
-
-int bmp085_finalize(void);
-
-
-#endif /* BMP085_H */
+#endif /* __BMP085_READER_H__ */
 

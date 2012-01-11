@@ -35,20 +35,20 @@ static sliding_avg_t *avg;
 
 static i2c_dev_t device;
 static bmp085_ctx_t context;
-static float start_alt;
 
 
 SIMPLE_THREAD_BEGIN(thread_func)
 {
    bmp085_read_temperature(&device, &context);
    float pressure = bmp085_read_pressure(&device, &context);
-   start_alt = 44330.75 * (1.0 - pow(pressure / 101325.0, 0.19029));
+   float start_alt = 44330.75 * (1.0 - pow(pressure / 101325.0, 0.19029));
 
    SIMPLE_THREAD_LOOP_BEGIN
    {
       bmp085_read_temperature(&device, &context);
       pressure = bmp085_read_pressure(&device, &context);
       float _alt = 44330.75 * (1.0 - pow(pressure / 101325.0, 0.19029)) - start_alt;
+      _alt = sliding_avg_calc(avg, _alt);
       threadsafe_float_set(&alt, _alt);
       msleep(1);
    }
@@ -74,7 +74,7 @@ int bmp085_reader_init(void)
       return status;   
    }
 
-   avg = sliding_avg_create(40, 0.0f);
+   avg = sliding_avg_create(20, 0.0f);
    simple_thread_start(&thread, thread_func,
                        THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
