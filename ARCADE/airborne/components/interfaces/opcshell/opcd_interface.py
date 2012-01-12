@@ -28,7 +28,8 @@ class OPCD_Interface:
       req.type = CtrlReq.GET
       req.id = id
       rep = self._send_and_recv(req)
-      assert rep.status == 0
+      if rep.status != 0:
+         raise KeyError
       pairs = []
       for pair in rep.pairs:
          for type in self.map.values():
@@ -51,7 +52,9 @@ class OPCD_Interface:
       req.type = CtrlReq.SET
       req.id = id
       setattr(req.val, self.map[val.__class__], val)
-      return self._send_and_recv(req).status
+      rep = self._send_and_recv(req)
+      if rep.status != 0:
+         raise KeyError
 
 
    def persist(self):

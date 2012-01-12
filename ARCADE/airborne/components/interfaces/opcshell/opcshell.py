@@ -25,10 +25,16 @@ _pp = pprint.PrettyPrinter(indent = 3)
 
 
 def get(key = ''):
-   _pp.pprint(_interface.get(key))
+   try:
+      _pp.pprint(_interface.get(key))
+   except KeyError:
+      print('key not found')
 
 def set(key, val):
-   print 'status:', _interface.set(key, val)
+   try:
+      _interface.set(key, val)
+   except KeyError:
+      print('key not found')
 
 def persist():
    print 'status:', _interface.persist()
