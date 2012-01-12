@@ -5,9 +5,6 @@ sensors:
       serial_speed: 57600
       min_sats: 6
    
-   voltage:
-      sysfs_path: "/sys/class/hwmon/hwmon0/device/in7_input"
-
 core:
    flash_enabled: false
 
@@ -82,4 +79,7 @@ core:
          process_covar: 1.0e-6
          mag_covar: 1.0e-3
          acc_covar: 1000.0
+      
+      voltage:
+         sysfs_path: "/sys/class/hwmon/hwmon0/device/in7_input"
 

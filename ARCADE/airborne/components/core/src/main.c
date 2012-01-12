@@ -175,7 +175,6 @@ void _main(int argc, char *argv[])
 
       /* write data to motor mixer: */
       EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&mixer_in));
-      EVERY_N_TIMES(300, printf("%f\n", voltage_reader_get()));
    }
 }
 
