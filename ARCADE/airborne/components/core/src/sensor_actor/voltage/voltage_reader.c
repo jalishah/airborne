@@ -18,7 +18,7 @@
 
 static simple_thread_t thread;
 static char *sysfs_path = NULL;
-threadsafe_float_t voltage;
+static threadsafe_float_t voltage;
 
 
 SIMPLE_THREAD_BEGIN(thread_func)
