@@ -2,6 +2,7 @@
 !.gitignore
 !*.sh
 !ARCADE
+!toolchains
 !CMakeLists.txt
 !common
 !README.md
