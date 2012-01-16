@@ -10,11 +10,9 @@
 #include <opcd_params.h>
 #include <periodic_thread.h>
 #include <threadsafe_types.h>
+#include <sclhelper.h>
+#include <monitor_data.pb-c.h>
 #include <util.h>
-#include <udp4.h>
-#include <debug_buffer.h>
-#include <debug_protobuf.h>
-#include <debug_data.pb-c.h>
 
 #include "navi.h"
 #include "ctrl.h"
@@ -56,9 +54,8 @@ static controller_errors_t errors;
 static ctrl_sp_t sp;
 
 
-static udp_socket_t *udp_socket = NULL;
-static debug_buffer_t *debug_buffer = NULL;
-static periodic_thread_t debug_thread;
+static pthread_mutex_t scl_mutex = PTHREAD_MUTEX_INITIALIZER;
+static periodic_thread_t monitor_thread;
 
 static pid_controller_t pitch_controller;
 static pid_controller_t roll_controller;
@@ -70,9 +67,9 @@ static threadsafe_float_t angle_d;
 static threadsafe_float_t pitch_bias;
 static threadsafe_float_t roll_bias;
 static threadsafe_int_t angle_cal;
-static char *debug_host;
-static threadsafe_int_t debug_port;
-
+static void *socket = NULL;
+static CoreMonData mon_data = CORE_MON_DATA__INIT;
+static periodic_thread_t thread;
 
 
 static struct
@@ -165,15 +162,13 @@ size_t ctrl_get_err(float *out, CtrlType type)
 }
 
 
-PERIODIC_THREAD_BEGIN(debug_thread_func)
+PERIODIC_THREAD_BEGIN(thread_func)
 {
    PERIODIC_THREAD_LOOP_BEGIN
    {
-      debug_buffer_lock(debug_buffer);
-      binary_data_t bindata = debug_protobuf_pack(debug_buffer);
-      debug_buffer_unlock(debug_buffer);
-      udp_socket_send(udp_socket, bindata.data, bindata.size);
-      free(bindata.data);
+      pthread_mutex_lock(&scl_mutex);
+      SCL_PACK_AND_SEND_DYNAMIC(socket, core_mon_data, mon_data);
+      pthread_mutex_unlock(&scl_mutex);
    }
    PERIODIC_THREAD_LOOP_END
 }
@@ -240,25 +235,40 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                              -model_state->roll.angle + symmetric_limit(navi_output.roll, 0.17)
                              + threadsafe_float_get(&roll_bias), dt);
 
-   if (0) //debug_buffer_trylock(debug_buffer) == 0)
+   if (pthread_mutex_trylock(&scl_mutex) == 0)
    {
-      debug_buffer_reset(debug_buffer);
-      debug_buffer_add(debug_buffer, KEY_TYPE__PITCH, model_state->pitch.angle);
-      debug_buffer_add(debug_buffer, KEY_TYPE__ROLL, model_state->roll.angle);
-      debug_buffer_add(debug_buffer, KEY_TYPE__YAW, model_state->yaw.angle);
-      debug_buffer_add(debug_buffer, KEY_TYPE__POS_X, model_state->x.pos);
-      debug_buffer_add(debug_buffer, KEY_TYPE__POS_Y, model_state->y.pos);
-      debug_buffer_add(debug_buffer, KEY_TYPE__POS_Z, model_state->ultra_z.pos);
-      debug_buffer_add(debug_buffer, KEY_TYPE__SPEED_X, model_state->x.speed);
-      debug_buffer_add(debug_buffer, KEY_TYPE__SPEED_Y, model_state->y.speed);
-      debug_buffer_add(debug_buffer, KEY_TYPE__SPEED_Z, model_state->ultra_z.speed);
-      debug_buffer_add(debug_buffer, KEY_TYPE__ACC_X, model_state->x.acc);
-      debug_buffer_add(debug_buffer, KEY_TYPE__ACC_Y, model_state->y.acc);
-      debug_buffer_add(debug_buffer, KEY_TYPE__ACC_Z, model_state->ultra_z.acc);
-      debug_buffer_add(debug_buffer, KEY_TYPE__SETPOINT_X, threadsafe_float_get(&sp.x));
-      debug_buffer_add(debug_buffer, KEY_TYPE__SETPOINT_Y, threadsafe_float_get(&sp.y));
-      debug_buffer_add(debug_buffer, KEY_TYPE__SETPOINT_Z, threadsafe_float_get(&sp.alt));
-      debug_buffer_unlock(debug_buffer);
+      /* angles / angle rates: */
+      mon_data.pitch = model_state->pitch.angle;
+      mon_data.roll = model_state->roll.angle;
+      mon_data.yaw = model_state->yaw.angle;
+      
+      /* position / speeds / accelerations: */
+      mon_data.pitch_speed = model_state->pitch.speed;
+      mon_data.roll_speed = model_state->roll.speed;
+      mon_data.yaw_speed = model_state->yaw.speed;
+      
+      mon_data.x = model_state->x.pos;
+      mon_data.y = model_state->y.pos;
+      mon_data.z = model_state->baro_z.pos;
+      
+      mon_data.x_speed = model_state->x.speed;
+      mon_data.y_speed = model_state->y.speed;
+      mon_data.z_speed = model_state->baro_z.speed;
+      
+      mon_data.x_acc = model_state->x.acc;
+      mon_data.y_acc = model_state->y.acc;
+      mon_data.z_acc = model_state->baro_z.acc;
+
+      /* setpoints: */
+      mon_data.setpoint_x = threadsafe_float_get(&sp.x);
+      mon_data.setpoint_y = threadsafe_float_get(&sp.y);
+      mon_data.setpoint_z = threadsafe_float_get(&sp.alt);
+      
+      /* other useful stuff: */
+      mon_data.batt_voltage = 16.0;
+      mon_data.batt_current = 20.0;
+
+      pthread_mutex_unlock(&scl_mutex);
    }
 
    /* write error state variables: */
@@ -324,8 +334,6 @@ void ctrl_init(void)
    /* load parameters: */
    opcd_param_t params[] =
    {
-      {"debug_host", &debug_host},
-      {"debug_port", &debug_port},
       {"angle.p", &angle_p.value},
       {"angle.i", &angle_i.value},
       {"angle.i_max", &angle_i_max.value},
@@ -336,6 +344,8 @@ void ctrl_init(void)
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.", params);
+   
+   socket = scl_get_socket("mon_data");
 
    /* initialize setpoints: */
    threadsafe_float_init(&sp.alt, 1.0f);
@@ -348,11 +358,9 @@ void ctrl_init(void)
    threadsafe_float_init(&errors.x_error, 0.0f);
    threadsafe_float_init(&errors.y_error, 0.0f);
 
-   /* create debug connection: */
-   udp_socket = udp_socket_create(debug_host, threadsafe_int_get(&debug_port), 1, 0);
-   debug_buffer = debug_buffer_create(128);
-   const struct timespec debug_thread_period = {0, 100 * NSEC_PER_MSEC};
-   periodic_thread_start(&debug_thread, debug_thread_func, "debug_thread", 0, debug_thread_period, NULL);
+   /* create monitoring connection: */
+   const struct timespec period = {0, 100 * NSEC_PER_MSEC};
+   periodic_thread_start(&thread, thread_func, "mon_thread", 0, period, NULL);
 
    /* initialize controllers and navi: */
    pid_init(&pitch_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);

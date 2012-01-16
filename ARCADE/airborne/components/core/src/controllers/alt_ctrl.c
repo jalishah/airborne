@@ -52,7 +52,7 @@ float alt_ctrl_step(float alt_err, float speed, float dt)
    else
    {
       gas = 0.5f + pid_control(&controller, spd_err, dt);
-      EVERY_N_TIMES(50, printf("%f, %f\n", gas, spd_err));
+      //EVERY_N_TIMES(50, printf("%f, %f\n", gas, spd_err));
    }
    return gas;
 }

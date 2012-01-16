@@ -1,0 +1,35 @@
+
+message CoreMonData
+{
+   required float pitch = 1;
+   required float roll = 2;
+   required float yaw = 3;
+
+   required float pitch_speed = 4;
+   required float roll_speed = 5;
+   required float yaw_speed = 6;
+
+   required float x = 7;
+   required float y = 8;
+   required float z = 9;
+
+   required float x_speed = 10;
+   required float y_speed = 11;
+   required float z_speed = 12;
+   
+   required float x_acc = 13;
+   required float y_acc = 14;
+   required float z_acc = 15;
+   
+   required float gps_start_lon = 16;
+   required float gps_start_lat = 17;
+   required float gps_start_alt = 18;
+
+   required float setpoint_x = 19;
+   required float setpoint_y = 20;
+   required float setpoint_z = 21;
+
+   required float batt_voltage = 22;
+   required float batt_current = 23;
+}
+
