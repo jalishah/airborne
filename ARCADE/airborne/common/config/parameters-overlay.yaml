@@ -10,8 +10,12 @@ core:
          speed_p: 0.1
    logger:
       details: 10
+      level: 2
    model:
       x_acc_avg: 0.3378201425075531
       y_acc_avg: -0.24202167987823486
       z_acc_avg: -9.68555736541748
+   sensors:
+      chr_6dm:
+         serial_port: /dev/ttyUSB3
 

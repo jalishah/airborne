@@ -235,7 +235,6 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                              -model_state->roll.angle + symmetric_limit(navi_output.roll, 0.17)
                              + threadsafe_float_get(&roll_bias), dt);
 
-   printf("hello\n");
    //pthread_mutex_lock(&scl_mutex);
    {
       /* angles / angle rates: */
@@ -361,7 +360,7 @@ void ctrl_init(void)
    threadsafe_float_init(&errors.y_error, 0.0f);
 
    /* create monitoring connection: */
-   const struct timespec period = {0, 1000 * NSEC_PER_MSEC};
+   const struct timespec period = {0, 200 * NSEC_PER_MSEC};
    periodic_thread_start(&thread, thread_func, "mon_thread", 0, period, NULL);
 
    /* initialize controllers and navi: */

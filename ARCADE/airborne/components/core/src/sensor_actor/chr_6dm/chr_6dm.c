@@ -563,10 +563,8 @@ int chr6dm_init(void)
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_broadcast_mode(&port, 0xFF), command_complete, 1);
    
    LOG(LL_INFO, "chr-6dm up and running");
- while (1)
-    sleep(1);
+   
    initialized = 1;
-
    return 0;
 }
 

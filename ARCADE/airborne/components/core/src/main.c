@@ -81,7 +81,6 @@ void _main(int argc, char *argv[])
    };
    opcd_params_apply("", params);
 
-   printf("read parameters\n");
    /* initialize logger: */
    syslog(LOG_INFO, "opening logger");
    if (logger_open() != 0)
@@ -92,7 +91,6 @@ void _main(int argc, char *argv[])
    syslog(LOG_CRIT, "logger opened");
    sleep(1); /* give zmq some time to establish
                 a link between publisher and subscriber */
-   printf("logger opened\n");
 
    LOG(LL_INFO, "+------------------+");
    LOG(LL_INFO, "|   core startup   |");
@@ -110,7 +108,6 @@ void _main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   printf("system init\n");
    /* initialize hardware/drivers: */
    omap_i2c_bus_init();
    if (threadsafe_int_get(&flash_enabled))
@@ -119,14 +116,12 @@ void _main(int argc, char *argv[])
    }
    baro_altimeter_init();
    ultra_altimeter_init();
-   printf("ahrs init\n");
    ahrs_init();
    motors_init();
-   //voltage_reader_start();
+   voltage_reader_start();
    //gps_init();
    
 
-   printf("controller init\n");
    LOG(LL_INFO, "initializing model/controller");
    model_init();
    ctrl_init();
@@ -136,7 +131,6 @@ void _main(int argc, char *argv[])
    cmd_init();
    
    /* prepare main loop: */
-   printf("cmd init\n");
    for (int i = 0; i < NUM_AVG; i++)
    {
       output_avg[i] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
@@ -160,9 +154,7 @@ void _main(int argc, char *argv[])
       /* read sensor values into model input structure: */
       model_input_t model_input;
       model_input.dt = dt;
-      printf("ahrs_read\n");
       ahrs_read(&model_input.ahrs_data);
-      printf("ahrs_read 2\n");
       gps_read(&model_input.gps_data);
       model_input.ultra_z = ultra_altimeter_read();
       model_input.baro_z = baro_altimeter_read();
