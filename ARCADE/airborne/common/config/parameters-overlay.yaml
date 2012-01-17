@@ -1,0 +1,17 @@
+
+#
+# GENERATED FILE - DO NOT EDIT!
+#
+
+core:
+   controllers:
+      yaw:
+         speed_i: 0.5
+         speed_p: 0.1
+   logger:
+      details: 10
+   model:
+      x_acc_avg: 0.3378201425075531
+      y_acc_avg: -0.24202167987823486
+      z_acc_avg: -9.68555736541748
+
