@@ -235,7 +235,8 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                              -model_state->roll.angle + symmetric_limit(navi_output.roll, 0.17)
                              + threadsafe_float_get(&roll_bias), dt);
 
-   if (pthread_mutex_trylock(&scl_mutex) == 0)
+   printf("hello\n");
+   //pthread_mutex_lock(&scl_mutex);
    {
       /* angles / angle rates: */
       mon_data.pitch = model_state->pitch.angle;
@@ -268,7 +269,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.batt_voltage = 16.0;
       mon_data.batt_current = 20.0;
 
-      pthread_mutex_unlock(&scl_mutex);
+      //pthread_mutex_unlock(&scl_mutex);
    }
 
    /* write error state variables: */
@@ -291,7 +292,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       data->pitch = pitch_ctrl_val;
       data->roll = roll_ctrl_val;
       data->yaw = yaw_ctrl_val;
-      data->gas = 1.0; //gas_ctrl_val;
+      data->gas = 0.0; //gas_ctrl_val;
    }
    pthread_mutex_unlock(&override_data.mutex);
 }
@@ -345,7 +346,8 @@ void ctrl_init(void)
    };
    opcd_params_apply("controllers.", params);
    
-   socket = scl_get_socket("mon_data");
+   socket = scl_get_socket("mon");
+   ASSERT_NOT_NULL(socket);
 
    /* initialize setpoints: */
    threadsafe_float_init(&sp.alt, 1.0f);
@@ -359,7 +361,7 @@ void ctrl_init(void)
    threadsafe_float_init(&errors.y_error, 0.0f);
 
    /* create monitoring connection: */
-   const struct timespec period = {0, 100 * NSEC_PER_MSEC};
+   const struct timespec period = {0, 1000 * NSEC_PER_MSEC};
    periodic_thread_start(&thread, thread_func, "mon_thread", 0, period, NULL);
 
    /* initialize controllers and navi: */
