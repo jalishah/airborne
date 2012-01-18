@@ -215,6 +215,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       if (raw_data_size < 0)
       {
          LOG(LL_ERROR, "scl recv failed");
+         sleep(1);
          continue;
       }
       float val_buf[2];

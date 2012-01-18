@@ -198,8 +198,8 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   _main(argc, argv);
-   //daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
+   //_main(argc, argv);
+   daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }
 

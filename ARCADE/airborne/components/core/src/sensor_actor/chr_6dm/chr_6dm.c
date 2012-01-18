@@ -551,20 +551,31 @@ int chr6dm_init(void)
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_process_covar(&port, threadsafe_float_get(&process_covar)), command_complete, 1);
 
    LOG(LL_DEBUG, "setting mag covariance to %f", threadsafe_float_get(&mag_covar));
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, threadsafe_float_get(&mag_covar)), command_complete, 1);
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, 1.0e-9), command_complete, 1);
    
    LOG(LL_DEBUG, "setting acc covariance to %f", threadsafe_float_get(&acc_covar));
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_covar(&port, threadsafe_float_get(&acc_covar)), command_complete, 1);
 
    LOG(LL_DEBUG, "resetting extended kalman filter");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_ekf_reset(&port), command_complete, 1);
-
+   
    LOG(LL_DEBUG, "enabling full-speed broadcast mode");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_broadcast_mode(&port, 0xFF), command_complete, 1);
+   initialized = 1;
+   
+   float last_yaw = 10.0;
+   while (fabs(last_yaw - imu_data.yaw) > 0.00001) //(count--)  
+   {
+      LOG(LL_INFO, "%f", fabs(last_yaw - imu_data.yaw));
+      last_yaw = imu_data.yaw;
+      msleep(100);
+   }
+   
+   LOG(LL_DEBUG, "setting mag covariance to %f", threadsafe_float_get(&mag_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, threadsafe_float_get(&mag_covar)), command_complete, 1);
    
    LOG(LL_INFO, "chr-6dm up and running");
    
-   initialized = 1;
    return 0;
 }
 

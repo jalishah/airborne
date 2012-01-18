@@ -175,6 +175,17 @@ PERIODIC_THREAD_BEGIN(thread_func)
 PERIODIC_THREAD_END
 
 
+
+/*void gps_add_offset(double *new_lat, double *new_lon, double lat, double lon, double dx, double dy)
+{
+   double delta_lon = dx / (111320.0 * cos(lat));
+   double delta_lat = dy / 110540.0;
+   *new_lon = lon + delta_lon;
+   *new_lat = lat + delta_lat;
+}*/
+
+
+
 void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
 {
    /*
@@ -251,6 +262,9 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.y = model_state->y.pos;
       mon_data.z = model_state->baro_z.pos;
       
+      mon_data.gps_start_lat = gps_start_lat();
+      mon_data.gps_start_lon = gps_start_lon();
+
       mon_data.x_speed = model_state->x.speed;
       mon_data.y_speed = model_state->y.speed;
       mon_data.z_speed = model_state->baro_z.speed;
