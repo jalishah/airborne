@@ -11,16 +11,16 @@
  *    DECLARE_THREADSAFE_TYPE(float);
  *
  * declaration of individual variable:
- *    threadsafe_float f;
+ *    tsfloat f;
  *
  * initialization phase (once):
- *    threadsafe_float_init(&f);
+ *    tsfloat_init(&f);
  *
  * in writing thread:
- *    threadsafe_float_set(&f, 1.0);
+ *    tsfloat_set(&f, 1.0);
  *
  * in reading thread:
- *    threadsafe_float_get(&f));
+ *    tsfloat_get(&f));
  */
 
 
@@ -38,15 +38,15 @@
       type value; \
       pthread_mutex_t mutex; \
    } \
-   threadsafe_##type##_t; \
+   ts##type##_t; \
    \
-   static inline void threadsafe_##type##_init(threadsafe_##type##_t *ts_var, type val) \
+   static inline void ts##type##_init(ts##type##_t *ts_var, type val) \
    { \
       pthread_mutex_init(&ts_var->mutex, NULL); \
       ts_var->value = val; \
    } \
    \
-   static inline type threadsafe_##type##_get(threadsafe_##type##_t *ts_var) \
+   static inline type ts##type##_get(ts##type##_t *ts_var) \
    { \
       type copy; \
       pthread_mutex_lock(&ts_var->mutex); \
@@ -55,14 +55,14 @@
       return copy; \
    } \
    \
-   static inline void threadsafe_##type##_set(threadsafe_##type##_t *ts_var, type data) \
+   static inline void ts##type##_set(ts##type##_t *ts_var, type data) \
    { \
       pthread_mutex_lock(&ts_var->mutex); \
       ts_var->value = data; \
       pthread_mutex_unlock(&ts_var->mutex); \
    } \
    \
-   static inline void threadsafe_##type##_copy(threadsafe_##type##_t *ts_var_a, threadsafe_##type##_t *ts_var_b) \
+   static inline void ts##type##_copy(ts##type##_t *ts_var_a, ts##type##_t *ts_var_b) \
    { \
       pthread_mutex_lock(&ts_var_a->mutex); \
       pthread_mutex_lock(&ts_var_b->mutex); \

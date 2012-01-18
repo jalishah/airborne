@@ -16,8 +16,9 @@ core:
       debug_host: "10.0.1.5"
       debug_port: 5555
       
-      angle:
-         calibrate: true
+      attitude:
+         calibrate: false
+         angle_max: 0.17
          p: 4.0
          i: 0.0
          i_max: 2.0

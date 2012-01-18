@@ -99,17 +99,17 @@ static void init_param(Value *val, char *id, void *data)
       }
       case TYPE_INT:
       {
-         threadsafe_int_init((threadsafe_int_t *)data, val->int_val);
+         tsint_init((tsint_t *)data, val->int_val);
          break;
       }
       case TYPE_FLOAT:
       {
-         threadsafe_float_init((threadsafe_float_t *)data, val->dbl_val);
+         tsfloat_init((tsfloat_t *)data, val->dbl_val);
          break;
       }
       case TYPE_BOOL:
       {
-         threadsafe_int_init((threadsafe_int_t *)data, val->bool_val);
+         tsint_init((tsint_t *)data, val->bool_val);
          break;
       }
    }
@@ -141,17 +141,17 @@ static void update_param(void *data, Pair *pair)
       }
       case TYPE_INT:
       {
-         threadsafe_int_set((threadsafe_int_t *)data, val->int_val);
+         tsint_set((tsint_t *)data, val->int_val);
          break;
       }
       case TYPE_FLOAT:
       {
-         threadsafe_float_set((threadsafe_float_t *)data, val->dbl_val);
+         tsfloat_set((tsfloat_t *)data, val->dbl_val);
          break;
       }
       case TYPE_BOOL:
       {
-         threadsafe_int_set((threadsafe_int_t *)data, val->int_val);
+         tsint_set((tsint_t *)data, val->int_val);
          break;
       }
    }

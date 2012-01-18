@@ -51,7 +51,7 @@ enum
 };
 
 
-static threadsafe_int_t flash_enabled;
+static tsint_t flash_enabled;
 static sliding_avg_t *output_avg[NUM_AVG];
 
 
@@ -110,7 +110,7 @@ void _main(int argc, char *argv[])
 
    /* initialize hardware/drivers: */
    omap_i2c_bus_init();
-   if (threadsafe_int_get(&flash_enabled))
+   if (tsint_get(&flash_enabled))
    {
       leds_overo_initialize();
    }
@@ -184,7 +184,7 @@ void _cleanup(void)
    static int killing = 0;
    if (!killing)
    {
-      if (threadsafe_int_get(&flash_enabled))
+      if (tsint_get(&flash_enabled))
       {
          leds_overo_finalize();
       }

@@ -52,9 +52,9 @@ static pthread_cond_t new_data_cond = PTHREAD_COND_INITIALIZER;
 
 static char *device_conf_file;
 static char *serial_port;
-static threadsafe_float_t process_covar;
-static threadsafe_float_t mag_covar;
-static threadsafe_float_t acc_covar;
+static tsfloat_t process_covar;
+static tsfloat_t mag_covar;
+static tsfloat_t acc_covar;
 
 
 
@@ -547,14 +547,14 @@ int chr6dm_init(void)
    LOG(LL_DEBUG, "calibrating rate gyros");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_zero_gyros(&port), gyro_bias_reported, 10);
 
-   LOG(LL_DEBUG, "setting process covariance to %f", threadsafe_float_get(&process_covar));
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_process_covar(&port, threadsafe_float_get(&process_covar)), command_complete, 1);
+   LOG(LL_DEBUG, "setting process covariance to %f", tsfloat_get(&process_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_process_covar(&port, tsfloat_get(&process_covar)), command_complete, 1);
 
-   LOG(LL_DEBUG, "setting mag covariance to %f", threadsafe_float_get(&mag_covar));
+   LOG(LL_DEBUG, "setting mag covariance to %f", tsfloat_get(&mag_covar));
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, 1.0e-9), command_complete, 1);
    
-   LOG(LL_DEBUG, "setting acc covariance to %f", threadsafe_float_get(&acc_covar));
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_covar(&port, threadsafe_float_get(&acc_covar)), command_complete, 1);
+   LOG(LL_DEBUG, "setting acc covariance to %f", tsfloat_get(&acc_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_acc_covar(&port, tsfloat_get(&acc_covar)), command_complete, 1);
 
    LOG(LL_DEBUG, "resetting extended kalman filter");
    LOOP_WHILE_COND_NOT_TRUE(chr6dm_ekf_reset(&port), command_complete, 1);
@@ -571,8 +571,8 @@ int chr6dm_init(void)
       msleep(100);
    }
    
-   LOG(LL_DEBUG, "setting mag covariance to %f", threadsafe_float_get(&mag_covar));
-   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, threadsafe_float_get(&mag_covar)), command_complete, 1);
+   LOG(LL_DEBUG, "setting mag covariance to %f", tsfloat_get(&mag_covar));
+   LOOP_WHILE_COND_NOT_TRUE(chr6dm_set_mag_covar(&port, tsfloat_get(&mag_covar)), command_complete, 1);
    
    LOG(LL_INFO, "chr-6dm up and running");
    

@@ -15,28 +15,28 @@
 
 
 static pid_controller_t controller;
-static threadsafe_float_t speed_p;
-static threadsafe_float_t speed_i;
-static threadsafe_float_t speed_imax;
-static threadsafe_float_t setpoint;
-static threadsafe_int_t manual;
+static tsfloat_t speed_p;
+static tsfloat_t speed_i;
+static tsfloat_t speed_imax;
+static tsfloat_t setpoint;
+static tsint_t manual;
 
 
 static float speed_func(float dist)
 {
-   return symmetric_limit(dist, 1.0f) * 0.6;
+   return sym_limit(dist, 1.0f) * 0.6;
 }
 
 
 void alt_setpoint_set(float yaw)
 {
-   threadsafe_float_set(&setpoint, yaw);
+   tsfloat_set(&setpoint, yaw);
 }
 
 
 float alt_setpoint_get(void)
 {
-   return threadsafe_float_get(&setpoint);
+   return tsfloat_get(&setpoint);
 }
 
 
@@ -45,7 +45,7 @@ float alt_ctrl_step(float alt_err, float speed, float dt)
    float spd_sp = speed_func(alt_err);
    float spd_err = spd_sp - speed;
    float gas;
-   if (threadsafe_int_get(&manual))
+   if (tsint_get(&manual))
    {
       gas = 1.0f;
    }
@@ -71,7 +71,7 @@ void alt_ctrl_init(void)
    };
    opcd_params_apply("controllers.altitude.", params);
 
-   threadsafe_float_init(&setpoint, 1.0f);
+   tsfloat_init(&setpoint, 1.0f);
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
 }
 

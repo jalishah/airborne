@@ -73,8 +73,8 @@ void _main(int argc, char *argv[])
    zmq_setsockopt(gps_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
    char *serial_path = "/dev/ttyACM0";
-   threadsafe_int_t serial_speed;
-   threadsafe_int_t min_sats;
+   tsint_t serial_speed;
+   tsint_t min_sats;
    
    opcd_param_t params[] =
    {
@@ -88,7 +88,7 @@ void _main(int argc, char *argv[])
    opcd_params_apply("", params);
    
    serialport_t port;
-   serial_open(&port, serial_path, threadsafe_int_get(&serial_speed), 0, 0, 0);
+   serial_open(&port, serial_path, tsint_get(&serial_speed), 0, 0, 0);
 
    nmeaPARSER parser;
    nmea_parser_init(&parser);
@@ -130,7 +130,7 @@ void _main(int argc, char *argv[])
             gps_data.time = time_str;
             
             /* set position data if a minimum of satellites is seen: */
-            if (info.satinfo.inuse >= threadsafe_int_get(&min_sats))
+            if (info.satinfo.inuse >= tsint_get(&min_sats))
             {
                /* set data for 2d fix: */
                if (info.fix >= 2)
