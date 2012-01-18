@@ -62,7 +62,7 @@ while True:
    i += 0.000001
    time_ms = int(time.time() / 10)
    flags = MAV_MODE_FLAG_AUTO_ENABLED | MAV_MODE_FLAG_STABILIZE_ENABLED | MAV_MODE_FLAG_SAFETY_ARMED
-   link.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 1, MAV_STATE_ACTIVE)
+   link.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 0, MAV_STATE_ACTIVE)
    link.global_position_int_send(time_ms, int((50.0 + i) * 1e7), int(10.0 * 1e7), 500, 0, 0, 0, 0, 0)
    link.attitude_send(time_ms, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
    
