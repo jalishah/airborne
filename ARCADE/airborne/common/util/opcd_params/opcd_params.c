@@ -10,12 +10,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <util.h>
+#include <opcd.pb-c.h>
+#include <simple_thread.h>
+#include <sclhelper.h>
+#include <threadsafe_types.h>
+
 #include "opcd_params.h"
-#include "util.h"
-#include "opcd.pb-c.h"
-#include "../threads/simple_thread.h"
-#include "../../../../../common/scl/src/sclhelper.h"
-#include "../threads/threadsafe_types.h"
 
 
 #define THREAD_NAME     "opcd_event_handler"

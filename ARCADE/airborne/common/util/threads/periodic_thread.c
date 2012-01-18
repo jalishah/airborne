@@ -14,7 +14,6 @@
 
 
 #include "util.h"
-//#include "../time/ltime.h"
 #include "periodic_thread.h"
 #include "thread_config.h"
 
