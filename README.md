@@ -26,7 +26,7 @@ The general folder structure is shown below:
 The key motivation behind this structure is to support code-reuse while keeping conceptually different parts of the software system in different repositories (plug-in concept).
 Thus, our system has the following benefits:
 
-* a standard structure, comparable with the Linux filesystem having fixed file locations at 3 hierarchy levels in the filesystem (config, messages, scripts)
+* a standard structure, comparable with the Linux filesystem having fixed file locations at 3 hierarchy levels (1-3) in the filesystem. Repeating directories are for example: config, messages, scripts.
 * code reuse between distinct projects like ARCADE and OSPECOR (__"level 1"__ common) keeps systems maintainable through submodules
 * support for automatic export of environment variables through multiple bashrc files
 * defining different software architectures (__"level 2"__ common) for multiple deployment targets (UAV, PC, ...)
