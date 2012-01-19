@@ -9,7 +9,7 @@ core:
    flash_enabled: false
 
    logger:
-      level: 3
+      level: 4
       details: 2
 
    controllers:

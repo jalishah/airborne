@@ -37,6 +37,7 @@ chr_6dm
 algorithms
 # sensor actor support:
 i2c gpio twl4030_madc serial logger opcd_params voltage threads ltime lmath scl
+zmq_inproc
 # ARCADE libraries
 util network_messages
 scl_messages

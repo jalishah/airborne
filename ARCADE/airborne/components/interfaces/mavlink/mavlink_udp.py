@@ -45,10 +45,8 @@ while True:
    mon.ParseFromString(str)
    time_ms = int(time.time() / 10)
    flags = MAV_MODE_FLAG_AUTO_ENABLED | MAV_MODE_FLAG_STABILIZE_ENABLED | MAV_MODE_FLAG_SAFETY_ARMED
-   link.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 1, MAV_STATE_ACTIVE)
-   #link.global_position_int_send(time_ms, int(50.0 * 1e7), int(10.0 * 1e7), 500 * 1000, 0, 0, 0, 0, 0)
+   link.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 0, MAV_STATE_ACTIVE)
    lat, lon = gps_add_meters(mon.gps_start_lat, mon.gps_start_lon, mon.x, mon.y);
-   print lat, lon
    link.global_position_int_send(time_ms, lat, lon, 0, 0, 0, 0, 0, 0)
    link.attitude_send(time_ms, mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
    
