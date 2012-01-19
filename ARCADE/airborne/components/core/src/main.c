@@ -110,10 +110,6 @@ void _main(int argc, char *argv[])
 
    /* initialize hardware/drivers: */
    omap_i2c_bus_init();
-   if (tsint_get(&flash_enabled))
-   {
-      leds_overo_initialize();
-   }
    baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
@@ -134,6 +130,11 @@ void _main(int argc, char *argv[])
    for (int i = 0; i < NUM_AVG; i++)
    {
       output_avg[i] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
+   }
+
+   if (tsint_get(&flash_enabled))
+   {
+      leds_overo_initialize();
    }
 
    LOG(LL_INFO, "system up and running");
