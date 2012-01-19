@@ -35,14 +35,14 @@
 
 
 /* configuration parameters: */
-static threadsafe_float_t process_noise;
-static threadsafe_float_t ultra_noise;
-static threadsafe_float_t baro_noise;
-static threadsafe_float_t gps_noise;
-static threadsafe_int_t acc_avg_update_s;
-static threadsafe_float_t x_acc_avg_conf;
-static threadsafe_float_t y_acc_avg_conf;
-static threadsafe_float_t z_acc_avg_conf;
+static tsfloat_t process_noise;
+static tsfloat_t ultra_noise;
+static tsfloat_t baro_noise;
+static tsfloat_t gps_noise;
+static tsint_t acc_avg_update_s;
+static tsfloat_t x_acc_avg_conf;
+static tsfloat_t y_acc_avg_conf;
+static tsfloat_t z_acc_avg_conf;
 
 /* kalman filters: */
 static kalman_t *ultra_z_kalman;
@@ -51,11 +51,11 @@ static kalman_t *y_kalman;
 static kalman_t *x_kalman;
 
 /* threadsafe state variables: */
-static threadsafe_float_t yaw;
-static threadsafe_float_t baro_alt;
-static threadsafe_float_t ultra_alt;
-static threadsafe_float_t x;
-static threadsafe_float_t y;
+static tsfloat_t yaw;
+static tsfloat_t baro_alt;
+static tsfloat_t ultra_alt;
+static tsfloat_t x;
+static tsfloat_t y;
 
 /* averages: */
 static sliding_avg_t *y_acc_avg;
@@ -71,31 +71,31 @@ static simple_thread_t thread;
 
 float model_get_yaw(void)
 {
-   return threadsafe_float_get(&yaw);
+   return tsfloat_get(&yaw);
 }
 
 
 float model_get_ultra_alt(void)
 {
-   return threadsafe_float_get(&ultra_alt);
+   return tsfloat_get(&ultra_alt);
 }
 
 
 float model_get_baro_alt(void)
 {
-   return threadsafe_float_get(&baro_alt);
+   return tsfloat_get(&baro_alt);
 }
 
 
 float model_get_x(void)
 {
-   return threadsafe_float_get(&x);
+   return tsfloat_get(&x);
 }
 
 
 float model_get_y(void)
 {
-   return threadsafe_float_get(&y);
+   return tsfloat_get(&y);
 }
 
 
@@ -214,11 +214,11 @@ void model_step(model_state_t *out, model_input_t *in)
                 );
   
    /* set accessable state variables: */
-   threadsafe_float_set(&yaw, out->yaw.angle);
-   threadsafe_float_set(&x, out->x.pos);
-   threadsafe_float_set(&y, out->y.pos);
-   threadsafe_float_set(&baro_alt, out->baro_z.pos);
-   threadsafe_float_set(&ultra_alt, out->ultra_z.pos);
+   tsfloat_set(&yaw, out->yaw.angle);
+   tsfloat_set(&x, out->x.pos);
+   tsfloat_set(&y, out->y.pos);
+   tsfloat_set(&baro_alt, out->baro_z.pos);
+   tsfloat_set(&ultra_alt, out->ultra_z.pos);
 
 }
 
@@ -227,7 +227,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
-      sleep(1); //sleep(threadsafe_int_get(&acc_avg_update_s));
+      sleep(1); //sleep(tsint_get(&acc_avg_update_s));
       opcd_float_param_set("core.model.x_acc_avg", sliding_avg_get(x_acc_avg));
       opcd_float_param_set("core.model.y_acc_avg", sliding_avg_get(y_acc_avg));
       opcd_float_param_set("core.model.z_acc_avg", sliding_avg_get(z_acc_avg));
@@ -256,10 +256,10 @@ void model_init(void)
    };
    opcd_params_apply("model.", params);
    LOG(LL_DEBUG, "process noise: %f, ultra noise: %f, baro noise: %f, gps noise: %f\n",
-       threadsafe_float_get(&process_noise),
-       threadsafe_float_get(&ultra_noise),
-       threadsafe_float_get(&baro_noise),
-       threadsafe_float_get(&gps_noise));
+       tsfloat_get(&process_noise),
+       tsfloat_get(&ultra_noise),
+       tsfloat_get(&baro_noise),
+       tsfloat_get(&gps_noise));
 
 
    socket = scl_get_socket("kalman");
@@ -269,20 +269,20 @@ void model_init(void)
    
    kalman_config_t alt_kalman_config = 
    {
-      threadsafe_float_get(&process_noise),
-      threadsafe_float_get(&ultra_noise)
+      tsfloat_get(&process_noise),
+      tsfloat_get(&ultra_noise)
    };
    
    kalman_config_t baro_kalman_config = 
    {
-      threadsafe_float_get(&process_noise), 
-      threadsafe_float_get(&baro_noise)
+      tsfloat_get(&process_noise), 
+      tsfloat_get(&baro_noise)
    };
    
    kalman_config_t lateral_kalman_config = 
    {
-      threadsafe_float_get(&process_noise),
-      threadsafe_float_get(&gps_noise)
+      tsfloat_get(&process_noise),
+      tsfloat_get(&gps_noise)
    };
 
    /* create kalman filters: */
@@ -292,20 +292,20 @@ void model_init(void)
    baro_z_kalman = kalman_create(&baro_kalman_config, &kalman_state);
    
    /* initialize accessable state variables: */
-   threadsafe_float_init(&yaw, 0.0);
-   threadsafe_float_init(&baro_alt, 0.0);
-   threadsafe_float_init(&ultra_alt, 0.0);
-   threadsafe_float_init(&x, 0.0);
-   threadsafe_float_init(&y, 0.0);
+   tsfloat_init(&yaw, 0.0);
+   tsfloat_init(&baro_alt, 0.0);
+   tsfloat_init(&ultra_alt, 0.0);
+   tsfloat_init(&x, 0.0);
+   tsfloat_init(&y, 0.0);
 
    /* set-up body to world coordinate transformation: */
    btw = body_to_world_create();
 
    /* intitialize averages: */
    const int ACC_AVG_SIZE = 10000;
-   x_acc_avg = sliding_avg_create(ACC_AVG_SIZE, threadsafe_float_get(&x_acc_avg_conf));
-   y_acc_avg = sliding_avg_create(ACC_AVG_SIZE, threadsafe_float_get(&y_acc_avg_conf));
-   z_acc_avg = sliding_avg_create(ACC_AVG_SIZE, threadsafe_float_get(&z_acc_avg_conf));
+   x_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&x_acc_avg_conf));
+   y_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&y_acc_avg_conf));
+   z_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&z_acc_avg_conf));
    
    /* start acc avg updater: */
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);

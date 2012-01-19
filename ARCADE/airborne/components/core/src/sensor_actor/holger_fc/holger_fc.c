@@ -50,7 +50,7 @@ static simple_thread_t sread_thread;
 
 static float start_baro = 0.0;
 
-static threadsafe_float_t altitude;
+static tsfloat_t altitude;
 static health_data_t health_data;
 
 static float *rpm = NULL;
@@ -81,7 +81,7 @@ int health_read(health_data_t *data_out)
 float fc_read_alt(void)
 {
    ASSERT_TRUE(sread_thread.running && dreq_thread.running);
-   return threadsafe_float_get(&altitude);
+   return tsfloat_get(&altitude);
 }
 
 
@@ -122,7 +122,7 @@ static void scmd_multiplex(in_cmd_t command, const plchar_t *payload)
          {
             start_baro = debug_data->analog[5] * 0.06;
          }
-         threadsafe_float_set(&altitude, debug_data->analog[5] * 0.06 - start_baro);
+         tsfloat_set(&altitude, debug_data->analog[5] * 0.06 - start_baro);
          
          /*
           * read motor rpm:

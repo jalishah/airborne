@@ -14,16 +14,16 @@
 
 
 /* configurable parameters: */
-static threadsafe_float_t speed_p;
-static threadsafe_float_t speed_min;
-static threadsafe_float_t speed_std;
-static threadsafe_float_t speed_max;
-static threadsafe_float_t sqrt_shift;
-static threadsafe_float_t sqrt_scale;
-static threadsafe_float_t square_shift;
-static threadsafe_float_t pos_i;
-static threadsafe_float_t pos_i_max;
-static threadsafe_float_t ortho_p;
+static tsfloat_t speed_p;
+static tsfloat_t speed_min;
+static tsfloat_t speed_std;
+static tsfloat_t speed_max;
+static tsfloat_t sqrt_shift;
+static tsfloat_t sqrt_scale;
+static tsfloat_t square_shift;
+static tsfloat_t pos_i;
+static tsfloat_t pos_i_max;
+static tsfloat_t ortho_p;
 
 
 /* vectors for use in navigation algorithm: */
@@ -46,18 +46,18 @@ static vector2d_t setpoints_dir;
 static vector2d_t virt_pos_err;
 
 static rot2d_context_t *rot2d_context;
-static threadsafe_float_t travel_speed;
+static tsfloat_t travel_speed;
 
 
 float desired_speed(float dist)
 {
-   float _square_shift = threadsafe_float_get(&square_shift);
+   float _square_shift = tsfloat_get(&square_shift);
    if (dist < _square_shift)
    {
       return 0.0f;
    }
-   float _sqrt_shift = threadsafe_float_get(&sqrt_shift);
-   float _sqrt_scale = threadsafe_float_get(&sqrt_scale);
+   float _sqrt_shift = tsfloat_get(&sqrt_shift);
+   float _sqrt_scale = tsfloat_get(&sqrt_scale);
    float meet_dist = 1.0f / 3.0f * (4.0f * _sqrt_shift - _square_shift);
    if (dist < meet_dist)
    {
@@ -65,7 +65,7 @@ float desired_speed(float dist)
       return square_scale * pow(dist - _square_shift, 2.0f);
    }
    float speed = _sqrt_scale * sqrt(dist - _sqrt_shift);
-   float _speed_max = threadsafe_float_get(&speed_max);
+   float _speed_max = tsfloat_get(&speed_max);
    if (speed > _speed_max)
    {
       speed = _speed_max;
@@ -131,17 +131,17 @@ void navigator_reset(void)
 
 void navigator_reset_travel_speed(void)
 {
-   threadsafe_float_set(&travel_speed, threadsafe_float_get(&speed_std));
+   tsfloat_set(&travel_speed, tsfloat_get(&speed_std));
 }
 
 
 int navigator_set_travel_speed(float speed)
 {
-   if (speed > threadsafe_float_get(&speed_max) || speed < threadsafe_float_get(&speed_min))
+   if (speed > tsfloat_get(&speed_max) || speed < tsfloat_get(&speed_min))
    {
       return -1;
    }
-   threadsafe_float_set(&travel_speed, speed);
+   tsfloat_set(&travel_speed, speed);
    return 0;
 }
 
@@ -170,7 +170,7 @@ void navigator_run(navi_output_t *output, const navi_input_t *input)
    vector2d_sub(&setpoints_dir, &dest_pos, &prev_dest_pos);
    vector2d_orthogonal_right(&ortho_vec, &setpoints_dir);
    vector2d_project(&ortho_pos_err, &pos_err, &ortho_vec);
-   vector2d_scalar_multiply(&ortho_thrust, threadsafe_float_get(&ortho_p), &ortho_pos_err);
+   vector2d_scalar_multiply(&ortho_thrust, tsfloat_get(&ortho_p), &ortho_pos_err);
  
    /* calculate speed setpoint vector: */
    vector2d_copy(&virt_dest_pos, &dest_pos);
@@ -182,21 +182,21 @@ void navigator_run(navi_output_t *output, const navi_input_t *input)
 
    /* caluclate error sum for "i-part" of controller,
       if sum is below pos_i_max: */
-   if (vector2d_length(&pos_err_sum) < threadsafe_float_get(&pos_i_max))
+   if (vector2d_length(&pos_err_sum) < tsfloat_get(&pos_i_max))
    {
-      float _speed_max = threadsafe_float_get(&speed_max);
+      float _speed_max = tsfloat_get(&speed_max);
       float i_weight = (_speed_max - desired_speed(target_dist)) / _speed_max;
-      vector2d_scalar_multiply(&pos_err_addend, input->dt * threadsafe_float_get(&pos_i) * i_weight, &pos_err);
+      vector2d_scalar_multiply(&pos_err_addend, input->dt * tsfloat_get(&pos_i) * i_weight, &pos_err);
       vector2d_add(&pos_err_sum, &pos_err_sum, &pos_err_addend);
    }
 
-   float speed_val = desired_speed(target_dist) * threadsafe_float_get(&travel_speed);
+   float speed_val = desired_speed(target_dist) * tsfloat_get(&travel_speed);
    vector2d_normalize(&dest_dir, &virt_pos_err);
    vector2d_scalar_multiply(&speed_setpoint, speed_val, &dest_dir);
 
    /* calculate controller thrust vector: */
    vector2d_sub(&speed_err, &speed_setpoint, &curr_speed);
-   vector2d_scalar_multiply(&world_thrust, threadsafe_float_get(&speed_p), &speed_err);
+   vector2d_scalar_multiply(&world_thrust, tsfloat_get(&speed_p), &speed_err);
 
    /* rotate according to yaw angle: */
    float in[2] = {vector2d_get_x(&world_thrust), vector2d_get_y(&world_thrust)};

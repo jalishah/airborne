@@ -20,10 +20,10 @@ message CoreMonData
    required float x_acc = 13;
    required float y_acc = 14;
    required float z_acc = 15;
-   
-   required float gps_start_lon = 16;
-   required float gps_start_lat = 17;
-   required float gps_start_alt = 18;
+
+   required double gps_start_lon = 16;
+   required double gps_start_lat = 17;
+   required double gps_start_alt = 18;
 
    required float setpoint_x = 19;
    required float setpoint_y = 20;

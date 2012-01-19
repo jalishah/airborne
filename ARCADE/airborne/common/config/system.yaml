@@ -76,13 +76,14 @@ components:
       - gps: sub
       - ctrl: rep
       - kalman: pub
-      - mon_data: pub
+      - mon: pub
       - health: pub
       - opcd_ctrl: req
       - opcd_event: sub
 
    - name: mavlink
-      - mon_data: sub
+     gates:
+      - core_mon: sub
 
    - name: opcd
      gates:
@@ -105,7 +106,7 @@ connections:
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl     ]
    - [ opcd.ctrl,                opcd_shell.ctrl    ]
    - [ localizer.kalman,         core.kalman        ]
-   - [ mavlink.mon_data,         core.mon_data      ]
+   - [ mavlink.core_mon,         core.mon      ]
    - [ remote.ctrl,              core.ctrl          ]
    - [ localizer.networks,       netscan.networks   ]
    - [ core_logger.log,          core.log           ]

@@ -15,8 +15,8 @@
 
 
 static void *socket = NULL;
-static threadsafe_int_t loglevel;
-static threadsafe_int_t details;
+static tsint_t loglevel;
+static tsint_t details;
 
 
 int logger_open(void)
@@ -45,7 +45,7 @@ void logger_write(char *file, loglevel_t level, unsigned int line, char *format,
    ASSERT_NOT_NULL(socket);
    ASSERT_NOT_NULL(file);
 
-   if (level <= (unsigned int)threadsafe_int_get(&loglevel))
+   if (level <= (unsigned int)tsint_get(&loglevel))
    {
       LogData log_data = LOG_DATA__INIT;
 
@@ -53,7 +53,7 @@ void logger_write(char *file, loglevel_t level, unsigned int line, char *format,
       log_data.level = level;
       log_data.file = file;
       log_data.line = line;
-      log_data.details = (unsigned int)threadsafe_int_get(&details);
+      log_data.details = (unsigned int)tsint_get(&details);
 
       /* set-up buffer for varg-message: */
       char message_buffer[1024];

@@ -19,10 +19,10 @@
 
 typedef struct
 {
-   threadsafe_float_t yaw_error;
-   threadsafe_float_t alt_error;
-   threadsafe_float_t x_error;
-   threadsafe_float_t y_error;
+   tsfloat_t yaw_error;
+   tsfloat_t alt_error;
+   tsfloat_t x_error;
+   tsfloat_t y_error;
 }
 controller_errors_t;
 

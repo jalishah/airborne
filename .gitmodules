@@ -5,5 +5,5 @@
 	path = ARCADE/common
 	url = git@github.com:ARCADE-UAV/common.git
 [submodule "ARCADE/airborne/components/interfaces/mavlink/pymavlink"]
-   path = ARCADE/airborne/components/interfaces/mavlink/pymavlink
-   url = git://github.com/tridge/pymavlink.git
+	path = ARCADE/airborne/components/interfaces/mavlink/pymavlink
+	url = git@github.com:ARCADE-UAV/pymavlink.git

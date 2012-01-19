@@ -23,7 +23,7 @@ static simple_thread_t thread;
 static serialport_t port;
 static maxsonar_t *sonar = NULL;
 
-static threadsafe_float_t altitude;
+static tsfloat_t altitude;
 
 
 SIMPLE_THREAD_BEGIN(thread_func)
@@ -42,9 +42,9 @@ SIMPLE_THREAD_BEGIN(thread_func)
       if (status == 1)
       {
 #ifdef USE_FILTER
-         threadsafe_float_set(&altitude, median_filter_run(&filter, maxsonar_get_dist(sonar)));
+         tsfloat_set(&altitude, median_filter_run(&filter, maxsonar_get_dist(sonar)));
 #else
-         threadsafe_float_set(&altitude, maxsonar_get_dist(sonar));
+         tsfloat_set(&altitude, maxsonar_get_dist(sonar));
 #endif
       }
    }
@@ -61,7 +61,7 @@ int maxsonar_reader_init(void)
    {
       return status;   
    }
-   threadsafe_float_init(&altitude, 0.3);
+   tsfloat_init(&altitude, 0.3);
    sonar = maxsonar_create();
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
@@ -70,6 +70,6 @@ int maxsonar_reader_init(void)
 
 float maxsonar_reader_get_alt(void)
 {
-   return threadsafe_float_get(&altitude);
+   return tsfloat_get(&altitude);
 }
 

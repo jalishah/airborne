@@ -51,7 +51,7 @@ enum
 };
 
 
-static threadsafe_int_t flash_enabled;
+static tsint_t flash_enabled;
 static sliding_avg_t *output_avg[NUM_AVG];
 
 
@@ -110,10 +110,6 @@ void _main(int argc, char *argv[])
 
    /* initialize hardware/drivers: */
    omap_i2c_bus_init();
-   if (threadsafe_int_get(&flash_enabled))
-   {
-      leds_overo_initialize();
-   }
    baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
@@ -134,6 +130,11 @@ void _main(int argc, char *argv[])
    for (int i = 0; i < NUM_AVG; i++)
    {
       output_avg[i] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
+   }
+
+   if (tsint_get(&flash_enabled))
+   {
+      leds_overo_initialize();
    }
 
    LOG(LL_INFO, "system up and running");
@@ -184,7 +185,7 @@ void _cleanup(void)
    static int killing = 0;
    if (!killing)
    {
-      if (threadsafe_int_get(&flash_enabled))
+      if (tsint_get(&flash_enabled))
       {
          leds_overo_finalize();
       }
@@ -198,8 +199,8 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   _main(argc, argv);
-   //daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
+   //_main(argc, argv);
+   daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }
 
