@@ -3,6 +3,7 @@
 !.gitmodules
 !*.sh
 !ARCADE
+!example.bashrc
 /ARCADE/airborne/common/config/parameters-overlay.yaml
 !toolchains
 !CMakeLists.txt
