@@ -7,17 +7,17 @@ The repository consists of two subrepositories, common and ARCADE/common.
 The general folder structure is shown below:
 
 * __MOBICOM__ (MOBICOM_PATH defines top-level path)
-    * __common__ MOBICOM common, aka __"level 1"__
+    * __common__ MOBICOM common, aka __"level 1 common"__
         * __scl__: signaling and communication link
         * __svctrl__: service control utility
         * __scripts__: bashrc (sourced from user bashrc)
     * __ARCADE__ (MOBICOM_PROJECT_NAME = ARCADE):
-        * __common__ ARCADE common, aka __"level 2"__
+        * __common__ ARCADE common, aka __"level 2 common"__
             * __messages__: messages formats exchanged between different ARCADE subprojects
             * __config__: common configuration files for all subprojects
             * __scripts__: bashrc (sourced from upper-level bashrc)
         * __airborne__ (MOBICOM_SUBPROJECT_NAME = airborne)
-            * __common__: network-level protobuf message definitions, aka __"level 1"__
+            * __common__: network-level protobuf message definitions, aka __"level 3 common"__
                 * __messages__: scl message formats for local system IPC
                 * __config__: system.yaml, services.yaml, parameters-*.yaml
                 * __scripts__: bashrc (sourced from upper-level bashrc)
@@ -26,11 +26,11 @@ The general folder structure is shown below:
 The key motivation behind this structure is to support code-reuse while keeping conceptually different parts of the software system in different repositories (plug-in concept).
 Thus, our system has the following benefits:
 
-* re-use code (even between separate projects like ARCADE and OSPECOR, but keep it maintainable (common repositories included as submodules)
+* re-use code (even between separate projects like ARCADE and OSPECOR (__"level 1"__ common), but keep it maintainable (common repositories included as submodules)
 * a standard structure, comparable with the Linux filesystem having fixed file locations at multiple hierarchy levels in the filesystem (config, messages, scripts)
 * support for automatic export of environment variables through multiple bashrc files
-* defining different software architectures for multiple deployment targets (UAV, PC, ...)
-* sharing code and message formats between multiple processes (components) on a single machine
+* defining different software architectures (__"level 2"__ common) for multiple deployment targets (UAV, PC, ...)
+* sharing code and message formats between multiple processes (components) on a single machine (__"level 3"__ common)
 
 ## Getting started
 
