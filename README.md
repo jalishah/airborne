@@ -7,22 +7,30 @@ The repository consists of two subrepositories, common and ARCADE/common.
 The general folder structure is shown below:
 
 * __MOBICOM__ (MOBICOM_PATH defines top-level path)
-    * __common__ (MOBICOM common)
+    * __common__ MOBICOM common, aka __"level 1"__
         * __scl__: signaling and communication link
         * __svctrl__: service control utility
         * __scripts__: bashrc (sourced from user bashrc)
     * __ARCADE__ (MOBICOM_PROJECT_NAME = ARCADE):
-        * __common__ (ARCADE common)
+        * __common__ ARCADE common, aka __"level 2"__
             * __messages__: messages formats exchanged between different ARCADE subprojects
             * __config__: common configuration files for all subprojects
             * __scripts__: bashrc (sourced from upper-level bashrc)
         * __airborne__ (MOBICOM_SUBPROJECT_NAME = airborne)
-            * __common__: network-level protobuf message definitions
+            * __common__: network-level protobuf message definitions, aka __"level 1"__
                 * __messages__: scl message formats for local system IPC
                 * __config__: system.yaml, services.yaml, parameters-*.yaml
                 * __scripts__: bashrc (sourced from upper-level bashrc)
             * __components__: programs connected through __common__ above
 
+The key motivation behind this structure is to support code-reuse while keeping conceptually different parts of the software system in different repositories (plug-in concept).
+Thus, our system has the following benefits:
+
+* re-use code (even between separate projects like ARCADE and OSPECOR, but keep it maintainable (common repositories included as submodules)
+* a standard structure, comparable with the Linux filesystem having fixed file locations at multiple hierarchy levels in the filesystem (config, messages, scripts)
+* support for automatic export of environment variables through multiple bashrc files
+* defining different software architectures for multiple deployment targets (UAV, PC, ...)
+* sharing code and message formats between multiple processes (components) on a single machine
 
 ## Getting started
 
