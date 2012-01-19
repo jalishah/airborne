@@ -1,5 +1,9 @@
 # ARCADE airborne software
 
+ARCADE airborne includes all software components which run on the ARCADE UAV system.
+The repository consists of two subrepositories, common and ARCADE/common.
+The general folder structure is shown below:
+
 * __MOBICOM__ (MOBICOM_PATH defines top-level path)
     * __common__ (MOBICOM common)
         * __scl__: signaling and communication link
