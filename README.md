@@ -38,11 +38,11 @@ The specific purpose of each level is explained as follows:
 
 In order to support this level concept we use another Unix concept: mounting filesystems.
 Within git (and github), mounting filesystems is similar to defining submodules.
-Currently, ARCADE airborne defines the followin submodules:
+Currently, the "airborne" software defines the following submodules:
 
-* common
-* ARCADE/common
-* ARCADE/airborne/components/interfaces/mavlink/pymavlink
+* common (MOBICOM common)
+* ARCADE/common (ARCADE common)
+* ARCADE/airborne/components/interfaces/mavlink/pymavlink (third-party library)
 
 
 ## Getting started
