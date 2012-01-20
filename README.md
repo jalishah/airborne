@@ -50,7 +50,9 @@ Currently, the "airborne" software defines the following submodules:
 ### General information
 
 First of all, please not that we are using [CMake](http://www.cmake.org) as a build system.
-Since CMake uses make on Linux systems and make checks file modification time, please go always sute (especially on the UAV system) that date and time are set correct.
+Since CMake uses make on Linux systems and make checks file modification time,
+please go always sure (especially on the UAV system) that the system time is correct.
+Otherwise, your build may be incomplete!
 
 ### Installing dependencies
 
