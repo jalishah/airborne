@@ -1,9 +1,9 @@
 #!/bin/sh
 
-cat .git/config | grep git@ > /dev/null
 echo -n "detected "
+cat .git/config | grep git@ > /dev/null
 if [ "$?" != "0" ]; then
-   echo -n non-
+   echo -n "non-"
    cp .gitmodules_ro .gitmodules
 else
    cp .gitmodules_rw .gitmodules
