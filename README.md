@@ -72,20 +72,26 @@ $ sudo apt-get install libtinyxml-dev graphviz  openjdk-7-jre-headless libcv-dev
     
     1.a. If you want a read-only clone, type:
 
+    ```
     git clone git://github.com/ARCADE-UAV/airborne.git MOBICOM
+    ```
 
     1.b. If you want a developer clone, type:
      
+    ```
     git clone git:@github.com:ARCADE-UAV/airborne.git MOBICOM
+    ```
 
 2. Change into the new directory and initialize the submodules (i.e. the common part of MOBICOM)
 
+    ```
     cd MOBICOM
     ./gitsub_init.sh
+    ```
 
 3. Copy the content of ```example.bashrc``` into your local bashrc and edit it if required, reinstalize your environment
 
-    ```bash
+    ```
     cat example.bashrc >> ~/.bashrc
     nano ~/.bashrc
     bash
@@ -93,13 +99,19 @@ $ sudo apt-get install libtinyxml-dev graphviz  openjdk-7-jre-headless libcv-dev
 
 4. Now, create a new build directory and build the source
 
+    ```
     mkdir build && cd build
+    ```
     
     4.a. If you are just compiling it on a regular PC for testing:
 
+    ```
     cmake .. && make
+    ```
 
     4.b If you are compiling on the UAV's ARM Cortex A8 system-on-chip:
 
+    ```
     cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/cortex_a8.cmake .. && make
+    ```
 
