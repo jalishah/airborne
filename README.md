@@ -35,30 +35,41 @@ Thus, our system has the following benefits:
 ## Getting started
 
 1. Clone the repo to your machine, make sure to call it MOBICOM (the actual project name will be a directory inside the repo)
+    
+    1.a. If you want a read-only clone, type:
 
     ```bash
-$ git clone git://github.com/ARCADE-UAV/airborne.git MOBICOM
-```
-2. Change into the new directory and initialize the submodules (i.e. the common part of MOBICOM)
-   
+    $ git clone git://github.com/ARCADE-UAV/airborne.git MOBICOM
+    ```
+
+    1.b. If you want a developer clone, type:
+
     ```bash
-$ cd ./MOBICOM
-$ ./gitsub_init.sh
-```
-    
+    $ git clone git:@github.com:ARCADE-UAV/airborne.git MOBICOM
+    ```
+
+2. Change into the new directory and initialize the submodules (i.e. the common part of MOBICOM)
+
+    ```bash
+    $ cd ./MOBICOM
+    $ ./gitsub_init.sh
+    ```
+
 3. Copy the content of ```example.bashrc``` into your local bashrc and edit it if required, reinstalize your environment
 
     ```bash
-$ cat example.bashrc >> ~/.bashrc
-$ nano ~/.bashrc
-$ bash
-```
+    $ cat example.bashrc >> ~/.bashrc
+    $ nano ~/.bashrc
+    $ bash
+    ```
 
 4. Now, create a new build directory and build the source
 
     ```bash
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-```
+    $ mkdir build && cd build
+    # if you are just compiling it on a regular PC:
+    $ cmake ..
+    # if you are compiling on ARM Cortex A8 (UAV SOC):
+    $ cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/cortex_a8.cmake ..
+    $ make
+    ```
