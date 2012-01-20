@@ -1,10 +1,10 @@
-# ARCADE "Airborne" Repository
-
-## Overview
+# ARCADE "Airborne" Software
 
 This repository includes all software components which run on the ARCADE UAV Linux system.
-The unique file system structure of our system is shown below:
 
+## Filesystem Structure
+
+The brief file system structure summary of the airborne software looks like the following:
 
 
 * __MOBICOM__ (MOBICOM_PATH defines top-level path)
