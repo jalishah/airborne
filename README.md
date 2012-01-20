@@ -32,7 +32,7 @@ Currently, we use 3 hierarchy levels (1-3) with one ever-repeating directory: "c
 "scripts" is present on all three levels. "messages" and "config" can be found on level 2 and 3.
 The specific purpose of each level is explained as follows:
 
-* __level 1__: MOBICOM inter-project code reuse and tools (SCL, svctrl)
+* __level 1__: [MOBICOM](http://www.gs-mobicom.de) inter-project code reuse and tools (SCL, svctrl)
 * __level 2__: code and configurations for heterogeneous machines (UAV, Notebook, Smartphone)
 * __level 3__: code and configurations for multiple processes (components) on a single machine, e.g. UAV
 
@@ -46,6 +46,27 @@ Currently, the "airborne" software defines the following submodules:
 
 
 ## Getting started
+
+### General information
+
+First of all, please not that we are using [CMake](http://www.cmake.org) as a build system,
+configured for [out-of-source build trees](http://www.cmake.org/Wiki/CMake_FAQ#Out-of-source_build_trees).
+Please note: CMake uses make on Linux systems and make checks file modification time,
+please go always sure (especially on the UAV system) that the system time is correct.
+Otherwise, your build might be incomplete (see [clock skew](http://www.linuxsa.org.au/pipermail/linuxsa/1999-August/008869.html))!
+
+### Installing dependencies
+
+On Ubuntu Linux:
+
+```bash
+# MOBICOM dependencies:
+$ sudo apt-get install git build-essential cmake libprotobuf-dev python-yaml protobuf-c-compiler libprotobuf-c0-dev  libzmq-dev python-zmq libyaml-dev
+# ARCADE airborne dependencies:
+$ sudo apt-get install libtinyxml-dev graphviz  openjdk-7-jre-headless libcv-dev libglib2.0-dev libmeschach-dev
+```
+
+### Building the software
 
 1. Clone the repo to your machine, make sure to call it MOBICOM (the actual project name will be a directory inside the repo)
     
