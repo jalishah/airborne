@@ -53,10 +53,32 @@ First of all, please not that we are using [CMake](http://www.cmake.org) as a bu
 
 ### Installing dependencies
 
-Ubuntu
-: [TODO]
-Gentoo
-: [TODO]
+Ubuntu:
+
+tools and library dependencies:
+
+    libtinyxml-dev
+    libprotobuf-dev
+    graphviz
+    openjdk-7-jre-headless
+    git
+    python-yaml
+    protobuf-c-compiler
+    libprotobuf-c0-dev
+    libcv-dev
+    build-essential
+    cmake
+    libglib2.0-dev
+    libzmq-dev
+    python-zmq
+    libyaml-dev
+    colorgcc
+    libmeschach-dev
+
+recommended:
+
+     colorgcc
+     vim
 
 ### Building the software
 
