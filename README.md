@@ -30,12 +30,19 @@ It is inspired by the Unix filesystem structure, which has fixed file locations 
 binaries, includes files and libraries.
 Currently, we use 3 hierarchy levels (1-3) with one ever-repeating directory: "common". Within common,
 "scripts" is present on all three levels. "messages" and "config" can be found on level 2 and 3.
-Another Unix concept - mounting filesystems - is used in our architecture using github subrepositories.
-The latter is used for code reuse on all three levels:
+The specific purpose of each level is explained as follows:
 
-* __level 1__: MOBICOM inter-project code reuse
-* __level 2__: common communication standards and configurations for multiple deployment targets (UAV, PC, ...)
-* __level 3__: common communication standards and configurations for multiple processes (components) on a single machine 
+* __level 1__: MOBICOM inter-project code reuse and tools (SCL, svctrl)
+* __level 2__: code and configurations for heterogeneous machines (UAV, Notebook, Smartphone)
+* __level 3__: code and configurations for multiple processes (components) on a single machine, e.g. UAV
+
+In order to support this level concept we use another Unix concept: mounting filesystems.
+Within git (and github), mounting filesystems is similar to defining submodules.
+Currently, ARCADE airborne defines the followin submodules:
+
+* common
+* ARCADE/common
+* ARCADE/airborne/components/interfaces/mavlink/pymavlink
 
 
 ## Getting started
