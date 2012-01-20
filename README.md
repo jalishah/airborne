@@ -47,6 +47,19 @@ Currently, the "airborne" software defines the following submodules:
 
 ## Getting started
 
+### General information
+
+First of all, please not that we are using [CMake](http://www.cmake.org) as a build system.
+
+### Installing dependencies
+
+Ubuntu
+: [TODO]
+Gentoo
+: [TODO]
+
+### Building the software
+
 1. Clone the repo to your machine, make sure to call it MOBICOM (the actual project name will be a directory inside the repo)
     
     1.a. If you want a read-only clone, type:
