@@ -50,35 +50,15 @@ Currently, the "airborne" software defines the following submodules:
 ### General information
 
 First of all, please not that we are using [CMake](http://www.cmake.org) as a build system.
+Since CMake uses make on Linux systems and make checks file modification time, please go always sute (especially on the UAV system) that date and time are set correct.
 
 ### Installing dependencies
 
-Ubuntu:
+On Ubuntu Linux:
 
-tools and library dependencies:
-
-    libtinyxml-dev
-    libprotobuf-dev
-    graphviz
-    openjdk-7-jre-headless
-    git
-    python-yaml
-    protobuf-c-compiler
-    libprotobuf-c0-dev
-    libcv-dev
-    build-essential
-    cmake
-    libglib2.0-dev
-    libzmq-dev
-    python-zmq
-    libyaml-dev
-    colorgcc
-    libmeschach-dev
-
-recommended:
-
-     colorgcc
-     vim
+```bash
+$ sudo apt-get install libtinyxml-dev libprotobuf-dev graphviz openjdk-7-jre-headless git python-yaml protobuf-c-compiler libprotobuf-c0-dev libcv-dev build-essential cmake libglib2.0-dev libzmq-dev python-zmq libyaml-dev colorgcc libmeschach-dev
+```
 
 ### Building the software
 
