@@ -60,7 +60,10 @@ Otherwise, your build might be incomplete (see [clock skew](http://www.linuxsa.o
 On Ubuntu Linux:
 
 ```bash
-$ sudo apt-get install libtinyxml-dev libprotobuf-dev graphviz openjdk-7-jre-headless git python-yaml protobuf-c-compiler libprotobuf-c0-dev libcv-dev build-essential cmake libglib2.0-dev libzmq-dev python-zmq libyaml-dev colorgcc libmeschach-dev
+# MOBICOM dependencies:
+$ sudo apt-get install git build-essential cmake libprotobuf-dev python-yaml protobuf-c-compiler libprotobuf-c0-dev  libzmq-dev python-zmq libyaml-dev
+# ARCADE airborne dependencies:
+$ sudo apt-get install libtinyxml-dev graphviz  openjdk-7-jre-headless libcv-dev libglib2.0-dev libmeschach-dev
 ```
 
 ### Building the software
