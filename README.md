@@ -12,12 +12,12 @@ The general folder structure is shown below:
         * __svctrl__: service control utility
         * __scripts__: bashrc (sourced from user bashrc)
     * __ARCADE__ (MOBICOM_PROJECT_NAME = ARCADE):
-        * __common__ ARCADE common, aka __"level 2 common"__
-            * __messages__: messages formats exchanged between different ARCADE subprojects
+        * __common__ ARCADE network-level definitions, aka __"level 2 common"__
+            * __messages__: messages formats exchanged between different ARCADE subprojects/machines
             * __config__: common configuration files for all subprojects
             * __scripts__: bashrc (sourced from upper-level bashrc)
         * __airborne__ (MOBICOM_SUBPROJECT_NAME = airborne)
-            * __common__: network-level protobuf message definitions, aka __"level 3 common"__
+            * __common__: airborne common for local IPC, aka __"level 3 common"__
                 * __messages__: scl message formats for local system IPC
                 * __config__: system.yaml, services.yaml, parameters-*.yaml
                 * __scripts__: bashrc (sourced from upper-level bashrc)
