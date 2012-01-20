@@ -1,18 +1,19 @@
-# ARCADE airborne software
+# ARCADE "Airborne" Repository
 
 ## Overview
 
-ARCADE airborne includes all software components which run on the ARCADE UAV system.
-The repository consists of two subrepositories, common and ARCADE/common.
-The general folder structure is shown below:
+This repository includes all software components which run on the ARCADE UAV Linux system.
+The unique file system structure of our system is shown below:
+
+
 
 * __MOBICOM__ (MOBICOM_PATH defines top-level path)
-    * __common__ MOBICOM common, aka __"level 1 common"__
-        * __scl__: signaling and communication link
-        * __svctrl__: service control utility
+    * __common__ [MOBICOM common](http://github.com/MOBICOM/common) , aka __"level 1 common"__ 
+        * __scl__: Signaling and Communication Link
+        * __svctrl__: Service Control Utility
         * __scripts__: bashrc (sourced from user bashrc)
     * __ARCADE__ (MOBICOM_PROJECT_NAME = ARCADE):
-        * __common__ ARCADE network-level definitions, aka __"level 2 common"__
+        * __common__ [ARCADE network-level common](http://github.com/ARCADE-UAV/common), aka __"level 2 common"__
             * __messages__: messages formats exchanged between different ARCADE subprojects/machines
             * __config__: common configuration files for all subprojects
             * __scripts__: bashrc (sourced from upper-level bashrc)
@@ -23,14 +24,19 @@ The general folder structure is shown below:
                 * __scripts__: bashrc (sourced from upper-level bashrc)
             * __components__: programs connected through __common__ above
 
-The key motivation behind this structure is to support code-reuse while keeping conceptually different parts of the software system in different repositories (plug-in concept).
-Thus, our system has the following benefits:
+The key motivation behind this structure is to support code-reuse and repository-tracked configuration file sharing
+on different levels on the software architecture.
+It is inspired by the Unix filesystem structure, which has fixed file locations for system, user and local
+binaries, includes files and libraries.
+Currently, we use 3 hierarchy levels (1-3) with one ever-repeating directory: "common". Within common,
+"scripts" is present on all three levels. "messages" and "config" can be found on level 2 and 3.
+Another Unix concept - mounting filesystems - is used in our architecture using github subrepositories.
+The latter is used for code reuse on all three levels:
 
-* a standard structure, comparable with the Linux filesystem having fixed file locations at 3 hierarchy levels (1-3) in the filesystem. Repeating directories are for example: config, messages, scripts.
-* code reuse between distinct projects like ARCADE and OSPECOR (__"level 1"__ common) keeps systems maintainable through submodules
-* support for automatic export of environment variables through multiple bashrc files
-* defining different software architectures (__"level 2"__ common) for multiple deployment targets (UAV, PC, ...)
-* sharing code and message formats between multiple processes (components) on a single machine (__"level 3"__ common)
+* __level 1__: MOBICOM inter-project code reuse
+* __level 2__: common communication standards and configurations for multiple deployment targets (UAV, PC, ...)
+* __level 3__: common communication standards and configurations for multiple processes (components) on a single machine 
+
 
 ## Getting started
 
