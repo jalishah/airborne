@@ -32,7 +32,7 @@ Currently, we use 3 hierarchy levels (1-3) with one ever-repeating directory: "c
 "scripts" is present on all three levels. "messages" and "config" can be found on level 2 and 3.
 The specific purpose of each level is explained as follows:
 
-* __level 1__: MOBICOM inter-project code reuse and tools (SCL, svctrl)
+* __level 1__: [MOBICOM](http://www.gs-mobicom.de) inter-project code reuse and tools (SCL, svctrl)
 * __level 2__: code and configurations for heterogeneous machines (UAV, Notebook, Smartphone)
 * __level 3__: code and configurations for multiple processes (components) on a single machine, e.g. UAV
 
