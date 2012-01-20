@@ -7,12 +7,12 @@ This repository includes all software components which run on the ARCADE UAV Lin
 The brief file system structure summary of the airborne software looks like the following:
 
 
-* __MOBICOM__ (MOBICOM_PATH defines top-level path)
+* __MOBICOM__ (MOBICOM\_PATH defines top-level path)
     * __common__ [MOBICOM common](http://github.com/MOBICOM/common) , aka __"level 1 common"__ 
         * __scl__: Signaling and Communication Link
         * __svctrl__: Service Control Utility
         * __scripts__: bashrc (sourced from user bashrc)
-    * __ARCADE__ (MOBICOM_PROJECT_NAME = ARCADE):
+    * __ARCADE__ (MOBICOM\_PROJECT\_NAME = ARCADE):
         * __common__ [ARCADE network-level common](http://github.com/ARCADE-UAV/common), aka __"level 2 common"__
             * __messages__: messages formats exchanged between different ARCADE subprojects/machines
             * __config__: common configuration files for all subprojects
@@ -51,38 +51,34 @@ Currently, the "airborne" software defines the following submodules:
     
     1.a. If you want a read-only clone, type:
 
-    ```bash
-    $ git clone git://github.com/ARCADE-UAV/airborne.git MOBICOM
-    ```
+    git clone git://github.com/ARCADE-UAV/airborne.git MOBICOM
 
     1.b. If you want a developer clone, type:
-
-    ```bash
-    $ git clone git:@github.com:ARCADE-UAV/airborne.git MOBICOM
-    ```
+     
+    git clone git:@github.com:ARCADE-UAV/airborne.git MOBICOM
 
 2. Change into the new directory and initialize the submodules (i.e. the common part of MOBICOM)
 
-    ```bash
-    $ cd ./MOBICOM
-    $ ./gitsub_init.sh
-    ```
+    cd MOBICOM
+    ./gitsub_init.sh
 
 3. Copy the content of ```example.bashrc``` into your local bashrc and edit it if required, reinstalize your environment
 
     ```bash
-    $ cat example.bashrc >> ~/.bashrc
-    $ nano ~/.bashrc
-    $ bash
+    cat example.bashrc >> ~/.bashrc
+    nano ~/.bashrc
+    bash
     ```
 
 4. Now, create a new build directory and build the source
 
-    ```bash
-    $ mkdir build && cd build
-    # if you are just compiling it on a regular PC:
-    $ cmake ..
-    # if you are compiling on ARM Cortex A8 (UAV SOC):
-    $ cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/cortex_a8.cmake ..
-    $ make
-    ```
+    mkdir build && cd build
+    
+    4.a. If you are just compiling it on a regular PC for testing:
+
+    cmake .. && make
+
+    4.b If you are compiling on the UAV's ARM Cortex A8 system-on-chip:
+
+    cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/cortex_a8.cmake .. && make
+
