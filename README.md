@@ -8,17 +8,17 @@ The brief file system structure summary of the airborne software looks like the 
 
 
 * __MOBICOM__ (MOBICOM\_PATH defines top-level path)
-    * __common__ [MOBICOM common](http://github.com/MOBICOM/common) , aka __"level 1 common"__ 
+    * __common__ ([MOBICOM common](http://github.com/MOBICOM/common) , aka __"level 1 common"__)
         * __scl__: Signaling and Communication Link
         * __svctrl__: Service Control Utility
         * __scripts__: bashrc (sourced from user bashrc)
     * __ARCADE__ (MOBICOM\_PROJECT\_NAME = ARCADE):
-        * __common__ [ARCADE network-level common](http://github.com/ARCADE-UAV/common), aka __"level 2 common"__
+        * __common__ ([ARCADE network-level common](http://github.com/ARCADE-UAV/common), aka __"level 2 common"__)
             * __messages__: messages formats exchanged between different ARCADE subprojects/machines
             * __config__: common configuration files for all subprojects
             * __scripts__: bashrc (sourced from upper-level bashrc)
         * __airborne__ (MOBICOM_SUBPROJECT_NAME = airborne)
-            * __common__: airborne common for local IPC, aka __"level 3 common"__
+            * __common__ (airborne common for local IPC, aka __"level 3 common"__)
                 * __messages__: scl message formats for local system IPC
                 * __config__: system.yaml, services.yaml, parameters-*.yaml
                 * __scripts__: bashrc (sourced from upper-level bashrc)
