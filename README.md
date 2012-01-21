@@ -19,7 +19,7 @@ The brief file system structure summary of the airborne software looks like the 
             * __scripts__: bashrc (sourced from upper-level bashrc)
         * __airborne__ (MOBICOM_SUBPROJECT_NAME = airborne)
             * __common__ (airborne common for local IPC, aka __"level 3 common"__)
-                * __messages__: scl message formats for local system IPC
+                * __messages__: message formats for local IPC using SCL
                 * __config__: system.yaml, services.yaml, parameters-*.yaml
                 * __scripts__: bashrc (sourced from upper-level bashrc)
             * __components__: programs connected through __common__ above
