@@ -41,7 +41,7 @@ int motors_write(mixer_in_t *data)
    data->pitch = sym_limit(data->pitch, 1.0f);
    data->roll = sym_limit(data->roll, 1.0f);
    data->yaw = sym_limit(data->yaw, 1.0f);
-   data->gas = limit(data->gas, 0.0f, 1.0f);
+   data->gas = limit(data->gas, 0.1f, 0.9f);
    return _motors_write(data);
 }
 
