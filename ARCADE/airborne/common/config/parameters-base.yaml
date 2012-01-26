@@ -3,7 +3,7 @@ sensors:
    gps:
       serial_path: "/dev/ttyACM0"
       serial_speed: 57600
-      min_sats: 6
+      min_sats: 4
    
 core:
    flash_enabled: false
@@ -48,7 +48,7 @@ core:
          speed_std: 2.0
          speed_max: 3.5
          sqrt_shift: 3.0
-         sqrt_scale: 0.3
+         sqrt_scale: 0.25
          square_shift: 0.5
          pos_i: 0.015
          pos_i_max: 5.0

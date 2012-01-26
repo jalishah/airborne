@@ -566,7 +566,7 @@ int chr6dm_init(void)
    float last_yaw = 10.0;
    while (fabs(last_yaw - imu_data.yaw) > 0.00001) //(count--)  
    {
-      LOG(LL_INFO, "%f", fabs(last_yaw - imu_data.yaw));
+      //LOG(LL_INFO, "%f", fabs(last_yaw - imu_data.yaw));
       last_yaw = imu_data.yaw;
       msleep(100);
    }

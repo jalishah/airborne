@@ -219,6 +219,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                               tsfloat_get(&sp.y),
                               pos_x, pos_y, speed_x, speed_y,
                               acc_x, acc_y, dt, yaw};
+   printf("%f, %f\n", pos_x, pos_y);
    navi_output_t navi_output;
    navigator_run(&navi_output, &navi_input);
    if (tsint_get(&angle_cal))
