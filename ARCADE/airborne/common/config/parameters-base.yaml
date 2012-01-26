@@ -9,7 +9,7 @@ core:
    flash_enabled: false
 
    logger:
-      level: 4
+      level: 3
       details: 2
 
    controllers:
@@ -38,7 +38,7 @@ core:
          speed_std: 0.1
          speed_max: 0.2
          speed_slope: 1.0
-         speed_p: 1.5
+         speed_p: 0.24
          speed_i: 0.7
          speed_imax: 100.0
 

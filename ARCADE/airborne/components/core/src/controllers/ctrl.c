@@ -203,7 +203,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                                       model_state->yaw.speed, dt);
 
    float alt_err;
-   if (sp.alt_mode == ALT_MODE_ULTRA)
+   if (1) //sp.alt_mode == ALT_MODE_ULTRA)
    {
       alt_err = tsfloat_get(&sp.alt) - model_state->ultra_z.pos;
    }
@@ -219,7 +219,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                               tsfloat_get(&sp.y),
                               pos_x, pos_y, speed_x, speed_y,
                               acc_x, acc_y, dt, yaw};
-   printf("%f, %f\n", pos_x, pos_y);
+   
    navi_output_t navi_output;
    navigator_run(&navi_output, &navi_input);
    if (tsint_get(&angle_cal))
@@ -297,7 +297,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       data->pitch = pitch_ctrl_val;
       data->roll = roll_ctrl_val;
       data->yaw = yaw_ctrl_val;
-      data->gas = 1.0; //gas_ctrl_val;
+      data->gas = gas_ctrl_val;
    }
    pthread_mutex_unlock(&override_data.mutex);
 }

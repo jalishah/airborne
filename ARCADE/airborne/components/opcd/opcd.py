@@ -58,12 +58,15 @@ class OPCD:
                # exact match:
                self._pairs_add(req.id, rep)
             else:
-               # try substring matches:
+               # try regex matches:
                found = False
                for key in all_keys:
-                  if match(req.id, key):
-                     self._pairs_add(key, rep)
-                     found = True
+                  try:
+                     if match(req.id, key):
+                        self._pairs_add(key, rep)
+                        found = True
+                  except:
+                     pass
                if not found:
                   rep.status = CtrlRep.PARAM_UNKNOWN
 
