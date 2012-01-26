@@ -240,7 +240,7 @@ SIMPLE_THREAD_END
 void model_init(void)
 {
    ASSERT_ONCE();
-   
+
    /* read configuration and initialize scl gates: */
    opcd_param_t params[] =
    {
@@ -261,9 +261,8 @@ void model_init(void)
        tsfloat_get(&baro_noise),
        tsfloat_get(&gps_noise));
 
-
    socket = scl_get_socket("kalman");
-   
+
    /* set-up kalman filters: */
    kalman_out_t kalman_state = {0.0, 0.0};
    
@@ -272,13 +271,13 @@ void model_init(void)
       tsfloat_get(&process_noise),
       tsfloat_get(&ultra_noise)
    };
-   
+
    kalman_config_t baro_kalman_config = 
    {
       tsfloat_get(&process_noise), 
       tsfloat_get(&baro_noise)
    };
-   
+
    kalman_config_t lateral_kalman_config = 
    {
       tsfloat_get(&process_noise),
