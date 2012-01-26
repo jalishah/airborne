@@ -14,6 +14,7 @@ from opcd_pb2 import CtrlReq, CtrlRep, Pair
 from scl import generate_map
 from named_daemon import daemonize
 from sys import argv
+from re import match
 
 
 class OPCD:
@@ -60,7 +61,7 @@ class OPCD:
                # try substring matches:
                found = False
                for key in all_keys:
-                  if key.find(req.id) == 0:
+                  if match(req.id, key):
                      self._pairs_add(key, rep)
                      found = True
                if not found:

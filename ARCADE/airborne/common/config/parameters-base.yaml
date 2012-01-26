@@ -19,10 +19,10 @@ core:
       attitude:
          calibrate: false
          angle_max: 0.17
-         p: 4.0
+         p: 0.64
          i: 0.0
-         i_max: 2.0
-         d: 0.02
+         i_max: 0.0
+         d: 0.003
          pitch_bias: -0.022
          roll_bias: 0.03
  
