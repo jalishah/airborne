@@ -27,7 +27,10 @@ socket = generate_map('core_logger')['log']
 signal.signal(signal.SIGINT, signal_handler)
 
 while True:
-   log_data = log_data_pb2.log_data()
-   raw_data = socket.recv()
-   log_data.ParseFromString(raw_data)
-   print logdata_2_string(log_data)
+   try:
+      log_data = log_data_pb2.log_data()
+      raw_data = socket.recv()
+      log_data.ParseFromString(raw_data)
+      print logdata_2_string(log_data)
+   except:
+      print 'logger error'

@@ -241,6 +241,13 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    //pthread_mutex_lock(&scl_mutex);
    {
       /* angles / angle rates: */
+      static int c = 0;
+      if (c++ > 100)
+      {
+         c = 0;
+         LOG(LL_INFO, "%f, %f, %f", model_state->pitch.angle, model_state->roll.angle, model_state->yaw.angle);
+      }
+
       mon_data.pitch = model_state->pitch.angle;
       mon_data.roll = model_state->roll.angle;
       mon_data.yaw = model_state->yaw.angle;
