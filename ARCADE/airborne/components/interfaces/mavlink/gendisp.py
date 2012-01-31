@@ -5,6 +5,29 @@
 from Queue import Queue
 from threading import Thread, Event
 from time import sleep
+import re
+
+
+class RegexDict(dict):
+
+
+    '''
+    regular expression dictionary
+
+    a regular expression is used as the key when retrieving data
+    '''
+
+    def __init__(self):
+        dict.__init__(self)
+
+    def __setitem__(self, regex, val):
+        r = re.compile(regex)
+        dict.__setitem__(self, r, val)
+
+    def __getitem__(self, key):
+        for regex, val in self.items():
+           if regex.match(key):
+              return val
 
 
 class GenDisp(Thread):
@@ -28,7 +51,7 @@ class GenDisp(Thread):
    def __init__(self, source, debug = False):
       Thread.__init__(self)
       self.source = source
-      self.queues = {}
+      self.queues = RegexDict()
       self.debug = debug
 
 
@@ -58,7 +81,7 @@ class GenDisp(Thread):
             break
          try:
             self.queues[type].put(data)
-         except KeyError, e:
+         except:
             if self.debug:
                print 'data', str(data), 'of type', str(type), 'not handled'
 

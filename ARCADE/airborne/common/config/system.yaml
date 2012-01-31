@@ -80,10 +80,11 @@ components:
       - health: pub
       - opcd_ctrl: req
       - opcd_event: sub
-
+ 
    - name: mavlink
      gates:
       - core_mon: sub
+      - ctrl: req # opcd
 
    - name: opcd
      gates:
@@ -101,24 +102,25 @@ components:
 
 connections:
 
-   - [ opcd.event,               core.opcd_event    ]
-   - [ opcd.ctrl,                core.opcd_ctrl     ]
-   - [ opcd.ctrl,                gps_sensor.opcd_ctrl     ]
-   - [ opcd.ctrl,                opcd_shell.ctrl    ]
-   - [ localizer.kalman,         core.kalman        ]
-   - [ mavlink.core_mon,         core.mon      ]
-   - [ remote.ctrl,              core.ctrl          ]
-   - [ localizer.networks,       netscan.networks   ]
-   - [ core_logger.log,          core.log           ]
-   - [ gps_sensor.gps,           core.gps           ]
-   - [ arbiter.ctrl,             ferry_ctrl.ctrl    ]
-   - [ ferry_ctrl.hlsm,          arbiter.hlsm       ]
-   - [ blackbox.state_machine,   arbiter.hlsm       ]
-   - [ blackbox.core_log,        core.log           ]
-   - [ arbiter.hlsm,             localizer.hlsm     ]
-   - [ arbiter.ctrl,             cmdshell.ctrl      ]
-   - [ core.health,              arbiter.health     ]
-   - [ core.ctrl,                arbiter.core       ]
-   - [ gpx_logger.gps,           gps_sensor.gps     ]
-   - [ gps_sensor.gps,           gps_test.gps       ]
+   - [ opcd.event,               core.opcd_event      ]
+   - [ opcd.ctrl,                core.opcd_ctrl       ]
+   - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
+   - [ opcd.ctrl,                opcd_shell.ctrl      ]
+   - [ localizer.kalman,         core.kalman          ]
+   - [ mavlink.core_mon,         core.mon             ]
+   - [ mavlink.ctrl,             opcd.ctrl            ]
+   - [ remote.ctrl,              core.ctrl            ]
+   - [ localizer.networks,       netscan.networks     ]
+   - [ core_logger.log,          core.log             ]
+   - [ gps_sensor.gps,           core.gps             ]
+   - [ arbiter.ctrl,             ferry_ctrl.ctrl      ]
+   - [ ferry_ctrl.hlsm,          arbiter.hlsm         ]
+   - [ blackbox.state_machine,   arbiter.hlsm         ]
+   - [ blackbox.core_log,        core.log             ]
+   - [ arbiter.hlsm,             localizer.hlsm       ]
+   - [ arbiter.ctrl,             cmdshell.ctrl        ]
+   - [ core.health,              arbiter.health       ]
+   - [ core.ctrl,                arbiter.core         ]
+   - [ gpx_logger.gps,           gps_sensor.gps       ]
+   - [ gps_sensor.gps,           gps_test.gps         ]
    

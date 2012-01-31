@@ -6,5 +6,6 @@ class MAVLinkSource:
 
    def read_pair(self):
       message = self.mavio.recv_msg()
-      return message.get_type(), message
+      if message:
+         return message.get_type(), message
 
