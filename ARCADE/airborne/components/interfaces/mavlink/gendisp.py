@@ -32,7 +32,7 @@ class GenDisp(Thread):
       self.debug = debug
 
 
-   def iter(self, type):
+   def generator(self, type):
       if self.debug:
          print 'message reader registered for type', type
       q = Queue()
@@ -117,11 +117,11 @@ if __name__ == '__main__':
    disp.start()
 
    def handle_a():
-      for e in disp.iter('a'):
+      for e in disp.generator('a'):
          print 'handle_a woke up with data:', e
 
    def handle_b():
-      for e in disp.iter('b'):
+      for e in disp.generator('b'):
          print 'handle_b woke up with data:', e
 
    ta = Thread(target = handle_a)
