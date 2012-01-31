@@ -34,7 +34,7 @@ class GenDisp(Thread):
 
    def generator(self, type):
       if self.debug:
-         print 'message reader registered for type', type
+         print 'message reader registered for type', str(type)
       q = Queue()
       self.queues[type] = q
       while True:
@@ -51,7 +51,7 @@ class GenDisp(Thread):
          try:
             type, data = self.source.read_pair()
             if self.debug:
-               print 'dispatcher is delegating:', type, data
+               print 'dispatcher is delegating:', str(data), 'of type', str(type)
          except TypeError:
             for queue in self.queues.values():
                queue.put(None)
@@ -60,7 +60,7 @@ class GenDisp(Thread):
             self.queues[type].put(data)
          except KeyError, e:
             if self.debug:
-               print 'data of type %s not handled' % str(type)
+               print 'data', str(data), 'of type', str(type), 'not handled'
 
 
 if __name__ == '__main__':

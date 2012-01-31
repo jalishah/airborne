@@ -3,9 +3,6 @@ import atexit
 import os
 import readline
 import pprint
-
-from arbiter_requests import Takeoff, Land, Move, RotateFixed, RotatePOI, Stop
-from arbiter_interface import ArbiterInterface
 from opcd_interface import OPCD_Interface
 
 
