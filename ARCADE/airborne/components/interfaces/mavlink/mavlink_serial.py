@@ -1,6 +1,6 @@
 
-from pymavlink.mavlinkv10 import *
-from pymavlink.mavutil import mavserial
+from mavlinkv10 import *
+from mavutil import mavserial
 
 from mavlink_source import MAVLinkSource
 from gendisp import GenDisp
