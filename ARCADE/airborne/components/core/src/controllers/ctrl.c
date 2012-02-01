@@ -245,7 +245,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       if (c++ > 100)
       {
          c = 0;
-         LOG(LL_INFO, "%f, %f, %f", model_state->pitch.angle, model_state->roll.angle, model_state->yaw.angle);
+         //LOG(LL_INFO, "%f, %f", model_state->ultra_z.pos, model_state->ultra_z.speed);
       }
 
       mon_data.pitch = model_state->pitch.angle;
@@ -304,7 +304,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       data->pitch = pitch_ctrl_val;
       data->roll = roll_ctrl_val;
       data->yaw = yaw_ctrl_val;
-      data->gas = gas_ctrl_val;
+      data->gas = 1.0;//gas_ctrl_val;
    }
    pthread_mutex_unlock(&override_data.mutex);
 }

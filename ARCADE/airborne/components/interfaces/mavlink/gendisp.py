@@ -76,9 +76,10 @@ class GenDisp(Thread):
             if self.debug:
                print 'dispatcher is delegating:', str(data), 'of type', str(type)
          except TypeError:
-            for queue in self.queues.values():
-               queue.put(None)
-            break
+            continue
+            #for queue in self.queues.values():
+            #   queue.put(None)
+            #break
          try:
             self.queues[type].put(data)
          except:

@@ -43,7 +43,7 @@ float alt_setpoint_get(void)
 float alt_ctrl_step(float alt_err, float speed, float dt)
 {
    float spd_sp = speed_func(alt_err);
-   float spd_err = spd_sp - speed;
+   float spd_err = 0.2/*spd_sp*/ - speed;
    float gas;
    if (tsint_get(&manual))
    {
@@ -52,7 +52,6 @@ float alt_ctrl_step(float alt_err, float speed, float dt)
    else
    {
       gas = 0.5f + pid_control(&controller, spd_err, dt);
-      //EVERY_N_TIMES(50, printf("%f, %f\n", gas, spd_err));
    }
    return gas;
 }
