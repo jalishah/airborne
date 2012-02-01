@@ -77,13 +77,7 @@ class DeadbeefHandler(Thread):
 
 from serial import Serial
 
-port = Serial('/dev/ttyUSB1', 9600, timeout = None,
-              bytesize = 8, parity = 'N', stopbits = 1,
-              dsrdtr = False, 
-              rtscts = False, xonxoff = False)
-
-
-mavio = mavserial(port, source_system = 0x01)
+mavio = mavserial('/dev/ttyUSB1', 9600, source_system = 0x01)
 
 source = MAVLinkSource(mavio)
 dispatcher = GenDisp(source)
