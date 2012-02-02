@@ -1,15 +1,17 @@
 
 from mavlinkv10 import *
-from mavutil import mavserial
-
+from mavutil import mavserial, mavudp
+import time
+from scl import generate_map
 from mavlink_source import MAVLinkSource
 from gendisp import GenDisp
 from opcd_interface import OPCD_Interface
 from threading import Thread
 from monitor_data_pb2 import CoreMonData
-
+from math import *
 from time import sleep
 import re
+
 
 class ParamHandler(Thread):
 
@@ -74,7 +76,6 @@ class DeadbeefHandler(Thread):
       for e in self.dispatcher.generator('BAD_DATA'):
          print 'bad data ignored'
 
-from math import *
 
 def gps_add_meters(lat, lon, dx, dy):
    delta_lon = dx / (111320 * cos(lat))
@@ -84,14 +85,15 @@ def gps_add_meters(lat, lon, dx, dy):
    return new_lat, new_lon
 
 
+simulate_local = True
 
-
-from serial import Serial
-
-mavio = mavserial('/dev/ttyACM0', 115200, source_system = 0x01)
-
+if simulate_local:
+   mavio = mavudp('localhost:1234', False)
+else:
+   mavio = mavserial('/dev/ttyACM0', 115200, source_system = 0x01)
 source = MAVLinkSource(mavio)
 dispatcher = GenDisp(source)
+dispatcher.start()
 
 param_handler = ParamHandler(dispatcher)
 param_handler.start()
@@ -99,30 +101,23 @@ param_handler.start()
 deadbeef_handler = DeadbeefHandler(dispatcher)
 deadbeef_handler.start()
 
-dispatcher.start()
-
-import time
-from scl import generate_map
-
-socket = generate_map('mavlink')['core_mon']
-
-
-mon = CoreMonData()
 
 def mon_read():
+   socket = generate_map('mavlink')['core_mon']
    while True:
       str = socket.recv()
       mon.ParseFromString(str)
 
-Thread(target = mon_read).start()
+
+mon = CoreMonData()
+if not simulate:
+   Thread(target = mon_read).start()
 
 flags = 0
 while True:
    time_ms = int(time.time() / 10)
-   
    mavio.mav.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 0, MAV_STATE_ACTIVE)
    lat, lon = gps_add_meters(mon.gps_start_lat, mon.gps_start_lon, mon.x, mon.y);
    mavio.mav.global_position_int_send(time_ms, lat, lon, mon.z, 0, mon.x_speed, mon.y_speed, mon.z_speed, 0)
    mavio.mav.attitude_send(time_ms, mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
-   
    time.sleep(0.2)
