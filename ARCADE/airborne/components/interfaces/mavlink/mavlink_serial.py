@@ -37,7 +37,6 @@ class ParamHandler(Thread):
    def run(self):
       for e in self.dispatcher.generator('PARAM_'):
          if e.get_type() == 'PARAM_REQUEST_LIST':
-            print e
             list = self.opcd_interface.get('')
             for index, (name, type, cast) in self.param_map.items():
                try:
@@ -46,11 +45,9 @@ class ParamHandler(Thread):
                   name_short = re.sub('_', '-', name)
                   name_short = re.sub('\.', '_', name_short)
                   mavio.mav.param_value_send(name_short, cast(val), type, len(self.param_map), index)
-                  print len(self.param_map), index, name_short, val, type
                except Exception, ex:
                   print str(ex)
          elif e.get_type() == 'PARAM_REQUEST_READ':
-            print e
             index = e.param_index
             name, type, cast = self.param_map[index]
             try:
@@ -59,11 +56,8 @@ class ParamHandler(Thread):
                name_short = re.sub('_', '-', name)
                name_short = re.sub('\.', '_', name_short)
                mavio.mav.param_value_send(name_short, cast(val), type, len(self.param_map), index)
-               print len(self.param_map), index, name_short, val, type
             except Exception, ex:
                print str(ex)
-         else:
-            print e
 
 
 class DeadbeefHandler(Thread):
@@ -88,18 +82,19 @@ def gps_add_meters(lat, lon, dx, dy):
 simulate_local = True
 
 if simulate_local:
-   mavio = mavudp('localhost:1234', False)
+   mavio = mavudp('localhost:14550', False, source_system = 0x01, blocking = True)
 else:
    mavio = mavserial('/dev/ttyACM0', 115200, source_system = 0x01)
 source = MAVLinkSource(mavio)
-dispatcher = GenDisp(source)
-dispatcher.start()
+dispatcher = GenDisp(source, True)
 
 param_handler = ParamHandler(dispatcher)
 param_handler.start()
 
 deadbeef_handler = DeadbeefHandler(dispatcher)
 deadbeef_handler.start()
+
+dispatcher.start()
 
 
 def mon_read():
@@ -110,14 +105,14 @@ def mon_read():
 
 
 mon = CoreMonData()
-if not simulate:
+if not simulate_local:
    Thread(target = mon_read).start()
 
 flags = 0
 while True:
    time_ms = int(time.time() / 10)
    mavio.mav.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 0, MAV_STATE_ACTIVE)
-   lat, lon = gps_add_meters(mon.gps_start_lat, mon.gps_start_lon, mon.x, mon.y);
-   mavio.mav.global_position_int_send(time_ms, lat, lon, mon.z, 0, mon.x_speed, mon.y_speed, mon.z_speed, 0)
-   mavio.mav.attitude_send(time_ms, mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
-   time.sleep(0.2)
+   #lat, lon = gps_add_meters(mon.gps_start_lat, mon.gps_start_lon, mon.x, mon.y);
+   #mavio.mav.global_position_int_send(time_ms, lat, lon, mon.z, 0, mon.x_speed, mon.y_speed, mon.z_speed, 0)
+   #mavio.mav.attitude_send(time_ms, mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
+   time.sleep(10)
