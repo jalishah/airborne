@@ -85,6 +85,7 @@ components:
      gates:
       - core_mon: sub
       - ctrl: req # opcd
+      - gps: sub
 
    - name: opcd
      gates:
@@ -113,6 +114,7 @@ connections:
    - [ localizer.networks,       netscan.networks     ]
    - [ core_logger.log,          core.log             ]
    - [ gps_sensor.gps,           core.gps             ]
+   - [ gps_sensor.gps,           mavlink.gps          ]
    - [ arbiter.ctrl,             ferry_ctrl.ctrl      ]
    - [ ferry_ctrl.hlsm,          arbiter.hlsm         ]
    - [ blackbox.state_machine,   arbiter.hlsm         ]

@@ -117,6 +117,7 @@ void _main(int argc, char *argv[])
       info.smask = 0; /* reset mask in order to distinguish between received nmea sentences */
       if (nmea_parse(&parser, buffer, pos, &info) == 1)
       {
+         printf("parsed something\n");
          smask |= info.smask;
          if (   (info.smask & GPGGA) /* check for new position update */
              && (smask & (GPGSA | GPRMC))) /* go sure that we collect all sentences for first output*/
@@ -137,6 +138,7 @@ void _main(int argc, char *argv[])
                {
                   gps_data.fix = 2;
                   PB_SET(gps_data, hdop, info.HDOP);
+                  PB_SET(gps_data, vdop, info.VDOP);
                   PB_SET(gps_data, lat, convert(info.lat));
                   PB_SET(gps_data, lon, convert(info.lon));
                   PB_SET(gps_data, sats, info.satinfo.inuse);
@@ -150,8 +152,33 @@ void _main(int argc, char *argv[])
                }
             }
 
+            /* add satellit info: */
+            int i;
+            gps_data.n_satinfo = info.satinfo.inview;
+            SatInfo **satinfo = malloc(gps_data.n_satinfo * sizeof(SatInfo *));
+            for (i = 0; i < gps_data.n_satinfo; i++)
+            {
+               /* fill SatInfo structure: */
+               nmeaSATELLITE *nmea_satinfo = &info.satinfo.sat[i];
+               satinfo[i] = malloc(gps_data.n_satinfo * sizeof(SatInfo));
+               sat_info__init(satinfo[i]);
+               satinfo[i]->id = nmea_satinfo->id;
+               satinfo[i]->in_use = nmea_satinfo->in_use;
+               satinfo[i]->elv = nmea_satinfo->elv;
+               satinfo[i]->azimuth = nmea_satinfo->azimuth;
+               satinfo[i]->sig = nmea_satinfo->sig;
+            }
+            gps_data.satinfo = satinfo;
+
             /* send the data: */
             SCL_PACK_AND_SEND_DYNAMIC(gps_socket, gps_data, gps_data);
+            
+            /* free allocated memory: */
+            for (i = 0; i < gps_data.n_satinfo; i++)
+            {
+               free(satinfo[i]);
+            }
+            free(satinfo);
          }
       }
    }

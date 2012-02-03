@@ -3,6 +3,17 @@
  * message format for gps data
  */
 
+
+message SatInfo
+{
+   required int32 id = 1;   
+   required bool in_use = 2;
+   required int32 elv = 3;
+   required int32 azimuth = 4;
+   required int32 sig = 5;
+}
+
+
 message GpsData
 {
    required uint32 fix =  1; // fix type (0,1,2,3)
@@ -11,6 +22,8 @@ message GpsData
    optional double lon =  4; // lon in degrees: +/- signifies north/south
    optional double alt =  5; // altitude above sea level in meters
    optional float hdop =  6; // horizontal dilution of precision
-   optional uint32 sats = 7; // number of satellites in use
+   optional float vdop =  7; // vertical dilution of precision
+   optional uint32 sats = 8; // satellites in use
+   repeated SatInfo satinfo = 9; // satellite info
 }
 
