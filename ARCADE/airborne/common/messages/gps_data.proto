@@ -23,7 +23,9 @@ message GpsData
    optional double alt =  5; // altitude above sea level in meters
    optional float hdop =  6; // horizontal dilution of precision
    optional float vdop =  7; // vertical dilution of precision
-   optional uint32 sats = 8; // satellites in use
-   repeated SatInfo satinfo = 9; // satellite info
+   optional float speed = 8; // speed over ground
+   optional float course = 9; // course in degrees
+   optional uint32 sats = 10; // satellites in use
+   repeated SatInfo satinfo = 11; // satellite info
 }
 

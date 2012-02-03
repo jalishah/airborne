@@ -4,10 +4,11 @@ from mavutil import mavserial, mavudp
 import time
 from scl import generate_map
 from mavlink_source import MAVLinkSource
-from gendisp import GenDisp
 from opcd_interface import OPCD_Interface
+from gendisp import GenDisp
 from threading import Thread
 from monitor_data_pb2 import CoreMonData
+from gps_data_pb2 import GpsData
 from math import *
 from time import sleep
 import re
@@ -105,11 +106,35 @@ class Bridge:
       self.mav_iface = mav_iface
 
 
-class GPSBridge(Bridge):
+class GpsBridge(Bridge):
    
    def __init__(self, socket_map, mav_iface):
       Bridge.__init__(self, socket_map, mav_iface)
- 
+      recv_thread = Thread(target = self._receive)
+      send_thread = Thread(target = self._send)
+      recv_thread.start()
+      send_thread.start()
+
+   def _receive(self):
+      socket = self.socket_map['gps']
+      gps = GpsData()
+      while True:
+         str = socket.recv()
+         gps.ParseFromString(str)
+         self.gps = gps
+
+   def _send(self):
+      while True:
+         try:
+            gps = self.gps
+            self.mav_iface.send_gps_position(gps.fix, gps.lon, gps.lat, gps.alt, gps.hdop, gps.vdop, gps.speed, gps.course, len(gps.satinfo)):
+            sleep(1.0)
+         except:
+            pass
+
+
+class CoreBridge(Bridge):
+    
    # def _gps_add_meters(self, lat, lon, dx, dy):
    #   delta_lon = dx / (111320 * cos(lat))
    #   delta_lat = dy / 110540
@@ -120,31 +145,31 @@ class GPSBridge(Bridge):
 
    #   lat, lon = self._gps_add_meters(mon.gps_start_lat, mon.gps_start_lon, mon.x, mon.y)
 
-class CoreBridge(Bridge):
-   
+  
    def __init__(self, socket_map, mav_iface):
       Bridge.__init__(self, socket_map, mav_iface)
-      self.mon = CoreMonData()
-      self.mon_valid = False
       recv_thread = Thread(target = self._receive)
       send_thread = Thread(target = self._send)
       recv_thread.start()
       send_thread.start()
 
    def _receive(self):
+      mon = CoreMonData()
       socket = self.socket_map['core_mon']
       while True:
          str = socket.recv()
-         self.mon.ParseFromString(str)
-         self.mon_valid = True
+         mon.ParseFromString(str)
+         self.mon = mon
 
    def _send(self):
       while True:
-         if self.mon_valid:
+         try:
             mon = self.mon
             self.mav_iface.send_local_position(mon.x, mon.y, mon.z, mon.x_speed, mon.y_speed, mon.z_speed)
             self.mav_iface.send_attitude(mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
             sleep(0.3)
+         except:
+            pass
 
 
 class MAVLink_Interface:
@@ -225,6 +250,7 @@ class MAVLink_Interface:
 
 mav_iface = MAVLink_Interface(mavio)
 CoreBridge(socket_map, mav_iface)
+GpsBridge(socket_map, mav_iface)
 
 flags = 0
 while True:

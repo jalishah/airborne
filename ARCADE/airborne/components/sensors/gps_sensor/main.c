@@ -142,6 +142,8 @@ void _main(int argc, char *argv[])
                   PB_SET(gps_data, lat, convert(info.lat));
                   PB_SET(gps_data, lon, convert(info.lon));
                   PB_SET(gps_data, sats, info.satinfo.inuse);
+                  PB_SET(gps_data, course, info.direction);
+                  PB_SET(gps_data, speed, info.speed);
                }
               
                /* set data for 3d fix: */

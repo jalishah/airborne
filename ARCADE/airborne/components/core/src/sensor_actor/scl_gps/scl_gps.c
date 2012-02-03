@@ -55,7 +55,7 @@ SIMPLE_THREAD_BEGIN(gps_reader_thread_func)
       gps_input_data.start_lon);
 
       gps_input_data.delta_z = gps_input_data.alt - gps_input_data.start_alt;
-      gps_input_data.ground_speed = 0.0;
+      gps_input_data.ground_speed = gps_data->speed;
       gps_input_data.climb_speed = 0.0;
       
       pthread_mutex_unlock(&mutex);
