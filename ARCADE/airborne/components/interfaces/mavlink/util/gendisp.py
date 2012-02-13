@@ -48,9 +48,9 @@ class GenDisp(Thread):
    '''
 
 
-   def __init__(self, source, debug = False):
+   def __init__(self, mavio, debug = False):
       Thread.__init__(self)
-      self.source = source
+      self.mavio = mavio
       self.queues = RegexDict()
       self.debug = debug
 
@@ -68,11 +68,15 @@ class GenDisp(Thread):
          else:
             return
 
+   def _read_pair(self):
+      message = self.mavio.recv_msg()
+      if message:
+         return message.get_type(), message
 
    def run(self):
       while True:
          try:
-            type, data = self.source.read_pair()
+            type, data = self._read_pair()
             if self.debug:
                print 'dispatcher is delegating:', str(data), 'of type', str(type)
          except TypeError:
@@ -84,72 +88,4 @@ class GenDisp(Thread):
          except:
             if self.debug:
                print 'data', str(data), 'of type', str(type), 'not handled'
-
-
-if __name__ == '__main__':
-
-   class TestSource:
-
-      def __init__(self, comm, parser):
-         self.comm = comm
-         self.parser = parser
-
-      def read_pair(self):
-         for i in range(2):
-            byte = self.comm.read_byte()
-            if byte is None:
-               return None
-            try:
-               type, data = self.parser.parse_byte(byte)
-            except:
-               pass
-         return type, data
-
-
-   class TestComm:
-
-      def __init__(self):
-         self.bytes = ['a', 1, 'b', 2, 'a', 6, 'b', 255]
-
-      def read_byte(self):
-         try:
-            byte = self.bytes[0]
-            self.bytes = self.bytes[1:]
-            sleep(1.0)
-            return byte
-         except:
-            pass
-         
-
-   class TestParser:
-
-      def __init__(self):
-         self.state = 0
-
-      def parse_byte(self, byte):
-         if self.state == 1:
-            self.state = 0
-            return self.type, byte
-         else:
-            self.type = byte
-         self.state += 1
-
-
-   source = TestSource(TestComm(), TestParser())
-   disp = GenDisp(source, True)
-   disp.start()
-
-   def handle_a():
-      for e in disp.generator('a'):
-         print 'handle_a woke up with data:', e
-
-   def handle_b():
-      for e in disp.generator('b'):
-         print 'handle_b woke up with data:', e
-
-   ta = Thread(target = handle_a)
-   ta.start()
-
-   tb = Thread(target = handle_b)
-   tb.start()
 
