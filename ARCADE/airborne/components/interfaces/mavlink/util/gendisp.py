@@ -54,6 +54,10 @@ class GenDisp(Thread):
       self.queues = RegexDict()
       self.debug = debug
 
+   def start(self, handlers):
+      for handler in handlers:
+         handler.start()
+      Thread.start(self)
 
    def generator(self, type):
       if self.debug:
