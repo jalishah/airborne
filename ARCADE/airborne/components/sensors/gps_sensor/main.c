@@ -117,7 +117,6 @@ void _main(int argc, char *argv[])
       info.smask = 0; /* reset mask in order to distinguish between received nmea sentences */
       if (nmea_parse(&parser, buffer, pos, &info) == 1)
       {
-         printf("parsed something\n");
          smask |= info.smask;
          if (   (info.smask & GPGGA) /* check for new position update */
              && (smask & (GPGSA | GPRMC))) /* go sure that we collect all sentences for first output*/

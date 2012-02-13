@@ -2,6 +2,7 @@
 from mavlinkv10 import *
 from mavutil import mavserial, mavudp
 import time
+from psutil import cpu_percent
 from scl import generate_map
 from mavlink_source import MAVLinkSource
 from opcd_interface import OPCD_Interface
@@ -12,6 +13,7 @@ from gps_data_pb2 import GpsData
 from math import *
 from time import sleep
 import re
+from mavlink_util import ControlSensorBits
 
 
 class ParamHandler(Thread):
@@ -117,20 +119,27 @@ class GpsBridge(Bridge):
 
    def _receive(self):
       socket = self.socket_map['gps']
-      gps = GpsData()
       while True:
          str = socket.recv()
+         gps = GpsData()
          gps.ParseFromString(str)
          self.gps = gps
 
    def _send(self):
       while True:
+         sleep(1.0)
          try:
             gps = self.gps
-            self.mav_iface.send_gps_position(gps.fix, gps.lon, gps.lat, gps.alt, gps.hdop, gps.vdop, gps.speed, gps.course, len(gps.satinfo)):
-            sleep(1.0)
-         except:
-            pass
+         except AttributeError:
+            continue
+         self.mav_iface.send_gps_position(gps.fix, gps.lon, gps.lat, gps.alt, gps.hdop, gps.vdop, gps.speed, gps.course, gps.sats)
+         if len(gps.satinfo) > 0:
+            list = [''] * 5
+            for satinfo in gps.satinfo:
+               for param_i, data in [[0, satinfo.id], [1, satinfo.in_use], [2, satinfo.elv], [3, satinfo.azimuth], [4, satinfo.sig]]:
+                  list[param_i] += struct.pack('b', data)
+            list = [len(gps.satinfo)] + list
+            self.mav_iface.mavio.mav.gps_status_send(*list)
 
 
 class CoreBridge(Bridge):
@@ -163,11 +172,18 @@ class CoreBridge(Bridge):
 
    def _send(self):
       while True:
+         sleep(0.5)
          try:
             mon = self.mon
             self.mav_iface.send_local_position(mon.x, mon.y, mon.z, mon.x_speed, mon.y_speed, mon.z_speed)
             self.mav_iface.send_attitude(mon.roll, mon.pitch, mon.yaw, mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
-            sleep(0.3)
+            ground_speed = sqrt(mon.x_speed ** 2, mon.y_speed ** 2)
+            airspeed = 0.0
+            heading = 0.0
+            throttle = 0.5
+            alt = 500.0
+            climb = mon.z_speed
+            self.mav_iface.mavio.mav.vfr_hud_send(airspeed, ground_speed, heading, throttle, alt, climb)
          except:
             pass
 
@@ -249,12 +265,55 @@ class MAVLink_Interface:
 
 
 mav_iface = MAVLink_Interface(mavio)
-CoreBridge(socket_map, mav_iface)
-GpsBridge(socket_map, mav_iface)
+core_bridge = CoreBridge(socket_map, mav_iface)
+gps_bridge = GpsBridge(socket_map, mav_iface)
 
+
+csb = ControlSensorBits()
+mav_udp = mavudp('141.24.211.33:14550', False)
+link = MAVLink(mav_udp)
+
+socket = generate_map('mavlink')['core_mon']
+mon = CoreMonData()
+
+onboard_control_sensors_present = 0xAA #csb.bits(['GYRO_3D', 'ACC_3D', 'MAG_3D', 'PRESSURE_ABS', 'GPS', 'ANGLE_RATE_CONTROL', 'ATTITUDE_CTRL', 'YAW_CTRL', 'ALTITUDE_CTRL', 'XY_CTRL', 'MOTOR_CTRL'])
+onboard_control_sensors_enabled = onboard_control_sensors_present
+onboard_control_sensors_health = onboard_control_sensors_present
+voltage_battery = 15 * 1000
+current_battery = 0
+battery_remaining = 100
+drop_rate_comm = 1000 * 10
+errors_comm = 0
+errors_count1 = 0
+errors_count2 = 0
+errors_count3 = 0
+errors_count4 = 0
+
+load_avg = [ cpu_percent() * 10 ] * 60
 flags = 0
 while True:
+   load_avg = load_avg[1:] + [ cpu_percent() * 10 ]
+   load = 0
+   for l in load_avg:
+      load += l
+   load /= len(load_avg)
    time_ms = int(time.time() / 10)
    mavio.mav.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, flags, 0, MAV_STATE_ACTIVE)
+   mavio.mav.sys_status_send(onboard_control_sensors_present,
+                        onboard_control_sensors_enabled,
+                        onboard_control_sensors_health,
+                        load, 
+                        voltage_battery, 
+                        current_battery, 
+                        battery_remaining, 
+                        drop_rate_comm, 
+                        errors_comm, 
+                        errors_count1,
+                        errors_count2, 
+                        errors_count3, 
+                        errors_count4)
+
+
+
    time.sleep(1.0)
 
