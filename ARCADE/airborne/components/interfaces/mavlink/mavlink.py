@@ -14,7 +14,7 @@ from time import sleep
 
 # get socket map and open mavio:
 socket_map = generate_map('mavlink')
-mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 0x01)
+mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 1)
 
 # start parameter handlers and dispatcher (handles all incoming data):
 dispatcher = GenDisp(mavio, True)

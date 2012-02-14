@@ -95,6 +95,7 @@ void _main(int argc, char *argv[])
 
    nmeaINFO info;
    nmea_zero_INFO(&info);
+   int time_set = 0;
    int smask = 0; /* global smask collects all sentences and is never reset,
                      in contrast to info.smask */
    while (running)
@@ -128,6 +129,15 @@ void _main(int argc, char *argv[])
             generate_time_str(time_str, &info.utc);
             gps_data.fix = 0;
             gps_data.time = time_str;
+
+            /* set system time to gps time once: */
+            if (!time_set)
+            {
+               char shell_date_cmd[TIME_STR_LEN + 8];
+               sprintf(shell_date_cmd, "date -s %s", time_str);
+               system(shell_date_cmd);
+               time_set = 1;   
+            }
             
             /* set position data if a minimum of satellites is seen: */
             if (info.satinfo.inuse >= tsint_get(&min_sats))
