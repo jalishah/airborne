@@ -1,4 +1,5 @@
 
+from mavlinkv10 import MAV_VAR_FLOAT, MAV_VAR_INT32
 from opcd_interface import OPCD_Interface
 from threading import Thread
 import re
@@ -36,7 +37,7 @@ class ParamHandler(Thread):
                   #name_short = re.sub('(?P<foo>\w)\w*\.', '\g<foo>.', name)
                   name_short = re.sub('_', '-', name)
                   name_short = re.sub('\.', '_', name_short)
-                  mavio.mav.param_value_send(name_short, float(val), type, len(self.param_map), index)
+                  self.dispatcher.mavio.mav.param_value_send(name_short, float(val), type, len(self.param_map), index)
                except Exception, ex:
                   print str(ex)
          elif e.get_type() == 'PARAM_REQUEST_READ':
@@ -47,18 +48,7 @@ class ParamHandler(Thread):
                #name_short = re.sub('(?P<foo>\w)\w*\.', '\g<foo>.', name)
                name_short = re.sub('_', '-', name)
                name_short = re.sub('\.', '_', name_short)
-               mavio.mav.param_value_send(name_short, float(val), type, len(self.param_map), index)
+               self.dispatcher.mavio.mav.param_value_send(name_short, float(val), type, len(self.param_map), index)
             except Exception, ex:
                print str(ex)
-
-
-class DeadbeefHandler(Thread):
-
-   def __init__(self, dispatcher):
-      Thread.__init__(self)
-      self.dispatcher = dispatcher
-
-   def run(self):
-      for e in self.dispatcher.generator('BAD_DATA'):
-         print 'bad data ignored'
 
