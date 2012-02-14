@@ -86,6 +86,8 @@ components:
       - core_mon: sub
       - ctrl: req # opcd
       - gps: sub
+      - arbiter_ctrl: req
+      - hlsm: sub
 
    - name: opcd
      gates:
@@ -110,6 +112,8 @@ connections:
    - [ localizer.kalman,         core.kalman          ]
    - [ mavlink.core_mon,         core.mon             ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
+   - [ mavlink.arbiter_ctrl,     arbiter.ctrl         ]
+   - [ mavlink.hlsm,             arbiter.hlsm         ]
    - [ remote.ctrl,              core.ctrl            ]
    - [ localizer.networks,       netscan.networks     ]
    - [ core_logger.log,          core.log             ]

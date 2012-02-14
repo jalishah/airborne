@@ -15,11 +15,12 @@ from time import sleep
 # get socket map and open mavio:
 socket_map = generate_map('mavlink')
 mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 1)
+arbiter_interface = ArbiterInterface(socket_map['arbiter_ctrl'])
 
 # start parameter handlers and dispatcher (handles all incoming data):
 dispatcher = GenDisp(mavio, True)
 handlers = [ParamHandler(dispatcher),
-   MissionHandler(dispatcher),
+   MissionHandler(dispatcher, arbiter_interface),
    DeadbeefHandler(dispatcher)]
 dispatcher.start(handlers)
 
