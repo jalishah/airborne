@@ -73,9 +73,8 @@ class GenDisp(Thread):
             return
 
    def _read_pair(self):
-      message = self.mavio.recv_msg()
-      if message:
-         return message.get_type(), message
+      message = self.mavio.read()
+      return message.get_type(), message
 
    def run(self):
       while True:
