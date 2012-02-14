@@ -1,6 +1,6 @@
 
-from mavio import MAVIO_Serial
 from scl import generate_map
+from util.mavio import MAVIO_Serial
 from util.gendisp import GenDisp
 from util.mavlink_util import MAVLink_Interface
 from handlers.params import ParamHandler
