@@ -2,7 +2,7 @@
 
 from named_daemon import daemonize
 from scl import generate_map
-from flight_manager import FlightManager
+from flight_manager import FlightManager, StateMachineError
 from protocols.arbiter_driver import ArbiterProtocolDriver
 from protocols.core_interface import CoreInterface
 from protocols.state_update_interface import StateUpdateInterface
@@ -24,6 +24,6 @@ def main(name):
       except CoreError, e:
          apd.send_err(-3, 'core error')
 
-
+main('arbiter')
 daemonize('arbiter', main)
 

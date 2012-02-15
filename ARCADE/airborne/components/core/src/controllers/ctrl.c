@@ -259,7 +259,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       
       mon_data.x = model_state->x.pos;
       mon_data.y = model_state->y.pos;
-      mon_data.z = model_state->baro_z.pos;
+      mon_data.z = model_state->ultra_z.pos;
       
       mon_data.gps_start_lat = gps_start_lat();
       mon_data.gps_start_lon = gps_start_lon();

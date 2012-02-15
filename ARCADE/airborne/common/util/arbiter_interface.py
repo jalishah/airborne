@@ -27,10 +27,11 @@ class ArbiterInterface:
       self._socket.send(req_data)
       rep_data = self._socket.recv()
       rep.ParseFromString(rep_data)
+      print rep.status
       if rep.status != 0:
          raise ArbiterError('arbiter error: %s - code: %d' % (rep.message, rep.status))
 
-   def takeoff(alt = None, speed = None):
+   def takeoff(self, alt = None, speed = None):
       """takeoff"""
       req = Request()
       req.type = TAKEOFF
@@ -41,7 +42,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def land(speed = None):
+   def land(self, speed = None):
       """land at current position"""
       req = Request()
       req.type = LAND
@@ -50,7 +51,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def move(pos, alt = None, speed = None, rel = None):
+   def move(self, pos, alt = None, speed = None, rel = None):
       """move to position"""
       req = Request()
       req.type = MOVE
@@ -64,7 +65,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def rotate_poi(pos, rel = None, speed = None):
+   def rotate_poi(self, pos, rel = None, speed = None):
       """rotate UAV towards pos"""
       req = Request()
       req.type = ROT
@@ -76,7 +77,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def rotate_fixed(yaw, rel = None, speed = None):
+   def rotate_fixed(self, yaw, rel = None, speed = None):
       """rotate UAV towards fixed angle"""
       req = Request()
       req.type = ROT
@@ -88,7 +89,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def stop():
+   def stop(self):
       """stop UAV at current position"""
       req = Request()
       req.type = STOP

@@ -134,10 +134,8 @@ void model_step(model_state_t *out, model_input_t *in)
    float world_acc_x = world_vector.x_dir - sliding_avg_get(x_acc_avg);
    float world_acc_y = world_vector.y_dir - sliding_avg_get(y_acc_avg);
    float world_acc_z = world_vector.z_dir - sliding_avg_get(z_acc_avg);
-   
 
    /* set-up kalman filter inputs: */
-
    const kalman_in_t x_in =
    {
       in->dt,
@@ -203,15 +201,15 @@ void model_step(model_state_t *out, model_input_t *in)
    out->y.speed = y_kalman_out.speed;
    out->y.acc = world_acc_y;
 
-   KalmanData kalman_data = KALMAN_DATA__INIT;
+   /*KalmanData kalman_data = KALMAN_DATA__INIT;
    kalman_data.lon = out->x.pos; //in->gps_data.start_x;
    kalman_data.lat = out->y.pos; //in->gps_data.start_y;
-   EVERY_N_TIMES(50,
+   EVERY_N_TIMES(80,
                  unsigned int data_len = (unsigned int)kalman_data__get_packed_size(&kalman_data);
                  void *buffer = malloc(data_len);
                  kalman_data__pack(&kalman_data, buffer);
                  scl_send_dynamic(socket, buffer, data_len, ZMQ_NOBLOCK);
-                );
+                );*/
   
    /* set accessable state variables: */
    tsfloat_set(&yaw, out->yaw.angle);
@@ -219,7 +217,6 @@ void model_step(model_state_t *out, model_input_t *in)
    tsfloat_set(&y, out->y.pos);
    tsfloat_set(&baro_alt, out->baro_z.pos);
    tsfloat_set(&ultra_alt, out->ultra_z.pos);
-
 }
 
 

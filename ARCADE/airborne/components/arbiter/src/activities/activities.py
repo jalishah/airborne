@@ -121,10 +121,10 @@ class TakeoffActivity(Activity, StabMixIn):
       core.set_gps(core.get_state(GPS_REL))
       core.reset_controllers()
 
-      if self._arg.alt:
-         core.set_altitude(self._arg.alt, RELATIVE)
-      else:
-         core.set_altitude(STD_HOVERING_ALT, RELATIVE)
+      #if len(self._arg.alt:
+      #   core.set_altitude(self._arg.alt, RELATIVE)
+      #else:
+      #   core.set_altitude(STD_HOVERING_ALT, RELATIVE)
 
       self.stabilize()
       sm.done()

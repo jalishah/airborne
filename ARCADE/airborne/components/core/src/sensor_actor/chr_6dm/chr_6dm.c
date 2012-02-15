@@ -213,6 +213,7 @@ static void chr6dm_handle_packet(unsigned char type, unsigned char *data)
             imu_data.roll_rate = sensor_array[CHR6DM_ROLL_RATE];
             imu_data.yaw_rate = sensor_array[CHR6DM_YAW_RATE];
             
+
             imu_data.acc_pitch = sensor_array[CHR6DM_ACC_X] * acc_pitch_scale;
             imu_data.acc_roll = sensor_array[CHR6DM_ACC_Y] * acc_roll_scale;
             imu_data.acc_yaw = sensor_array[CHR6DM_ACC_Z] * acc_yaw_scale;

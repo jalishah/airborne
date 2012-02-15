@@ -29,7 +29,9 @@ MAV_MODE_FLAG_SAFETY_ARMED = 128 # 0b10000000 MAV safety set to armed. Motors ar
 
 
 class ArbiterBridge(Bridge):
-   def __init__(self, socket_map, mav_iface, send_interval):
+
+   def __init__(self, socket_map, mav_iface, send_interval, dispatcher):
+      self.dispatcher = dispatcher
       self.auto_mode_flags = MAV_MODE_FLAG_SAFETY_ARMED \
          | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED \
          | MAV_MODE_FLAG_STABILIZE_ENABLED \
@@ -60,7 +62,7 @@ class ArbiterBridge(Bridge):
          voltage_battery = 15 * 1000
          current_battery = 0
          battery_remaining = 100
-         drop_rate_comm = 1000 * 10
+         drop_rate_comm = int(10000.0 * self.dispatcher.loss_rate)
          errors_comm = 0
          errors_count1 = 0
          errors_count2 = 0

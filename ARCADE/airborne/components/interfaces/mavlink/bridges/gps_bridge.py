@@ -32,14 +32,15 @@ class GpsBridge(Bridge):
             continue
          self.mav_iface.send_gps_position(gps.fix, gps.lon, gps.lat, 
             gps.alt, gps.hdop, gps.vdop, gps.speed, gps.course, gps.sats)
-         try:
-            args = [''] * 5
-            for satinfo in gps.satinfo:
-               satinfo_pairs = [(0, satinfo.id), (1, satinfo.in_use),
-                  (2, satinfo.elv), (3, satinfo.azimuth), (4, satinfo.sig)]
-               for param_i, data in satinfo_pairs:
-                  args[param_i] += pack('b', data)
-            args = [len(gps.satinfo)] + args
-            self.mav_iface.mavio.mav.gps_status_send(*args)
-         except:
-            pass
+         args = [''] * 5
+         for satinfo in gps.satinfo:
+            satinfo_pairs = [(0, satinfo.id),
+               (1, satinfo.in_use),
+               (2, satinfo.elv),
+               (3, int(satinfo.azimuth / 360.0 * 255.0)),
+               (4, satinfo.sig)]
+            for param_i, data in satinfo_pairs:
+               args[param_i] += pack('B', data & 0xFF)
+         args = [len(gps.satinfo)] + args
+         self.mav_iface.mavio.mav.gps_status_send(*args)
+

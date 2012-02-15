@@ -10,5 +10,5 @@ class DeadbeefHandler(Thread):
 
    def run(self):
       for e in self.dispatcher.generator('BAD_DATA'):
-         print 'bad data ignored'
+         pass #print 'bad data ignored'
 

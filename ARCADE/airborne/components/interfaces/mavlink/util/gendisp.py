@@ -53,6 +53,7 @@ class GenDisp(Thread):
       self.mavio = mavio
       self.queues = RegexDict()
       self.debug = debug
+      self.loss_rate = 0
 
    def start(self, handlers):
       for handler in handlers:
@@ -77,12 +78,22 @@ class GenDisp(Thread):
       return message.get_type(), message
 
    def run(self):
+      last_seq = None
       while True:
          try:
             type, data = self._read_pair()
+            seq = data.get_seq()
+            if seq != 0:
+               if last_seq: # out-of-order messages will confuse the calc.
+                  loss_hist = loss_hist[1:] + [((seq - last_seq) % 256) - 1]
+               sum_lost = float(sum(loss_hist))
+               self.loss_rate = sum_lost / (sum_lost + len(loss_hist))
+               print seq
+               last_seq = seq
             if self.debug:
                print 'dispatcher is delegating:', str(type)
          except:
+            raise
             if self.debug:
                print 'read failed'
             sleep(0.1)
@@ -93,3 +104,4 @@ class GenDisp(Thread):
          except:
             if self.debug:
                print 'data', str(data), 'of type', str(type), 'not handled'
+ 

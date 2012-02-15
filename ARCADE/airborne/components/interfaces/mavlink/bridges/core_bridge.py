@@ -28,15 +28,15 @@ class CoreBridge(Bridge):
          sleep(self.send_interval)
          try:
             mon = self.mon
-            self.mav_iface.send_local_position(mon.x, mon.y, mon.z,
-               mon.x_speed, mon.y_speed, mon.z_speed)
+            self.mav_iface.send_local_position(mon.x, mon.y, -mon.z,
+               mon.x_speed, mon.y_speed, -mon.z_speed)
             self.mav_iface.send_attitude(mon.roll, mon.pitch, mon.yaw,
                mon.roll_speed, mon.pitch_speed, mon.yaw_speed)
             ground_speed = sqrt(mon.x_speed ** 2, mon.y_speed ** 2)
             airspeed = 0.0 # TODO: fix me
             throttle = 0.5 # todo: fix me
             self.mav_iface.mavio.mav.vfr_hud_send(airspeed, ground_speed,
-               mon.yaw, throttle, mon.z, mon.z_speed)
+               mon.yaw, throttle, -mon.z, -mon.z_speed)
          except:
             pass
 

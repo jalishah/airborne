@@ -13,7 +13,7 @@ from logging import Logger
 from arbiter_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
 from state_update_pb2 import StateUpdate
 from activities.activities import DummyActivity, TakeoffActivity, LandActivity, MoveActivity, StopActivity
-from flight_sm.flight_sm import flight_sm
+from flight_sm import flight_sm
 
 
 class StateMachineError(Exception):

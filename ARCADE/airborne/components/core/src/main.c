@@ -156,6 +156,7 @@ void _main(int argc, char *argv[])
       model_input_t model_input;
       model_input.dt = dt;
       ahrs_read(&model_input.ahrs_data);
+      
       gps_read(&model_input.gps_data);
       model_input.ultra_z = ultra_altimeter_read();
       model_input.baro_z = baro_altimeter_read();
@@ -199,7 +200,6 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
-   //_main(argc, argv);
    daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }

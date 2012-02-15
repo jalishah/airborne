@@ -131,7 +131,7 @@ void _main(int argc, char *argv[])
             gps_data.time = time_str;
 
             /* set system time to gps time once: */
-            if (!time_set)
+            if (0) //!time_set)
             {
                char shell_date_cmd[TIME_STR_LEN + 8];
                sprintf(shell_date_cmd, "date -s %s", time_str);
