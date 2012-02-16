@@ -39,7 +39,7 @@ static void generate_time_str(char str[TIME_STR_LEN], nmeaTIME *time)
    }
    else
    {
-      strftime(str, TIME_STR_LEN, "%Y-%m-%dT%H:%M:%S", &tm_time);
+      strftime(str, TIME_STR_LEN, "%Y-%m-%d %H:%M:%S", &tm_time);
    }
 }
 
@@ -131,10 +131,10 @@ void _main(int argc, char *argv[])
             gps_data.time = time_str;
 
             /* set system time to gps time once: */
-            if (0) //!time_set)
+            if (!time_set)
             {
                char shell_date_cmd[TIME_STR_LEN + 8];
-               sprintf(shell_date_cmd, "date -s %s", time_str);
+               sprintf(shell_date_cmd, "date -s \"%s\"", time_str);
                system(shell_date_cmd);
                time_set = 1;   
             }
