@@ -30,8 +30,9 @@ MAV_MODE_FLAG_SAFETY_ARMED = 128 # 0b10000000 MAV safety set to armed. Motors ar
 
 class ArbiterBridge(Bridge):
 
-   def __init__(self, socket_map, mav_iface, send_interval, dispatcher):
+   def __init__(self, socket_map, mav_iface, send_interval, dispatcher, core_bridge):
       self.dispatcher = dispatcher
+      self.core_bridge = core_bridge
       self.auto_mode_flags = MAV_MODE_FLAG_SAFETY_ARMED \
          | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED \
          | MAV_MODE_FLAG_STABILIZE_ENABLED \
@@ -45,6 +46,7 @@ class ArbiterBridge(Bridge):
          'YAW_CTRL', 'ALTITUDE_CTRL', 'XY_CTRL', 'MOTOR_CTRL'])
  
       self.sensors_enabled = self.sensors_present
+
       self.sensors_health = self.sensors_present
       self.load_avg = [ cpu_percent() * 10 ] * 60
       send_thread = Thread(target = self._send)
@@ -69,8 +71,13 @@ class ArbiterBridge(Bridge):
          errors_count3 = 0
          errors_count4 = 0
          
+         if self.core_bridge.dead:
+            sensors_enabled = 0
+         else:
+            sensors_enabled = self.sensors_enabled
+         
          self.mav_iface.mavio.mav.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, self.auto_mode_flags, 0, MAV_STATE_ACTIVE)
-         self.mav_iface.mavio.mav.sys_status_send(self.sensors_present, self.sensors_enabled, self.sensors_health,
+         self.mav_iface.mavio.mav.sys_status_send(self.sensors_present, sensors_enabled, 0,
             self._load_avg(), voltage_battery, current_battery, battery_remaining, drop_rate_comm, 
             errors_comm, errors_count1, errors_count2, errors_count3, errors_count4)
          

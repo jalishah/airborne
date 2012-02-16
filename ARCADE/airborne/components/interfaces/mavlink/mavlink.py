@@ -28,5 +28,5 @@ dispatcher.start(handlers)
 mav_iface = MAVLink_Interface(mavio)
 core_bridge = CoreBridge(socket_map, mav_iface, 0.5)
 gps_bridge = GpsBridge(socket_map, mav_iface, 1.0)
-arbiter_bridge = ArbiterBridge(socket_map, mav_iface, 1.0, dispatcher)
+arbiter_bridge = ArbiterBridge(socket_map, mav_iface, 1.0, dispatcher, core_bridge)
 

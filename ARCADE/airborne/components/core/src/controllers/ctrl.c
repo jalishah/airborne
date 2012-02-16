@@ -22,6 +22,7 @@
 #include "../util/logger/logger.h"
 #include "../util/time/ltime.h"
 #include "../sensor_actor/interfaces/gps.h"
+#include "../sensor_actor/interfaces/health.h"
 
 
 typedef struct
@@ -278,7 +279,10 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.setpoint_z = tsfloat_get(&sp.alt);
       
       /* other useful stuff: */
-      mon_data.batt_voltage = 16.0;
+
+      health_data_t health_data;
+      fc_read_voltage(&health_data);
+      mon_data.batt_voltage = health_data.voltage;
       mon_data.batt_current = 20.0;
 
       //pthread_mutex_unlock(&scl_mutex);

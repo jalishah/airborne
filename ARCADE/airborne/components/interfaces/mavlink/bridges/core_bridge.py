@@ -1,8 +1,8 @@
 
 from bridge import Bridge
-from threading import Thread
+from threading import Thread, Timer
 from monitor_data_pb2 import CoreMonData
-from time import sleep
+from time import time, sleep
 from math import sqrt
 
 
@@ -14,14 +14,23 @@ class CoreBridge(Bridge):
       send_thread = Thread(target = self._send)
       recv_thread.start()
       send_thread.start()
+      self.dead = False
+
+   def _dead(self):
+      self.dead = True
 
    def _receive(self):
       mon = CoreMonData()
       socket = self.socket_map['core_mon']
+      last_read = time()
       while True:
+         t = Timer(1.0, self.dead)
+         t.start()
          str = socket.recv()
          mon.ParseFromString(str)
          self.mon = mon
+         t.cancel()
+         self.dead = False
 
    def _send(self):
       while True:

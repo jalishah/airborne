@@ -66,7 +66,7 @@ void fc_read_motors_rpm(float *rpm_out)
 
 
 
-int health_read(health_data_t *data_out)
+int fc_read_voltage(health_data_t *data_out)
 {
    ASSERT_NOT_NULL(data_out);
    ASSERT_TRUE(sread_thread.running);

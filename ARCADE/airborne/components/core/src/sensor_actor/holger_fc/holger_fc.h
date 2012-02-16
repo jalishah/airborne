@@ -30,7 +30,7 @@ float fc_read_alt(void);
 /*
  * reads current battery voltage
  */
-float fc_read_voltage(health_data_t *data_out);
+int fc_read_voltage(health_data_t *data_out);
 
 
 /*

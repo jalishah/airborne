@@ -78,6 +78,7 @@ class GenDisp(Thread):
       return message.get_type(), message
 
    def run(self):
+      loss_hist = [ 0.0 ] * 10
       last_seq = None
       while True:
          try:

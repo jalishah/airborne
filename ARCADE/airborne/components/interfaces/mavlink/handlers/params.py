@@ -1,5 +1,5 @@
 
-from mavlinkv10 import MAV_VAR_FLOAT, MAV_VAR_INT32
+from mavlinkv10 import MAVLINK_TYPE_FLOAT, MAVLINK_TYPE_INT32_T
 from opcd_interface import OPCD_Interface
 from threading import Thread
 import re
@@ -15,7 +15,7 @@ class ParamHandler(Thread):
       self.param_rev_map = {}
       list = self.opcd_interface.get('')
       c = 0
-      type_map = {float: MAV_VAR_FLOAT, long: MAV_VAR_INT32}
+      type_map = {float: MAVLINK_TYPE_FLOAT, long: MAVLINK_TYPE_INT32_T}
       cast_map = {float: float, long: int}
       for name, val in list:
          try:
@@ -42,6 +42,8 @@ class ParamHandler(Thread):
                   print str(ex)
          elif e.get_type() == 'PARAM_REQUEST_READ':
             index = e.param_index
+            if index == -1:
+               return
             name, type, cast = self.param_map[index]
             try:
                val = self.opcd_interface.get(name)
@@ -50,5 +52,6 @@ class ParamHandler(Thread):
                name_short = re.sub('\.', '_', name_short)
                self.dispatcher.mavio.mav.param_value_send(name_short, float(val), type, len(self.param_map), index)
             except Exception, ex:
+               raise
                print str(ex)
 
