@@ -9,8 +9,9 @@ Released under GNU GPL version 3 or later
 import mavlinkv10 as mavlink
 import serial
 import time
-from threading import Lock
 import random
+import socket
+
 
 class MAVIO:
     
@@ -31,7 +32,6 @@ class MAVIO_Serial(MAVIO):
          dsrdtr = False, rtscts = False, xonxoff = False,
          writeTimeout = None)
       self.port.setDTR(False)
-      self.lock = Lock()
 
    def read(self):
       while True:
@@ -41,7 +41,24 @@ class MAVIO_Serial(MAVIO):
             return msg
 
    def write(self, data):
-      self.lock.acquire()
-      self.port.write(data) # NOTE: this call is already thread-safe!
-      self.lock.release()
+      self.port.write(data)
+
+
+class MAVIO_UDP(MAVIO):
+    
+   def __init__(self, address, port, source_system):
+      MAVIO.__init__(self, source_system)
+      self.address = address
+      self.port = port
+      self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+   def read(self):
+      while True:
+         data = self.socket.recvfrom(1)
+         msg = self.mav.parse_char(data)
+         if msg is not None:
+            return msg
+
+   def write(self, data):
+      self.socket.sendto(data, (self.address, self.port))
 

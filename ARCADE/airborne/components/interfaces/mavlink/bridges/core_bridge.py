@@ -24,7 +24,7 @@ class CoreBridge(Bridge):
       socket = self.socket_map['core_mon']
       last_read = time()
       while True:
-         t = Timer(1.0, self.dead)
+         t = Timer(1.0, self._dead)
          t.start()
          str = socket.recv()
          mon.ParseFromString(str)
