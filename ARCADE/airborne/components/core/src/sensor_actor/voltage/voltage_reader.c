@@ -31,7 +31,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          int val;
          fscanf(file, "%d", &val);
          fclose(file);
-         tsfloat_set(&voltage, ((float)val + 27.0951f) / 117.1319f);
+         tsfloat_set(&voltage, ((float)val - 56.0) / 134.0);
       }
       sleep(1);
    }

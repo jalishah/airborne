@@ -8,9 +8,9 @@ from handlers.mission import MissionHandler
 from handlers.deadbeef import DeadbeefHandler
 from bridges.core_bridge import CoreBridge
 from bridges.gps_bridge import GpsBridge
-from bridges.arbiter_bridge import ArbiterBridge
 from time import sleep
 from arbiter_interface import ArbiterInterface
+
 
 # get socket map and open mavio:
 socket_map = generate_map('mavlink')
@@ -27,7 +27,6 @@ dispatcher.start(handlers)
 
 # start outgoing bridges:
 mav_iface = MAVLink_Interface(mavio)
-core_bridge = CoreBridge(socket_map, mav_iface, 0.5)
+core_bridge = CoreBridge(socket_map, mav_iface, 0.3, dispatcher)
 gps_bridge = GpsBridge(socket_map, mav_iface, 1.0)
-arbiter_bridge = ArbiterBridge(socket_map, mav_iface, 1.0, dispatcher, core_bridge)
 

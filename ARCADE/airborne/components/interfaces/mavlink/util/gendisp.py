@@ -89,7 +89,6 @@ class GenDisp(Thread):
                   loss_hist = loss_hist[1:] + [((seq - last_seq) % 256) - 1]
                sum_lost = float(sum(loss_hist))
                self.loss_rate = sum_lost / (sum_lost + len(loss_hist))
-               print seq
                last_seq = seq
             if self.debug:
                print 'dispatcher is delegating:', str(type)

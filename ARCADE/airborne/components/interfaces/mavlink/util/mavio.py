@@ -19,6 +19,14 @@ class MAVIO:
       self.mav = mavlink.MAVLink(self, srcSystem = source_system)
       self.mav.robust_parsing = True
 
+   def read(self):
+      while True:
+         data = self._read_bytes()
+         for char in data:
+            msg = self.mav.parse_char(char)
+            if msg is not None:
+               return msg
+
 
 class MAVIO_Serial(MAVIO):
     
@@ -33,12 +41,8 @@ class MAVIO_Serial(MAVIO):
          writeTimeout = None)
       self.port.setDTR(False)
 
-   def read(self):
-      while True:
-         data = self.port.read(1)
-         msg = self.mav.parse_char(data)
-         if msg is not None:
-            return msg
+   def _read_bytes(self):
+      return self.port.read(1024)
 
    def write(self, data):
       self.port.write(data)
@@ -52,12 +56,9 @@ class MAVIO_UDP(MAVIO):
       self.port = port
       self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-   def read(self):
-      while True:
-         data = self.socket.recvfrom(1)
-         msg = self.mav.parse_char(data)
-         if msg is not None:
-            return msg
+
+   def _read_bytes(self):
+      return self.socket.recvfrom(1024)
 
    def write(self, data):
       self.socket.sendto(data, (self.address, self.port))
