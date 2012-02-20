@@ -376,7 +376,7 @@ void ctrl_init(void)
    tsfloat_init(&errors.y_error, 0.0f);
 
    /* create monitoring connection: */
-   const struct timespec period = {0, 200 * NSEC_PER_MSEC};
+   const struct timespec period = {0, 500 * NSEC_PER_MSEC};
    periodic_thread_start(&thread, thread_func, "mon_thread", 0, period, NULL);
 
    /* initialize controllers and navi: */

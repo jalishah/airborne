@@ -35,7 +35,6 @@ class MAVLink_Interface:
       return long(self._uptime() * 1000000.0)
 
    def _time_ms(self):
-      print int(time() * 1000.0)
       return int(time() * 1000.0)
 
    def _time_us(self):
@@ -63,7 +62,9 @@ class MAVLink_Interface:
          float(pitch_speed), # Pitch angular speed (rad/s)
          float(yaw_speed)) # Yaw angular speed (rad/s)
 
-   def send_gps_position(self, fix_type, lon_deg, lat_deg, alt_m, hdop_m = None, vdop_m = None, speed_m_s = None, course_deg = None, sats_visible = None):
+   def send_gps_position(self, fix_type, lon_deg, lat_deg, alt_m,
+                         hdop_m = None, vdop_m = None, speed_m_s = None,
+                         course_deg = None, sats_visible = None):
       params = [self._time_us(), # Timestamp (microseconds since UNIX epoch or microseconds since system boot)
          fix_type, # 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
          long(lat_deg * 1.0e7), # Latitude in 1E7 degrees

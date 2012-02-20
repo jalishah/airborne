@@ -14,8 +14,8 @@ from arbiter_interface import ArbiterInterface
 
 # get socket map and open mavio:
 socket_map = generate_map('mavlink')
-#mavio = MAVIO_UDP('10.0.0.6', 14550, source_system = 1)
-mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 1)
+mavio = MAVIO_UDP('10.0.0.2', 14550, source_system = 1)
+#mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 1)
 arbiter_interface = ArbiterInterface(socket_map['arbiter_ctrl'])
 
 # start parameter handlers and dispatcher (handles all incoming data):
@@ -27,6 +27,6 @@ dispatcher.start(handlers)
 
 # start outgoing bridges:
 mav_iface = MAVLink_Interface(mavio)
-core_bridge = CoreBridge(socket_map, mav_iface, 0.3, dispatcher)
+core_bridge = CoreBridge(socket_map, mav_iface, 0.5, dispatcher)
 gps_bridge = GpsBridge(socket_map, mav_iface, 1.0)
 

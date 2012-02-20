@@ -17,11 +17,15 @@ class GpsBridge(Bridge):
 
    def _receive(self):
       socket = self.socket_map['gps']
+      count = 0
       while True:
          str = socket.recv()
-         gps = GpsData()
-         gps.ParseFromString(str)
-         self.gps = gps
+         count += 1
+         if count == 5:
+            count = 0
+            gps = GpsData()
+            gps.ParseFromString(str)
+            self.gps = gps
 
    def _send(self):
       sat_send_counter = 5

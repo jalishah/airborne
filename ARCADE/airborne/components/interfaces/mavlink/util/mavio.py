@@ -22,9 +22,10 @@ class MAVIO:
    def read(self):
       while True:
          data = self._read_bytes()
-         msg = self.mav.parse_char(data)
-         if msg is not None:
-            return msg
+         for byte in data:
+            msg = self.mav.parse_char(byte)
+            if msg is not None:
+               return msg
 
 
 class MAVIO_Serial(MAVIO):

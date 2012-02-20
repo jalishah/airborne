@@ -31,5 +31,8 @@ message CoreMonData
 
    required float batt_voltage = 22;
    required float batt_current = 23;
+
+   required bool armed = 24;
+   required bool motors_running = 25;
 }
 
