@@ -2,8 +2,7 @@
 from core_pb2 import *
 from activity import Activity, StabMixIn
 
-from logging import log_config, debug as log_debug
-from logging import info as log_info, warning as log_warn, error as log_err
+from logging import debug as log_debug, info as log_info, warning as log_warn, error as log_err
 
 
 

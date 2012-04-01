@@ -1,11 +1,11 @@
 
+from math import hypot
 from time import sleep
 from util.geomath import lineq_n, meter_offset
 from numpy import array, zeros
-
 from core_pb2 import *
-
 from activity import Activity, StabMixIn
+
 
 
 class MoveActivity(Activity, StabMixIn):

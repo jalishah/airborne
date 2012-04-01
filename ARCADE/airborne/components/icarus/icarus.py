@@ -38,7 +38,7 @@ from logging import info as log_info, warning as log_warn, error as log_err
 from logging import DEBUG
 from os import sep
 from paths import user_data_dir
-
+from landing_spots import LandingSpots
 
 #class OperationRangeEstimate:
 #
@@ -50,10 +50,12 @@ from paths import user_data_dir
 #      return = self.speed * time_remaining
 
 
+
+
 class ICARUS:
 
    def __init__(self, sockets):
-      logfile = user_data_dir() + os.sep + 'ICARUS.log'
+      logfile = user_data_dir() + sep + 'ICARUS.log'
       log_config(filename = logfile, level = DEBUG,
                  format = '%(asctime)s - %(levelname)s: %(message)s')
       log_info('icarus starting up')
@@ -62,7 +64,7 @@ class ICARUS:
       self.emergency_land = False
       self.return_when_signal_lost = True
       self.fsm = flight_sm(self)
-      self.landing_spots = []
+      self.landing_spots = LandingSpots(3.0)
       self.core = CoreInterface(sockets['core'], sockets['mon'])
       self.state_emitter = StateEmitter(sockets['hlsm'])
       self.powerman = PowerMan(sockets['power_ctrl'], sockets['power_mon'])
@@ -76,6 +78,7 @@ class ICARUS:
 
 
    def state_time_monitor(self):
+      log_info('starting state time monitor')
       while True:
          if self.fsm._state != flight_Standing:
             # count the time for "in-the-air-states":
@@ -87,6 +90,32 @@ class ICARUS:
             self.uptime = int(up_list[0])
             up_file.close()
          sleep(1)
+
+
+   def core_monitor(self):
+      log_info('starting core state monitor')
+      last_valid = time()
+      self.mon_data = MonData()
+      while True:
+         self.core.mon_read(self.mon_data)
+         if self.mon_data.signal_valid:
+            last_valid = time()
+         else:
+            if time() - rc_timeout < last_valid:
+               log_err('invalid RC signal')
+               self.icarus_takeover = True
+
+
+   def power_state_monitor(self):
+      log_info('starting power state monitor')
+      while True:
+         self.power_state = self.powerman.read()
+         if self.power_state.critical:
+            log_warn('critical power state: emergency landing')
+            # disable system interface and take over control:
+            self.icarus_takeover = True
+            if not self.emergency_land:
+               self.emergency_landing()
 
 
    def move_and_land(self, x, y):
@@ -123,29 +152,6 @@ class ICARUS:
       # after emergency landing, the interface will stay locked
       # and power circruitry will go offline
 
-
-   def core_monitor(self):
-      last_valid = time()
-      self.mon_data = MonData()
-      while True:
-         self.core.mon_read(self.mon_data)
-         if self.mon_data.signal_valid:
-            last_valid = time()
-         else:
-            if time() - rc_timeout < last_valid:
-               log_err('invalid RC signal')
-               self.icarus_takeover = True
-
-
-   def power_state_monitor(self):
-      while True:
-         self.power_state = self.powerman.read()
-         if self.power_state.critical:
-            log_warn('critical power state: emergency landing')
-            # disable system interface and take over control:
-            self.icarus_takeover = True
-            if not self.emergency_land:
-               self.emergency_landing()
 
 
    def rotate(self, arg):
@@ -226,7 +232,7 @@ class ICARUS:
 
    def _takeoff_activity(self):
       log_info('taking off')
-      self.landing_spots.append((self.mon_data.x, self.mon_data.y))
+      self.landing_spots.add((self.mon_data.x, self.mon_data.y))
       self.activity.cancel_and_join()
       self.powerman.flight_mode()
       self.yaw_setpoint = self.mon.yaw
