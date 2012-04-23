@@ -25,7 +25,6 @@ model
 char_queue
 platform
 # sensor/actor:
-flightgear
 holger_fc
 rc_dsl
 scl_gps

@@ -24,7 +24,6 @@
 #include "util/logger/logger.h"
 #include "interfaces/cmd.h"
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
-#include "sensor_actor/flight_gear/fg_reader.h"
 #include "sensor_actor/interfaces/altimeter.h"
 #include "sensor_actor/interfaces/motors.h"
 #include "sensor_actor/leds/leds_overo.h"
