@@ -126,24 +126,11 @@ static void set_ctrl_param(Reply *reply, Request *request)
 }
 
 
-static float get_state(ValueID id)
+static void get_state(Params *params)
 {
-   float val;
-   switch (id)
-   {
-      case VALUE_ID__GPS_START_LON:
-         val = gps_start_lon();
-         break;
-
-      case VALUE_ID__GPS_START_LAT:
-         val = gps_start_lat();
-         break;
-
-      case VALUE_ID__GPS_START_ALT:
-         val = gps_start_alt();
-         break;
-   }
-   return val;
+   params->start_lon = gps_start_lon();
+   params->start_lat = gps_start_lat();
+   params->start_alt = gps_start_alt();
 }
 
 
@@ -162,7 +149,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          continue;
       }
       Request *request = request__unpack(NULL, raw_data_size, raw_data);
-      float val;
+      Params params = PARAMS__INIT;
       if (request == NULL)
       {
          reply.status = STATUS__E_SYN;
@@ -192,17 +179,10 @@ SIMPLE_THREAD_BEGIN(thread_func)
                set_ctrl_param(&reply, request);
                break;
 
-            case REQUEST_TYPE__GET_VAL:
-               LOG(LL_DEBUG, "GET_VAL");
-               if (!request->has_val_id)
-               {
-                  reply.status = STATUS__E_SEM;
-               }
-               else
-               {
-                  reply.val = get_state(request->val_id);
-                  reply.has_val = 1;
-               }
+            case REQUEST_TYPE__GET_PARAMS:
+               LOG(LL_DEBUG, "GET_PARAMS");
+               reply.params = &params;
+               get_state(&params);
                break;
 
             default:

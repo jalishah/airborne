@@ -196,8 +196,8 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       
       mon_data.x = model_state->x.pos;
       mon_data.y = model_state->y.pos;
+      mon_data.z = model_state->baro_z.pos;
       mon_data.z_ground = model_state->ultra_z.pos;
-      mon_data.z_msl = model_state->baro_z.pos;
       
       mon_data.x_speed = model_state->x.speed;
       mon_data.y_speed = model_state->y.speed;

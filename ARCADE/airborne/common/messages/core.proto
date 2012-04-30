@@ -19,7 +19,7 @@ enum RequestType
    
    /* requests with parameters: */
    SET_CTRL_PARAM = 4; /* set controller parameter, requires CtrlData */
-   GET_VAL = 5; /* get a value / multiple values, requires ValueID */
+   GET_PARAMS = 5; /* get parameters */
 }
 
 
@@ -44,11 +44,25 @@ message CtrlData
 }
 
 
-enum ValueID
+message Params
 {
-   GPS_START_LON = 1;
-   GPS_START_LAT = 2;
-   GPS_START_ALT = 3;
+   // initial position reported by GPS,
+   // when core was started:
+   required double start_lon = 1;
+   required double start_lat = 2;
+   required double start_alt = 3;
+
+   // position setpoints:
+   required float setp_x = 4;
+   required float setp_y = 5;
+   required float setp_z = 6;
+   optional float setp_z_ground = 7; // one of them is required, ...
+   optional float setp_yaw = 8;      // ... but not both!
+
+   // speed control setpoints:
+   required float setp_speed_xy = 9;
+   required float setp_speed_z = 10;
+   required float setp_speed_yaw = 11;
 };
 
 
@@ -56,7 +70,6 @@ message Request
 {
    required RequestType type =   1;
    optional CtrlData ctrl_data = 2; /* needed if type == SET_CTRL_DATA */
-   optional ValueID val_id =   3; /* needed if type == GET_VALUE */
 }
 
 
@@ -72,7 +85,7 @@ enum Status
 message Reply
 {
    required Status status = 1;
-   optional double val =    2; /* content depends on request */
+   optional Params params = 2; /* required if type == GET_PARAMS */
 }
 
 
@@ -93,8 +106,8 @@ message MonData
 
    required float x =        7; /* x position relative to starting point  */
    required float y =        8; /* y position relative to starting point */
+   required float z =        10; /* z position relative to starting gps altitude */
    required float z_ground = 9; /* z position above ground */
-   required float z_msl =   10; /* z position above msl */
 
    required float x_speed = 11; /* x speed in m/s */
    required float y_speed = 12; /* y speed in m/s */
