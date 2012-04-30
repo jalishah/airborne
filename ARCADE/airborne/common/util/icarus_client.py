@@ -3,7 +3,7 @@
 # sends ICARUS commands and reads status
 
 
-from icarus__pb2 import *
+from icarus_pb2 import *
 
 
 class ICARUS_Error(Exception):
@@ -31,18 +31,18 @@ class ICARUS_Client:
 
 
    def takeoff(self, z, glob, speed):
-      """takeoff"""
       req = Request()
       req.type = TAKEOFF
-      if alt:
-         req.pos.append(alt)
-      if speed:
+      if not z is None:
+         req.takeoff_data.z = z
+      if not glob is None:
+         req.glob = glob
+      if not speed is None:
          req.speed = speed
       self._execute(req)
 
 
    def land(self, speed):
-      """land at current position"""
       req = Request()
       req.type = LAND
       if speed:
@@ -51,7 +51,6 @@ class ICARUS_Client:
 
 
    def move(self, pos, glob, rel, speed, block):
-      """move to position"""
       req = Request()
       req.type = MOVE
       if rel:
@@ -65,7 +64,6 @@ class ICARUS_Client:
 
 
    def rotate(self, pos, glob, rel, speed, block):
-      """rotate UAV towards pos"""
       req = Request()
       req.type = ROT
       req.pos.extend(pos)
@@ -77,9 +75,7 @@ class ICARUS_Client:
 
 
    def stop(self):
-      """stop UAV at current position"""
       req = Request()
       req.type = STOP
       self._execute(req)
-
 

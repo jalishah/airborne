@@ -14,21 +14,20 @@ from math import atan2
 from time import sleep
 from logging import Logger
 from icarus_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
+from protocols.icarus_server import ICARUS_Exception
 from state_update_pb2 import StateUpdate
 from activities.activities import DummyActivity, TakeoffActivity, LandActivity, MoveActivity, StopActivity
 from flight_sm import flight_sm, flight_Hovering, flight_Moving, flight_Stopping
 
 
-class StateMachineError(Exception):
-   pass
-
 
 class FlightManager:
 
-   def __init__(self, core, sui, mon):
+
+   def __init__(self, core, state_emitter, monitor):
       self.core = core
-      self.sui = sui
-      self.mon = mon
+      self.state_emitter = state_emitter
+      self.monitor = monitor
       self.fsm = flight_sm(self)
       self.landing_spots = []
       self.activity = DummyActivity()
@@ -41,9 +40,10 @@ class FlightManager:
       The code is only executed when the system is in a valid state.
       '''
       prev_yaw = None
+      min_rot_ground_alt = 2.0
       valid_states = [flight_Hovering, flight_Moving, flight_Stopping]
       while True:
-         if self.fsm._state in valid_states:
+         if self.fsm._state != flight_Landing and self.monitor.data.z_ground > min_rot_ground_alt:
             print 'system is able to rotate'
             try:
                if isinstance(self.yaw_target, float):
@@ -53,7 +53,7 @@ class FlightManager:
                   poi_x = self.yaw_target[0]
                   poi_y = self.yaw_target[1]
                   print 'POI mode, x =', poi_x, ' y =', poi_y
-                  yaw = atan2(self.mon.data.y - poi_y, self.mon.data.x - poi_x)
+                  yaw = atan2(self.monitor.data.y - poi_y, self.monitor.data.x - poi_x)
                if prev_yaw != yaw:
                   print 'setting yaw to:', yaw
                   self.core.set_ctrl_param(POS_YAW, yaw)
@@ -83,14 +83,18 @@ class FlightManager:
          raise ValueError('could not handle request type: %f' % req.type)
 
 
+
    # underscore prefixed methods are 
    # called internally from state machine
 
+
    def _error(self):
-      raise StateMachineError
+      raise ICARUS_Exception(-1, 'flight state machine error')
+
 
    def _broadcast(self):
-      self._sui.send(self.fsm._state)
+      self.state_emitter.send(self.fsm._state)
+
 
    def _save_power_activity(self):
       print 'save_power_activity'
@@ -98,12 +102,14 @@ class FlightManager:
       self.activity = PowerSaveActivity(self.core)
       self.activity.start()
 
+
    def _takeoff_activity(self):
       print 'takeoff_activity'
-      self.landing_spots.append((self.mon.data.x, self.mon.data.y))
+      self.landing_spots.append((self.monitor.data.x, self.monitor.data.y))
       self.activity.cancel_and_join()
       self.activity = TakeoffActivity(self.fsm, self.core, self.arg)
       self.activity.start()
+
 
    def _land_activity(self):
       print 'land_activity'
@@ -111,11 +117,13 @@ class FlightManager:
       self.activity = LandActivity(self.fsm, self.core)
       self.activity.start()
 
+
    def _move_activity(self):
       print 'move_activity'
       self.activity.cancel_and_join()
       self.activity = MoveActivity(self.fsm, self.core, self.arg)
       self.activity.start()
+
 
    def _stop_activity(self):
       print 'stop_activity'

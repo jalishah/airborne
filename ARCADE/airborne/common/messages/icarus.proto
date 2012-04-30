@@ -114,11 +114,20 @@ message Request
     */
 
 }
- 
- 
+
+
+enum Status
+{
+   OK =     0; /* everything ok */
+   E_SYN = -1; /* syntactic error in data */
+   E_SEM = -2; /* semantic errror in protobuf data */
+   E_HW =  -3; /* hardware error */
+}
+
+
 message Reply /* icarus reply */
 {
-   required int32 status = 1;
+   required Status status = 1;
    optional string message = 2;
 }
  

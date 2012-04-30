@@ -103,7 +103,7 @@ class TakeoffActivity(Activity, StabMixIn):
    def run(self):
       sm = self._sm
       core = self._core
-      core.set_altitude(self.LOW_ALT_SETPOINT, RELATIVE)
+      core.set_ctrl_param(POS_Z_MSL, self.LOW_ALT_SETPOINT, RELATIVE)
       core.power_on()
 
       if self._canceled:
