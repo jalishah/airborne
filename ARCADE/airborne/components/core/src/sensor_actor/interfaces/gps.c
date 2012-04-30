@@ -9,6 +9,7 @@
 
 double start_lon = 0.0;
 double start_lat = 0.0;
+float start_alt = 0.0;
 
 
 int gps_init(void)
@@ -29,11 +30,18 @@ double gps_start_lat(void)
 }
 
 
+float gps_start_alt(void)
+{
+   return start_alt;
+}
+
+
 void gps_read(gps_data_t *data)
 {
    scl_gps_read(data);
    start_lat = data->start_lat;
    start_lon = data->start_lon;
+   start_alt = data->start_alt;
 }
 
 

@@ -4,23 +4,6 @@ from core_pb2 import *
 from math import sqrt
 
 
-# altitude control setpoints:
-LOW_ALT_SETPOINT = -10.0
-MIN_HOVERING_ALT = 0.57
-STD_HOVERING_ALT = 0.5
-
-# stabilization counter and waiting time:
-POLLING_TIMEOUT = 0.1
-STAB_COUNT = 20
-
-# epsilon values for stabilizing controllers:
-LAT_STAB_EPSILON = 3.0
-ALT_STAB_EPSILON = 0.4
-YAW_STAB_EPSILON = 0.3
-
-POWERSAVE_TIMEOUT = 60 * 5
-
-
 class Activity(Thread):
 
    def __init__(self):
@@ -36,29 +19,39 @@ class Activity(Thread):
 
 
 class StabMixIn:
+   
+   LAT_STAB_EPSILON = 3.0
+   ALT_STAB_EPSILON = 0.4
+   YAW_STAB_EPSILON = 0.3
+   POLLING_TIMEOUT = 0.1
+   STAB_COUNT = 20
 
    def __init__(self, core):
       self._core = core
 
    def stabilize(self):
+      core = self._core
       count = 0
       while True:
          count += 1
-         if count == STAB_COUNT:
+         if count == self.STAB_COUNT:
             break
          if self._canceled:
             return
-         sleep(POLLING_TIMEOUT)
-         core = self._core
-         x, y = core.get_ctrl_error(GPS)
-         if core.get_ctrl_error(ALT) > ALT_STAB_EPSILON:
-            print 'alt instable', core.get_ctrl_error(ALT)
+         sleep(self.POLLING_TIMEOUT)
+         # read error values from core:
+         x_err, y_err = core.get_ctrl_error(GPS)
+         alt_err = core.get_ctrl_error(ALT)
+         yaw_err = core.get_ctrl_error(YAW)
+         # reset counter if one of the errors becomes too huge:
+         if alt_err > self.ALT_STAB_EPSILON:
+            print 'alt instable', alt_err, count
             count = 0
-         if sqrt(x ** 2.0 + y ** 2.0) > LAT_STAB_EPSILON:
-            print 'gps instable', x, y
+         elif sqrt(x_err * x_err + y_err * y_err) > self.LAT_STAB_EPSILON:
+            print 'gps instable', x_err, y_err, count
             count = 0
-         if core.get_ctrl_error(YAW) > YAW_STAB_EPSILON:
-            print 'yaw instable', core.get_ctrl_error(YAW)
+         elif yaw_err > self.YAW_STAB_EPSILON:
+            print 'yaw instable', core.get_ctrl_error(YAW), count
             count = 0
       print 'stabilized'
 
@@ -74,6 +67,8 @@ class DummyActivity(Activity):
 
 class PowerSaveActivity(Activity):
 
+   POWERSAVE_TIMEOUT = 60 * 5
+
    def __init__(self, ctrl):
       Activity.__init__(self)
       self.ctrl = ctrl
@@ -83,12 +78,16 @@ class PowerSaveActivity(Activity):
       self.timer.join()
 
    def run(self):
-      self.timer = Timer(POWERSAVE_TIMEOUT, self.ctrl.power_off)
+      self.timer = Timer(self.POWERSAVE_TIMEOUT, self.ctrl.power_off)
       self.timer.start()
       self.timer.join()
 
 
 class TakeoffActivity(Activity, StabMixIn):
+
+   LOW_ALT_SETPOINT = -10.0
+   STD_HOVERING_ALT = 0.5
+
 
    def __init__(self, sm, core, arg):
       Activity.__init__(self)
@@ -104,13 +103,13 @@ class TakeoffActivity(Activity, StabMixIn):
    def run(self):
       sm = self._sm
       core = self._core
-      core.set_altitude(LOW_ALT_SETPOINT, RELATIVE)
+      core.set_altitude(self.LOW_ALT_SETPOINT, RELATIVE)
       core.power_on()
 
       if self._canceled:
          return
 
-      # "point of no return", cancellation not possible anymore
+      # "point of no return":
       try:
          core.start_motors()
       except:
@@ -132,14 +131,17 @@ class TakeoffActivity(Activity, StabMixIn):
 
 class LandActivity(Activity):
 
+   MIN_HOVERING_ALT = 0.57
+
+
    def __init__(self, fsm, core):
       Activity.__init__(self)
       self._fsm = fsm
       self._core = core
 
    def run(self):
-      self._core.set_altitude(ALT, MIN_HOVERING_ALT / 3.0, RELATIVE)
-      while self._core.get_state(ULTRA_ALT) > MIN_HOVERING_ALT:
+      self._core.set_altitude(ALT, self.MIN_HOVERING_ALT / 3.0, RELATIVE)
+      while self._core.get_state(ULTRA_ALT) > self.MIN_HOVERING_ALT:
          sleep(POLLING_TIMEOUT)
       self._core.stop_motors()
       self._fsm.landing_done()

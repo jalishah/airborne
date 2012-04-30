@@ -41,6 +41,6 @@ zmq_inproc
 util network_messages
 scl_messages
 # external libraries:
-cxcore cv meschach zmq yaml-cpp rt pthread m glib-2.0 protobuf-c)
+opencv_imgproc opencv_core opencv_video meschach zmq yaml-cpp rt pthread m glib-2.0 protobuf-c)
 
 INSTALL_TARGETS(/bin core)

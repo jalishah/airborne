@@ -6,84 +6,109 @@
  */
 
 
+/***************************************************
+ * the following data is sent through the cmd gate *
+ ***************************************************/
+
 enum RequestType
-{ 
-   /* general (no arguments in Request): */
-   POWER_ON = 1;
-   POWER_OFF = 2;
-   START_MOTORS = 3;
-   STOP_MOTORS = 4;
-
-   /* controller related (ctrl set in Request): */
-   CTRL_SET_SP = 5;
-   CTRL_GET_ERR = 6;
-   CTRL_RESET = 7;
-
-   /* state related (state set in Request): */
-   STATE_GET = 8;
-}
-
-
-enum CtrlType
-{ 
-   ALT = 1; /* altitude */
-   GPS = 2; /* gps position */
-   YAW = 3; /* yaw position */
-}
-
-
-enum AltCtrlType
 {
-   RELATIVE = 1;
-   ABSOLUTE = 2;
+   /* requests without parameters: */
+   SPIN_UP = 1; /* spin up motors */
+   SPIN_DOWN = 2; /* spin down motors */
+   RESET_CTRL = 3; /* reset controllers (I-parts) */
+   
+   /* requests with parameters: */
+   SET_CTRL_PARAM = 4; /* set controller parameter, requires CtrlData */
+   GET_VAL = 5; /* get a value / multiple values, requires ValueID */
+}
+
+
+enum CtrlParam
+{
+   POS_X = 1; /* X position, relative to starting point  */
+   POS_Y = 2; /* Y position, relative to starting point  */
+   POS_Z_GROUND = 3; /* altitude above ground */
+   POS_Z_MSL = 4; /* altitude above msl */
+   POS_YAW = 5; /* absolute yaw position, north = 0.0 */
+
+   SPEED_XY = 6; /* xy speed */
+   SPEED_Z = 7; /* z speed */
+   SPEED_YAW = 8; /* yaw speed */
 }
 
 
 message CtrlData
 {
-   required CtrlType type = 1;
-   repeated float pos = 2; /* required by CTRL_SET_SP */
-   optional float speed = 3; /* required by CTRL_SET_SP */
-   optional AltCtrlType alt_type = 4; /* required if CTRL_SET_SP */
+   required CtrlParam param = 1;
+   required float val = 2;
 }
 
 
-enum StateType
+enum ValueID
 {
-   /* model states: */
-   ULTRA_ALT = 1;
-   BARO_ALT = 2;
-   GPS_START = 3;
-   GPS_REL = 4;
-   YAW_POS = 5;
-   
-   /* system health information: */
-   VOLTAGE = 6;
-   RC_QUAL = 7;
-}
+   GPS_START_LON = 1;
+   GPS_START_LAT = 2;
+   GPS_START_ALT = 3;
+};
 
 
 message Request
 {
-   required RequestType type = 1;
-   optional CtrlData ctrl = 2; /* required by (SET|RESET)_SETPOINT */
-   optional StateType state_type = 3; /* required by GET_STATE */
+   required RequestType type =   1;
+   optional CtrlData ctrl_data = 2; /* needed if type == SET_CTRL_DATA */
+   optional ValueID val_id =   3; /* needed if type == GET_VALUE */
 }
 
 
 enum Status
 {
-   OK = 0; /* everything ok */
-   E_PB = -1; /* protbuf parser error */
-   E_ARG = -2; /* argument errror */
-   E_HW = -3; /* hardware error */
+   OK =     0; /* everything ok */
+   E_SYN = -1; /* syntactic error in data */
+   E_SEM = -2; /* semantic errror in protobuf data */
+   E_HW =  -3; /* hardware error */
 }
 
 
 message Reply
 {
    required Status status = 1;
-   optional string message = 2;
-   repeated float value = 3; /* set when STATE_GET or CTRL_GET_ERR requested */
+   optional double val =    2; /* content depends on request */
+}
+
+
+
+/******************************
+ * sent through the mon gate: *
+ ******************************/
+
+message MonData
+{
+   required float pitch = 1; /* pitch in rad */
+   required float roll =  2; /* roll in rad */
+   required float yaw =   3; /* yaw in rad */
+
+   required float pitch_speed = 4; /* pitch speed in rad/s */
+   required float roll_speed =  5; /* roll speed in rad/s */
+   required float yaw_speed =   6; /* yaw speed in rad/s */
+
+   required float x =        7; /* x position relative to starting point  */
+   required float y =        8; /* y position relative to starting point */
+   required float z_ground = 9; /* z position above ground */
+   required float z_msl =   10; /* z position above msl */
+
+   required float x_speed = 11; /* x speed in m/s */
+   required float y_speed = 12; /* y speed in m/s */
+   required float z_speed = 13; /* z speed in m/s */
+   
+   required float x_acc = 14; /* x acceleration in m/s^2 */
+   required float y_acc = 15; /* y acceleration in m/s^2 */
+   required float z_acc = 16; /* z acceleration in m/s^2 */
+
+   required float x_err =   17; /* x error in m */
+   required float y_err =   18; /* y error in m */
+   required float z_err =   19; /* z error in m */
+   required float yaw_err = 20; /* yaw error in rad */
+
+   required float batt_voltage = 21; /* battery voltage in V */
 }
 

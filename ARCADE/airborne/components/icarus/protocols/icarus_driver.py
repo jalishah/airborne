@@ -1,14 +1,15 @@
 
-# arbiter protcol driver
+
+# ICARUS Protcol Driver
+#
+# Author: Tobias Simon, Ilmenau University of Technology
 
 
-from arbiter_pb2 import Request, Reply
-from flight_manager import StateMachineError
-from core_interface import CoreError
+from icarus_pb2 import Request, Reply
 
 
-class ArbiterProtocolDriver:
-   """arbiter protocol driver: responsible for delegating incoming commands"""
+class ICARUS_Driver:
+   """ICARUS protocol driver: responsible for delegating incoming commands"""
 
    def __init__(self, socket, handler):
       """socket: a zmq socket, handler: a handler object for requests"""
@@ -16,7 +17,7 @@ class ArbiterProtocolDriver:
       self._handler = handler
 
    def handle(self):
-      """ receives, parses and executes arbiter command requests using the submited handler object"""
+      """ receives, parses and executes command requests using the submited handler object"""
       req = Request()
       req.ParseFromString(self._socket.recv())
       rep_data = Reply()

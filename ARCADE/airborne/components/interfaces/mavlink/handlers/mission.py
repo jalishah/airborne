@@ -1,5 +1,5 @@
 
-from arbiter_interface import ArbiterError
+from icarus_interface import ICARUS_Error
 from threading import Thread
 from mavlinkv10 import *
 
@@ -11,10 +11,10 @@ MAV_CMD_ACK_ERR_FAIL
 
 class MissionHandler(Thread):
 
-   def __init__(self, dispatcher, arbiter_interface):
+   def __init__(self, dispatcher, icarus_interface):
       Thread.__init__(self)
       self.dispatcher = dispatcher
-      self.arbiter_interface = arbiter_interface
+      self.icarus_interface = icarus_interface
 
 
    def _send_ack(self, status):
@@ -23,15 +23,15 @@ class MissionHandler(Thread):
 
    def _takeoff(self, arg):
       try:
-         self.arbiter_interface.takeoff()
+         self.icarus_interface.takeoff()
          self._send_ack(MAV_CMD_ACK_OK)
-      except ArbiterError:
+      except icarusError:
          self._send_ack(MAV_CMD_ACK_ERR_FAIL)
 
 
    def _land(self, arg):
       try:
-         self.arbiter_interface.land()
+         self.icarus_interface.land()
          self._send_ack(MAV_CMD_ACK_OK)
       except:
          self._send_ack(MAV_CMD_ACK_ERR_FAIL)

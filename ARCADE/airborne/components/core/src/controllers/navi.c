@@ -77,7 +77,7 @@ float desired_speed(float dist)
 /*
  * allocates and initializes memory for navigation control subsystem
  */
-void navigator_init(void)
+void navi_init(void)
 {
    ASSERT_ONCE();
    opcd_param_t params[] =
@@ -119,23 +119,23 @@ void navigator_init(void)
    vector2d_set(&prev_dest_pos, 0.0, 0.0);
    rot2d_context = rot2d_create();
 
-   navigator_reset_travel_speed();
+   navi_reset_travel_speed();
 }
 
 
-void navigator_reset(void)
+void navi_reset(void)
 {
    vector2d_set(&pos_err_sum, 0.0f, 0.0f);
 }
 
 
-void navigator_reset_travel_speed(void)
+void navi_reset_travel_speed(void)
 {
    tsfloat_set(&travel_speed, tsfloat_get(&speed_std));
 }
 
 
-int navigator_set_travel_speed(float speed)
+int navi_set_travel_speed(float speed)
 {
    if (speed > tsfloat_get(&speed_max) || speed < tsfloat_get(&speed_min))
    {
@@ -149,7 +149,7 @@ int navigator_set_travel_speed(float speed)
 /*
  * executes navigation control subsystem
  */
-void navigator_run(navi_output_t *output, const navi_input_t *input)
+void navi_run(navi_output_t *output, const navi_input_t *input)
 {
    ASSERT_NOT_NULL(output);
    ASSERT_NOT_NULL(input);

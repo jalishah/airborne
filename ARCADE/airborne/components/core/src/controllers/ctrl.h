@@ -49,13 +49,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state);
 /*
  * sets the setpoint for type to val
  */
-int ctrl_set_setpoint(CtrlType type, float *pos, float *speed);
-
-
-/*
- * returns the current error for type
- */
-size_t ctrl_get_err(float *out, CtrlType type);
+int ctrl_set_data(CtrlParam param, float data);
 
 
 #endif /* __CTRL_H__ */

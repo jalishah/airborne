@@ -88,7 +88,7 @@ void _main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
    syslog(LOG_CRIT, "logger opened");
-   sleep(1); /* give zmq some time to establish
+   sleep(1); /* give scl some time to establish
                 a link between publisher and subscriber */
 
    LOG(LL_INFO, "+------------------+");
@@ -104,16 +104,17 @@ void _main(int argc, char *argv[])
    if (mlockall(MCL_CURRENT | MCL_FUTURE))
    {
       LOG(LL_ERROR, "mlockall() failed");
-      exit(EXIT_FAILURE);
+      //exit(EXIT_FAILURE);
    }
 
    /* initialize hardware/drivers: */
-   omap_i2c_bus_init();
-   baro_altimeter_init();
+   void *x = omap_i2c_bus_init;
+   /*baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
    motors_init();
    voltage_reader_start();
+   */
    //gps_init();
    
 
@@ -124,6 +125,8 @@ void _main(int argc, char *argv[])
    /* initialize command interface */
    LOG(LL_INFO, "initializing cmd interface");
    cmd_init();
+   while(1)
+      sleep(1);
    
    /* prepare main loop: */
    for (int i = 0; i < NUM_AVG; i++)
@@ -143,7 +146,7 @@ void _main(int argc, char *argv[])
    clock_gettime(CLOCK_REALTIME, &ts_curr);
  
    /* run model and controller: */
-   while(1)
+   while (1)
    {
       /* calculate dt: */
       ts_prev = ts_curr;
@@ -168,7 +171,7 @@ void _main(int argc, char *argv[])
       mixer_in_t mixer_in;
       ctrl_step(&mixer_in, dt, &model_state);
  
-      /* set up mixer input:  */
+      /* set up mixer input: */
       mixer_in.pitch = sliding_avg_calc(output_avg[AVG_PITCH], mixer_in.pitch);
       mixer_in.roll = sliding_avg_calc(output_avg[AVG_ROLL], mixer_in.roll);
       mixer_in.yaw = sliding_avg_calc(output_avg[AVG_YAW], mixer_in.yaw);
@@ -199,6 +202,7 @@ void _cleanup(void)
 
 int main(int argc, char *argv[])
 {
+   _main(argc, argv);
    daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }

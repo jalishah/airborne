@@ -30,25 +30,31 @@ navi_output_t;
 /*
  * allocates and initializes memory for navigation control subsystem
  */
-void navigator_init(void);
+void navi_init(void);
 
 
 /*
  * resets i-part(s) of the navigation algorithm
  */
-void navigator_reset(void);
+void navi_reset(void);
 
 
-void navigator_reset_travel_speed(void);
+/*
+ * set travel speed to standard
+ */
+void navi_reset_travel_speed(void);
 
 
-int navigator_set_travel_speed(float speed);
+/*
+ * set maximal navi travel speed
+ */
+int navi_set_travel_speed(float speed);
 
 
 /*
  * executes navigation control subsystem
  */
-void navigator_run(navi_output_t *output, const navi_input_t *input);
+void navi_run(navi_output_t *output, const navi_input_t *input);
 
 
 

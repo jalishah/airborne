@@ -1,13 +1,12 @@
 
-# arbiter interface library
-# sends arbiter commands and reads status
+# ICARUS client service provider interface
+# sends ICARUS commands and reads status
 
 
-from arbiter_pb2 import *
-from threading import Lock 
+from icarus__pb2 import *
 
 
-class ArbiterError(Exception):
+class ICARUS_Error(Exception):
 
    def __init__(self, msg):
       self.msg = msg
@@ -16,7 +15,7 @@ class ArbiterError(Exception):
       return self.msg
 
 
-class ArbiterInterface:
+class ICARUS_Client:
 
    def __init__(self, socket):
       self._socket = socket
@@ -27,11 +26,11 @@ class ArbiterInterface:
       self._socket.send(req_data)
       rep_data = self._socket.recv()
       rep.ParseFromString(rep_data)
-      print rep.status
       if rep.status != 0:
-         raise ArbiterError('arbiter error: %s - code: %d' % (rep.message, rep.status))
+         raise ICARUS_Error('ICARUS_ error: %s - code: %d' % (rep.message, rep.status))
 
-   def takeoff(self, alt = None, speed = None):
+
+   def takeoff(self, z, glob, speed):
       """takeoff"""
       req = Request()
       req.type = TAKEOFF
@@ -42,7 +41,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def land(self, speed = None):
+   def land(self, speed):
       """land at current position"""
       req = Request()
       req.type = LAND
@@ -51,7 +50,7 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def move(self, pos, alt = None, speed = None, rel = None):
+   def move(self, pos, glob, rel, speed, block):
       """move to position"""
       req = Request()
       req.type = MOVE
@@ -65,23 +64,11 @@ class ArbiterInterface:
       self._execute(req)
 
 
-   def rotate_poi(self, pos, rel = None, speed = None):
+   def rotate(self, pos, glob, rel, speed, block):
       """rotate UAV towards pos"""
       req = Request()
       req.type = ROT
       req.pos.extend(pos)
-      if speed:
-         req.speed = speed
-      if rel:
-         req.rel = rel
-      self._execute(req)
-
-
-   def rotate_fixed(self, yaw, rel = None, speed = None):
-      """rotate UAV towards fixed angle"""
-      req = Request()
-      req.type = ROT
-      req.pos.append(yaw)
       if speed:
          req.speed = speed
       if rel:

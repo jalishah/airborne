@@ -11,7 +11,7 @@
 #include <periodic_thread.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
-#include <monitor_data.pb-c.h>
+#include <core.pb-c.h>
 #include <util.h>
 
 #include "navi.h"
@@ -27,31 +27,18 @@
 
 typedef struct
 {
-   tsfloat_t alt;
+   /* relative GPS setpoint: */
    tsfloat_t x;
    tsfloat_t y;
-   
-   /* altitude setpoint data: */
+   tsfloat_t z;
    enum 
    {
       ALT_MODE_ULTRA, 
       ALT_MODE_BARO
-   } alt_mode;
-   
-   /* yaw setpoint data: */
-   enum 
-   {
-      YAW_MODE_FIXED, 
-      YAW_MODE_POI
-   } yaw_mode;
-   tsfloat_t poi_x;
-   tsfloat_t poi_y;
+   }
+   alt_mode;
 }
 ctrl_sp_t;
-
-
-static controller_errors_t errors;
-
 static ctrl_sp_t sp;
 
 
@@ -69,8 +56,8 @@ static tsfloat_t pitch_bias;
 static tsfloat_t roll_bias;
 static tsint_t angle_cal;
 static tsfloat_t angle_max;
-static void *socket = NULL;
-static CoreMonData mon_data = CORE_MON_DATA__INIT;
+static void *mon_socket = NULL;
+static MonData mon_data = MON_DATA__INIT;
 static periodic_thread_t thread;
 
 
@@ -87,94 +74,59 @@ override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
 
 
 
-int ctrl_set_yaw_setpoint(float pos, float *speed)
-{
-   if (speed != NULL)
-   {
-      int status = yaw_ctrl_set_speed(*speed);
-      if (status != 0)
-      {
-         return status;
-      }
-   }
-   else
-   {
-      yaw_ctrl_std_speed();   
-   }
-   return yaw_ctrl_set_pos(pos);
-}
-
-
 /*
  * sets the setpoint for type to val
  * returns 0 on success or EINVAL
  */
-int ctrl_set_setpoint(CtrlType type, float *pos, float *speed)
+int ctrl_set_data(CtrlParam param, float value)
 {
    int status = 0;
-   switch (type)
+   switch (param)
    {
-      case CTRL_TYPE__YAW:
-         LOG(LL_DEBUG, "yaw setpoint update: %f", pos[0]);
-         status = ctrl_set_yaw_setpoint(pos[0], speed);
+      case CTRL_PARAM__POS_X:
+         LOG(LL_DEBUG, "x pos update: %f", value);
+         tsfloat_set(&sp.x, value);
          break;
- 
-      case CTRL_TYPE__GPS:
-         LOG(LL_DEBUG, "gps (meters) setpoint update: %f, %f", pos[0], pos[1]);
-         tsfloat_set(&sp.x, pos[0]);
-         tsfloat_set(&sp.y, pos[1]);
+
+      case CTRL_PARAM__POS_Y:
+         LOG(LL_DEBUG, "y pos update: %f", value);
+         tsfloat_set(&sp.x, value);
          break;
- 
-     case CTRL_TYPE__ALT:
-         LOG(LL_DEBUG, "ultra setpoint update: %f", pos[0]);
+
+      case CTRL_PARAM__POS_Z_GROUND:
+         LOG(LL_DEBUG, "ground z pos update: %f", value);
+         sp.alt_mode = ALT_MODE_ULTRA;
+         tsfloat_set(&sp.z, value);
+         break;
+
+      case CTRL_PARAM__POS_Z_MSL:
+         LOG(LL_DEBUG, "msl z pos update: %f", value);
          sp.alt_mode = ALT_MODE_BARO;
-         tsfloat_set(&sp.alt, pos[0]);
+         tsfloat_set(&sp.z, value);
+         break;
+
+      case CTRL_PARAM__POS_YAW:
+         LOG(LL_DEBUG, "yaw pos update: %f", value);
+         status = yaw_ctrl_set_pos(value);
          break;
    }
    return status;
 }
 
 
-/*
- * returns the current error value for type
- */
-size_t ctrl_get_err(float *out, CtrlType type)
-{
-   size_t size;
-   switch (type)
-   {
-      case CTRL_TYPE__ALT:
-         out[0] = tsfloat_get(&errors.alt_error);
-         size = 1;
-         break;
 
-      case CTRL_TYPE__GPS:
-         out[0] = tsfloat_get(&errors.x_error);
-         out[1] = tsfloat_get(&errors.y_error);
-         size = 2;
-         break;
-
-      case CTRL_TYPE__YAW:
-         out[0] = tsfloat_get(&errors.yaw_error);
-         size = 1;
-         break;
-   }
-
-   return size;
-}
-
-
-PERIODIC_THREAD_BEGIN(thread_func)
+PERIODIC_THREAD_BEGIN(mon_emitter)
 {
    PERIODIC_THREAD_LOOP_BEGIN
    {
       pthread_mutex_lock(&scl_mutex);
-      SCL_PACK_AND_SEND_DYNAMIC(socket, core_mon_data, mon_data);
+      SCL_PACK_AND_SEND_DYNAMIC(mon_socket, mon_data, mon_data);
       pthread_mutex_unlock(&scl_mutex);
    }
    PERIODIC_THREAD_LOOP_END
 }
 PERIODIC_THREAD_END
+
 
 
 void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
@@ -191,38 +143,31 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
    float yaw = model_state->yaw.angle;
 
    /*
-    * prepare and run controllers:
-    */
-   float err_x = pos_x - tsfloat_get(&sp.x);
-   float err_y = pos_y - tsfloat_get(&sp.y);
- 
-   /*
     * run controllers:
     */
-   float yaw_error;
-   float yaw_ctrl_val = yaw_ctrl_step(&yaw_error, model_state->yaw.angle,
+   float yaw_err;
+   float yaw_ctrl_val = yaw_ctrl_step(&yaw_err, model_state->yaw.angle,
                                       model_state->yaw.speed, dt);
 
-   float alt_err;
-   if (1) //sp.alt_mode == ALT_MODE_ULTRA)
+   float z_err;
+   if (sp.alt_mode == ALT_MODE_ULTRA)
    {
-      alt_err = tsfloat_get(&sp.alt) - model_state->ultra_z.pos;
+      z_err = tsfloat_get(&sp.z) - model_state->ultra_z.pos;
    }
    else
    {
-      alt_err = tsfloat_get(&sp.alt) - model_state->baro_z.pos;
+      z_err = tsfloat_get(&sp.z) - model_state->baro_z.pos;
    }
    
-   float gas_ctrl_val = alt_ctrl_step(alt_err, model_state->baro_z.speed, dt);
+   float gas_ctrl_val = alt_ctrl_step(z_err, model_state->baro_z.speed, dt);
 
-   /* run navigator: */
    navi_input_t navi_input = {tsfloat_get(&sp.x),
                               tsfloat_get(&sp.y),
                               pos_x, pos_y, speed_x, speed_y,
                               acc_x, acc_y, dt, yaw};
    
    navi_output_t navi_output;
-   navigator_run(&navi_output, &navi_input);
+   navi_run(&navi_output, &navi_input);
    if (tsint_get(&angle_cal))
    {
       navi_output.pitch = 0.0;
@@ -239,32 +184,21 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
                              -model_state->roll.angle + sym_limit(navi_output.roll, _angle_max)
                              + tsfloat_get(&roll_bias), dt);
 
-   //pthread_mutex_lock(&scl_mutex);
+   if (pthread_mutex_trylock(&scl_mutex) == 0)
    {
-      /* angles / angle rates: */
-      static int c = 0;
-      if (c++ > 100)
-      {
-         c = 0;
-         //LOG(LL_INFO, "%f, %f", model_state->ultra_z.pos, model_state->ultra_z.speed);
-      }
-
       mon_data.pitch = model_state->pitch.angle;
       mon_data.roll = model_state->roll.angle;
       mon_data.yaw = model_state->yaw.angle;
       
-      /* position / speeds / accelerations: */
       mon_data.pitch_speed = model_state->pitch.speed;
       mon_data.roll_speed = model_state->roll.speed;
       mon_data.yaw_speed = model_state->yaw.speed;
       
       mon_data.x = model_state->x.pos;
       mon_data.y = model_state->y.pos;
-      mon_data.z = model_state->ultra_z.pos;
+      mon_data.z_ground = model_state->ultra_z.pos;
+      mon_data.z_msl = model_state->baro_z.pos;
       
-      mon_data.gps_start_lat = gps_start_lat();
-      mon_data.gps_start_lon = gps_start_lon();
-
       mon_data.x_speed = model_state->x.speed;
       mon_data.y_speed = model_state->y.speed;
       mon_data.z_speed = model_state->baro_z.speed;
@@ -272,25 +206,15 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.x_acc = model_state->x.acc;
       mon_data.y_acc = model_state->y.acc;
       mon_data.z_acc = model_state->baro_z.acc;
-
-      /* setpoints: */
-      mon_data.setpoint_x = tsfloat_get(&sp.x);
-      mon_data.setpoint_y = tsfloat_get(&sp.y);
-      mon_data.setpoint_z = tsfloat_get(&sp.alt);
       
-      /* other useful stuff: */
+      mon_data.x_err = pos_x - tsfloat_get(&sp.x);
+      mon_data.y_err = pos_y - tsfloat_get(&sp.y);
+      mon_data.z_err = z_err;
+      mon_data.yaw_err = yaw_err;
 
       mon_data.batt_voltage = voltage_reader_get();
-      mon_data.batt_current = 0.0;
-
-      //pthread_mutex_unlock(&scl_mutex);
+      pthread_mutex_unlock(&scl_mutex);
    }
-
-   /* write error state variables: */
-   tsfloat_set(&errors.x_error, err_x);
-   tsfloat_set(&errors.y_error, err_y);
-   tsfloat_set(&errors.alt_error, alt_err);
-   tsfloat_set(&errors.yaw_error, yaw_error);
 
    /* finally, set actuator outputs: */
    pthread_mutex_lock(&override_data.mutex);
@@ -306,7 +230,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       data->pitch = pitch_ctrl_val;
       data->roll = roll_ctrl_val;
       data->yaw = yaw_ctrl_val;
-      data->gas = 1.0;//gas_ctrl_val;
+      data->gas = gas_ctrl_val;
    }
    pthread_mutex_unlock(&override_data.mutex);
 }
@@ -318,7 +242,7 @@ void ctrl_reset(void)
    alt_ctrl_reset();
    pid_reset(&pitch_controller);
    pid_reset(&roll_controller);
-   navigator_reset(); // TODO: not threadsafe
+   navi_reset(); // TODO: not threadsafe
 }
 
 
@@ -361,29 +285,23 @@ void ctrl_init(void)
    };
    opcd_params_apply("controllers.attitude.", params);
    
-   socket = scl_get_socket("mon");
-   ASSERT_NOT_NULL(socket);
+   mon_socket = scl_get_socket("mon");
+   ASSERT_NOT_NULL(mon_socket);
 
    /* initialize setpoints: */
-   tsfloat_init(&sp.alt, 1.0f);
+   tsfloat_init(&sp.z, 2.0f);
    tsfloat_init(&sp.x, 0.0f);
    tsfloat_init(&sp.y, 0.0f);
 
-   /* initialize errors: */
-   tsfloat_init(&errors.yaw_error, 0.0f);
-   tsfloat_init(&errors.alt_error, 0.0f);
-   tsfloat_init(&errors.x_error, 0.0f);
-   tsfloat_init(&errors.y_error, 0.0f);
-
    /* create monitoring connection: */
-   const struct timespec period = {0, 500 * NSEC_PER_MSEC};
-   periodic_thread_start(&thread, thread_func, "mon_thread", 0, period, NULL);
+   const struct timespec period = {0, 100 * NSEC_PER_MSEC};
+   periodic_thread_start(&thread, mon_emitter, "mon_thread", 0, period, NULL);
 
-   /* initialize controllers and navi: */
+   /* initialize controllers: */
    pid_init(&pitch_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
    pid_init(&roll_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
    yaw_ctrl_init();
    alt_ctrl_init();
-   navigator_init();
+   navi_init();
 }
 

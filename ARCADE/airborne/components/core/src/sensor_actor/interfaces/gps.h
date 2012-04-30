@@ -52,6 +52,8 @@ double gps_start_lon(void);
 
 double gps_start_lat(void);
 
+float gps_start_alt(void);
+
 int gps_init(void);
 
 

@@ -53,10 +53,10 @@ components:
       - state_machine: sub
       - core_log: sub
 
-   - name: arbiter
+   - name: icarus
      gates:
+      - mon: sub
       - hlsm: pub
-      - health: sub
       - core: req
       - ctrl: rep
 
@@ -67,7 +67,7 @@ components:
    - name: localizer
      gates:
       - networks: sub
-      - kalman: sub
+      - mon: sub
       - hlsm: sub
    
    - name: core
@@ -75,9 +75,7 @@ components:
       - log: pub
       - gps: sub
       - ctrl: rep
-      - kalman: pub
       - mon: pub
-      - health: pub
       - opcd_ctrl: req
       - opcd_event: sub
  
@@ -86,7 +84,7 @@ components:
       - core_mon: sub
       - ctrl: req # opcd
       - gps: sub
-      - arbiter_ctrl: req
+      - icarus_ctrl: req
       - hlsm: sub
 
    - name: opcd
@@ -109,24 +107,24 @@ connections:
    - [ opcd.ctrl,                core.opcd_ctrl       ]
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
    - [ opcd.ctrl,                opcd_shell.ctrl      ]
-   - [ localizer.kalman,         core.kalman          ]
+   - [ localizer.mon,            core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
-   - [ mavlink.arbiter_ctrl,     arbiter.ctrl         ]
-   - [ mavlink.hlsm,             arbiter.hlsm         ]
+   - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
+   - [ mavlink.hlsm,             icarus.hlsm         ]
    - [ remote.ctrl,              core.ctrl            ]
    - [ localizer.networks,       netscan.networks     ]
    - [ core_logger.log,          core.log             ]
    - [ gps_sensor.gps,           core.gps             ]
    - [ gps_sensor.gps,           mavlink.gps          ]
-   - [ arbiter.ctrl,             ferry_ctrl.ctrl      ]
-   - [ ferry_ctrl.hlsm,          arbiter.hlsm         ]
-   - [ blackbox.state_machine,   arbiter.hlsm         ]
+   - [ icarus.ctrl,             ferry_ctrl.ctrl      ]
+   - [ ferry_ctrl.hlsm,          icarus.hlsm         ]
+   - [ blackbox.state_machine,   icarus.hlsm         ]
    - [ blackbox.core_log,        core.log             ]
-   - [ arbiter.hlsm,             localizer.hlsm       ]
-   - [ arbiter.ctrl,             cmdshell.ctrl        ]
-   - [ core.health,              arbiter.health       ]
-   - [ core.ctrl,                arbiter.core         ]
+   - [ icarus.hlsm,             localizer.hlsm       ]
+   - [ icarus.ctrl,             cmdshell.ctrl        ]
+   - [ core.ctrl,                icarus.core         ]
+   - [ core.mon,                 icarus.mon          ]
    - [ gpx_logger.gps,           gps_sensor.gps       ]
    - [ gps_sensor.gps,           gps_test.gps         ]
    
