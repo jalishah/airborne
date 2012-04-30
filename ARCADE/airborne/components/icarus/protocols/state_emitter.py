@@ -3,7 +3,7 @@ from flight_sm import flight_Standing, flight_Taking_off, flight_Landing, flight
 from state_update_pb2 import StateUpdate, STANDING, TAKING_OFF, LANDING, MOVING, HOVERING
 
 
-class StateUpdateInterface:
+class StateEmitter:
 
    def __init__(self, socket):
       self._socket = socket

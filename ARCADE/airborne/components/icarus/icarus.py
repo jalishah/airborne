@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+
 from named_daemon import daemonize
 from scl import generate_map
 from flight_manager import FlightManager, StateMachineError
-from protocols.icarus_driver import ICARUS_Driver
+from protocols.icarus_server import ICARUS_Server
 from protocols.core_mon import CoreMon
-from protocols.core_interface import CoreInterface, CoreError
-from protocols.state_update_interface import StateUpdateInterface
+from protocols.core_ctrl import CoreInterface, CoreError
+from protocols.state_emitter import StateEmitter
 
 
 def main(name):
@@ -15,9 +16,9 @@ def main(name):
    mon = CoreMon(sockets['mon'])
    mon.start()
    mon.join()
-   sui = StateUpdateInterface(sockets['hlsm'])
+   sui = StateEmitter(sockets['hlsm'])
    mgr = FlightManager(core, mon, sui)
-   ipd = ICARUS_Driver(sockets['ctrl'], mgr)
+   ipd = ICARUS_Server(sockets['ctrl'], mgr)
 
    while True:
       try:

@@ -1,6 +1,6 @@
 
 
-# ICARUS Protcol Driver
+# ICARUS Server
 #
 # Author: Tobias Simon, Ilmenau University of Technology
 
@@ -8,8 +8,12 @@
 from icarus_pb2 import Request, Reply
 
 
-class ICARUS_Driver:
-   """ICARUS protocol driver: responsible for delegating incoming commands"""
+class ICARUS_Server:
+
+   """
+   ICARUS server
+   responsible for delegating incoming commands
+   """
 
    def __init__(self, socket, handler):
       """socket: a zmq socket, handler: a handler object for requests"""
