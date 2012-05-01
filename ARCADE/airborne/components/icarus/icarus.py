@@ -19,6 +19,7 @@ def main(name):
    icarus_srv = ICARUS_Server(sockets['ctrl'], manager)
    icarus_srv.run()
 
+
 main('icarus')
 #daemonize('arbiter', main)
 

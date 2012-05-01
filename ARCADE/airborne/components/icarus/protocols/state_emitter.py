@@ -1,6 +1,16 @@
 
+# ICARUS state emitter
+# 
+# Author: Tobias Simon, Ilmenau University of Technology
+#
+# Purpose:
+#  - translates flight_sm states to icarus StateUpdate messages
+#  - sends icarus StateUpdate messages using the given socket
+#
+
+
 from flight_sm import flight_Standing, flight_Taking_off, flight_Landing, flight_Moving, flight_Hovering
-from state_update_pb2 import StateUpdate, STANDING, TAKING_OFF, LANDING, MOVING, HOVERING
+from icarus_pb2 import StateUpdate, STANDING, TAKING_OFF, LANDING, MOVING, HOVERING
 
 
 class StateEmitter:

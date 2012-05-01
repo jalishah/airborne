@@ -12,13 +12,20 @@
 from core_pb2 import POS_YAW, SPEED_YAW
 from math import atan2
 from time import sleep
-from logging import Logger
 from icarus_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
 from protocols.icarus_server import ICARUS_Exception
 from state_update_pb2 import StateUpdate
 from activities.activities import DummyActivity, TakeoffActivity, LandActivity, MoveActivity, StopActivity
 from flight_sm import flight_sm, flight_Hovering, flight_Moving, flight_Stopping
 
+
+def calc_bearing(pos, target):
+   lon1, lat1 = pos
+   lon2, lat2 = target
+   d_lon = lon2 - lon1
+   y = sin(d_lon) * cos(lat2)
+   x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon)
+   return atan2(y, x) % (2.0 * pi)
 
 
 class FlightManager:

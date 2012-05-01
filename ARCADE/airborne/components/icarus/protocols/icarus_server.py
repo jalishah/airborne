@@ -60,7 +60,8 @@ class ICARUS_Server:
             self._delegate.handle(req)
             self.send_ok()
          except ICARUS_Exception, ex:
-            self.send_err(ex.code, ex.msg)
+            # semantic error:
+            self.send_err(E_SEM, ex.msg)
 
 
    def send_err(self, code, msg):
