@@ -14,34 +14,25 @@ from math import atan2
 from time import sleep
 from icarus_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
 from protocols.icarus_server import ICARUS_Exception
-from state_update_pb2 import StateUpdate
-from activities.activities import DummyActivity, TakeoffActivity, LandActivity, MoveActivity, StopActivity
+from activities.activities import DummyActivity, TakeoffActivity, LandActivity, StopActivity
+from activities.move import MoveActivity
 from flight_sm import flight_sm, flight_Hovering, flight_Moving, flight_Stopping
+from util.geomath import bearing
 
 
-def calc_bearing(pos, target):
-   lon1, lat1 = pos
-   lon2, lat2 = target
-   d_lon = lon2 - lon1
-   y = sin(d_lon) * cos(lat2)
-   x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon)
-   return atan2(y, x) % (2.0 * pi)
+class EventHandler:
 
 
-class FlightManager:
-
-
-   def __init__(self, core, state_emitter, monitor):
+   def __init__(self, core, state_emitter):
       self.core = core
       self.state_emitter = state_emitter
-      self.monitor = monitor
       self.fsm = flight_sm(self)
       self.landing_spots = []
       self.activity = DummyActivity()
       self.activity.start()
 
 
-   def rotate_thread(self):
+   def poi_thread(self):
       '''
       This method/thread is responsible for updating the yaw setpoint of the system.
       The code is only executed when the system is in a valid state.
@@ -60,7 +51,7 @@ class FlightManager:
                   poi_x = self.yaw_target[0]
                   poi_y = self.yaw_target[1]
                   print 'POI mode, x =', poi_x, ' y =', poi_y
-                  yaw = atan2(self.monitor.data.y - poi_y, self.monitor.data.x - poi_x)
+                  yaw = atan2(self.core.mon.y - poi_y, self.core.mon.x - poi_x)
                if prev_yaw != yaw:
                   print 'setting yaw to:', yaw
                   self.core.set_ctrl_param(POS_YAW, yaw)
@@ -112,7 +103,7 @@ class FlightManager:
 
    def _takeoff_activity(self):
       print 'takeoff_activity'
-      self.landing_spots.append((self.monitor.data.x, self.monitor.data.y))
+      self.landing_spots.append((self.core.mon.x, self.core.mon.y))
       self.activity.cancel_and_join()
       self.activity = TakeoffActivity(self.fsm, self.core, self.arg)
       self.activity.start()
@@ -121,7 +112,7 @@ class FlightManager:
    def _land_activity(self):
       print 'land_activity'
       self.activity.cancel_and_join()
-      self.activity = LandActivity(self.fsm, self.core)
+      self.activity = LandActivity(self.fsm, self.core, self.core.mon)
       self.activity.start()
 
 

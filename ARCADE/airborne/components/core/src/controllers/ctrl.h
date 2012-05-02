@@ -1,9 +1,16 @@
 
 /*
- * ctrl.h
+ * File: ctrl.c
+ * Type: set of PID controllers
+ * Purpose: runs multiple controllers (x,y,z,yaw) and executes attitude control
+ * Design Pattern: Singleton using ctrl_init
  *
- * Created on: 26.09.2010
- * Author: tobi
+ * Responsibilities:
+ *   - self-configuration through OPCD
+ *   - sub-controller management
+ *   - controller state management
+ *
+ * Author: Tobias Simon, Ilmenau University of Technology
  */
 
 

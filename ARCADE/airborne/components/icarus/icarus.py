@@ -4,19 +4,17 @@
 from named_daemon import daemonize
 from scl import generate_map
 from protocols.icarus_server import ICARUS_Server
-from protocols.core_mon import CoreMon
-from protocols.core_ctrl import CoreInterface
+from protocols.core_interface import CoreInterface
 from protocols.state_emitter import StateEmitter
-from flight_manager import FlightManager
+from event_handler import EventHandler
 
 
 def main(name):
    sockets = generate_map(name)
-   core = CoreInterface(sockets['core'])
-   monitor = CoreMon(sockets['mon'])
+   core = CoreInterface(sockets['core'], sockets['mon'])
    state_emitter = StateEmitter(sockets['hlsm'])
-   manager = FlightManager(core, state_emitter, monitor)
-   icarus_srv = ICARUS_Server(sockets['ctrl'], manager)
+   handler = EventHandler(core, state_emitter)
+   icarus_srv = ICARUS_Server(sockets['ctrl'], handler)
    icarus_srv.run()
 
 

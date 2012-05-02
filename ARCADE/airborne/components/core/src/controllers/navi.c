@@ -46,7 +46,10 @@ static vector2d_t setpoints_dir;
 static vector2d_t virt_pos_err;
 
 static rot2d_context_t *rot2d_context;
+/* setpoints: */
 static tsfloat_t travel_speed;
+static tsfloat_t dest_x; /* destination in lon direction, in m */
+static tsfloat_t dest_y; /* destination in lat direction, in m */
 
 
 float desired_speed(float dist)
@@ -119,6 +122,11 @@ void navi_init(void)
    vector2d_set(&prev_dest_pos, 0.0, 0.0);
    rot2d_context = rot2d_create();
 
+   tsfloat_init(&travel_speed, 0.0f);
+   tsfloat_init(&dest_x, 0.0f);
+   tsfloat_init(&dest_y, 0.0f);
+
+
    navi_reset_travel_speed();
 }
 
@@ -126,6 +134,30 @@ void navi_init(void)
 void navi_reset(void)
 {
    vector2d_set(&pos_err_sum, 0.0f, 0.0f);
+}
+
+
+void navi_set_dest_x(float x)
+{
+   tsfloat_set(&dest_x, x);
+}
+
+
+void navi_set_dest_y(float y)
+{
+   tsfloat_set(&dest_y, y);
+}
+
+
+float navi_get_dest_x(void)
+{
+   return tsfloat_get(&dest_x);
+}
+
+
+float navi_get_dest_y(void)
+{
+   return tsfloat_get(&dest_y);
 }
 
 
@@ -157,11 +189,14 @@ void navi_run(navi_output_t *output, const navi_input_t *input)
    /* set-up input vectors: */
    vector2d_set(&curr_speed, input->speed_x, input->speed_y);
    
-   if (vector2d_get_x(&dest_pos) != input->dest_x ||
-       vector2d_get_y(&dest_pos) != input->dest_y)
+   float _dest_x = tsfloat_get(&dest_x);
+   float _dest_y = tsfloat_get(&dest_y);
+
+   if (vector2d_get_x(&dest_pos) != _dest_x ||
+       vector2d_get_y(&dest_pos) != _dest_y)
    {
       vector2d_copy(&prev_dest_pos, &dest_pos);
-      vector2d_set(&dest_pos, input->dest_x, input->dest_y);
+      vector2d_set(&dest_pos, _dest_x, _dest_y);
    }
    vector2d_set(&curr_pos, input->pos_x, input->pos_y);
    vector2d_sub(&pos_err, &dest_pos, &curr_pos);
@@ -198,15 +233,13 @@ void navi_run(navi_output_t *output, const navi_input_t *input)
    vector2d_sub(&speed_err, &speed_setpoint, &curr_speed);
    vector2d_scalar_multiply(&world_thrust, tsfloat_get(&speed_p), &speed_err);
 
-   /* rotate according to yaw angle: */
+   /* transform thrust vector to global coordinate system: */
    float in[2] = {vector2d_get_x(&world_thrust), vector2d_get_y(&world_thrust)};
-   float out[2] = {0.0, 0.0};
+   float out[2];
    rot2d_calc(rot2d_context, out, in, input->yaw);
 
    /* fill output structure: */
    output->roll = out[0];
    output->pitch = out[1];
-
-   //EVERY_N_TIMES(300, printf("pos err: %f\n", target_dist));
 }
 

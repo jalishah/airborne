@@ -27,16 +27,16 @@ class StabMixIn:
    STAB_COUNT = 20
 
    def __init__(self, core):
-      self._core = core
+      self.core = core
 
    def stabilize(self):
-      core = self._core
+      core = self.core
       count = 0
       while True:
          count += 1
          if count == self.STAB_COUNT:
             break
-         if self._canceled:
+         if self.canceled:
             return
          sleep(self.POLLING_TIMEOUT)
          # read error values from core:
@@ -92,26 +92,26 @@ class TakeoffActivity(Activity, StabMixIn):
    def __init__(self, sm, core, arg):
       Activity.__init__(self)
       StabMixIn.__init__(self, core)
-      self._sm = sm
-      self._core = core
-      self._arg = arg
-      self._canceled = False
+      self.fsm = sm
+      self.core = core
+      self.arg = arg
+      self.canceled = False
 
    def _cancel(self):
-      self._canceled = True
+      self.canceled = True
 
    def run(self):
       sm = self._sm
       core = self._core
-      core.set_ctrl_param(POS_Z_MSL, self.LOW_ALT_SETPOINT, RELATIVE)
+      core.set_ctrl_param(POS_Z_MSL, self.LOW_ALT_SETPOINT)
       core.power_on()
 
-      if self._canceled:
+      if self.canceled:
          return
 
       # "point of no return":
       try:
-         core.start_motors()
+         core.spin_up()
       except:
          sm.failed()
          return
@@ -126,7 +126,7 @@ class TakeoffActivity(Activity, StabMixIn):
       #   core.set_altitude(STD_HOVERING_ALT, RELATIVE)
 
       self.stabilize()
-      sm.done()
+      fsm.done()
 
 
 class LandActivity(Activity):
@@ -134,36 +134,20 @@ class LandActivity(Activity):
    MIN_HOVERING_ALT = 0.57
 
 
-   def __init__(self, fsm, core):
+   def __init__(self, fsm, core, mon):
       Activity.__init__(self)
-      self._fsm = fsm
-      self._core = core
+      self.fsm = fsm
+      self.core = core
+      self.mon = mon
 
    def run(self):
-      self._core.set_altitude(ALT, self.MIN_HOVERING_ALT / 3.0, RELATIVE)
-      while self._core.get_state(ULTRA_ALT) > self.MIN_HOVERING_ALT:
-         sleep(POLLING_TIMEOUT)
-      self._core.stop_motors()
-      self._fsm.landing_done()
-
-
-class MoveActivity(Activity, StabMixIn):
-
-   def __init__(self, fsm, core, arg):
-      Activity.__init__(self)
-      StabMixIn.__init__(self, core)
-      self._fsm = fsm
-      self._core = core
-      self._arg = arg
-      self._canceled = False
-
-   def run(self):
-      self._core.set_gps((self._arg[0], self._arg[1]))
-      self.stabilize()
-      self._fsm.done()
-
-   def _cancel(self):
-      self._canceled = True
+      print 'x'
+      self.core.set_ctrl_param(POS_Z_GROUND, self.MIN_HOVERING_ALT / 3.0)
+      print 'x'
+      #while self.mon.z_ground > self.MIN_HOVERING_ALT:
+         #sleep(self.POLLING_TIMEOUT)
+      self.core.spin_down()
+      self.fsm.landing_done()
 
 
 class StopActivity(Activity, StabMixIn):
@@ -171,10 +155,10 @@ class StopActivity(Activity, StabMixIn):
    def __init__(self, fsm, core):
       Activity.__init__(self)
       StabMixIn.__init__(self, core)
-      self._fsm = fsm
-      self._core = core
+      self.fsm = fsm
+      self.core = core
 
    def run(self):
-      self._core.reset_setpoint(GPS_METERS)
+      self.core.reset_setpoint(GPS_METERS)
       self.stabilize()
 

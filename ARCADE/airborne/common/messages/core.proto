@@ -1,39 +1,42 @@
 
-/*
- * file: core.proto
- * purpose: message format for interfacing the core
- * author: Tobias Simon, Ilmenau University of Technology
- */
+//
+// file: core.proto
+// purpose: message format for interfacing the core
+// author: Tobias Simon, Ilmenau University of Technology
+//
 
 
-/***************************************************
- * the following data is sent through the cmd gate *
- ***************************************************/
+/////////////////////////
+// REQUEST-REPLY DATA: //
+/////////////////////////
+
 
 enum RequestType
 {
-   /* requests without parameters: */
-   SPIN_UP = 1; /* spin up motors */
-   SPIN_DOWN = 2; /* spin down motors */
-   RESET_CTRL = 3; /* reset controllers (I-parts) */
-   
-   /* requests with parameters: */
-   SET_CTRL_PARAM = 4; /* set controller parameter, requires CtrlData */
-   GET_PARAMS = 5; /* get parameters */
+   // requests without parameters:
+   SPIN_UP = 1;    // spin up motors
+   SPIN_DOWN = 2;  // spin down motors
+   RESET_CTRL = 3; // reset controllers (I-parts)
+   GET_PARAMS = 4; // get parameters
+
+   // request with parameters:
+   SET_CTRL_PARAM = 5; // requires CtrlData */
 }
 
 
 enum CtrlParam
 {
-   POS_X = 1; /* X position, relative to starting point  */
-   POS_Y = 2; /* Y position, relative to starting point  */
-   POS_Z_GROUND = 3; /* altitude above ground */
-   POS_Z_MSL = 4; /* altitude above msl */
-   POS_YAW = 5; /* absolute yaw position, north = 0.0 */
+   // position setpoints:
+   POS_X = 1;        // X position, relative to starting point
+   POS_Y = 2;        // Y position, relative to starting point
+   POS_Z_GROUND = 3; // altitude above ground
+   POS_Z_MSL = 4;    // altitude above msl
+   POS_YAW = 5;      // absolute yaw position, north = 0.0
 
-   SPEED_XY = 6; /* xy speed */
-   SPEED_Z = 7; /* z speed */
-   SPEED_YAW = 8; /* yaw speed */
+   // speed setpoints:
+   SPEED_XY = 6;  // xy speed */
+   SPEED_Z = 7;   // z speed */
+   SPEED_YAW = 8; // yaw speed */
 }
 
 
@@ -46,8 +49,7 @@ message CtrlData
 
 message Params
 {
-   // initial position reported by GPS,
-   // when core was started:
+   // initial position reported by GPS:
    required double start_lon = 1;
    required double start_lat = 2;
    required double start_alt = 3;
@@ -69,59 +71,61 @@ message Params
 message Request
 {
    required RequestType type =   1;
-   optional CtrlData ctrl_data = 2; /* needed if type == SET_CTRL_DATA */
+   optional CtrlData ctrl_data = 2; // needed if type == SET_CTRL_DATA
 }
 
 
 enum Status
 {
-   OK =     0; /* everything ok */
-   E_SYN = -1; /* syntactic error in data */
-   E_SEM = -2; /* semantic errror in protobuf data */
-   E_HW =  -3; /* hardware error */
+   OK =         0; // everything OK
+   E_SYNTAX =   1; // syntactic error in data
+   E_SEMANTIC = 2; // semantic errror in protobuf data
+   E_HARDWARE = 3; // hardware error
 }
 
 
 message Reply
 {
    required Status status = 1;
-   optional Params params = 2; /* required if type == GET_PARAMS */
+   optional string err_msg = 2;
+   optional Params params = 3; // required if type == GET_PARAMS
 }
 
 
 
-/******************************
- * sent through the mon gate: *
- ******************************/
+//////////////////////
+// MONITORING DATA: //
+//////////////////////
+
 
 message MonData
 {
-   required float pitch = 1; /* pitch in rad */
-   required float roll =  2; /* roll in rad */
-   required float yaw =   3; /* yaw in rad */
+   required float pitch = 1; // pitch in rad
+   required float roll =  2; // roll in rad
+   required float yaw =   3; // yaw in rad
 
-   required float pitch_speed = 4; /* pitch speed in rad/s */
-   required float roll_speed =  5; /* roll speed in rad/s */
-   required float yaw_speed =   6; /* yaw speed in rad/s */
+   required float pitch_speed = 4; // pitch speed in rad/s
+   required float roll_speed =  5; // roll speed in rad/s
+   required float yaw_speed =   6; // yaw speed in rad/s
 
-   required float x =        7; /* x position relative to starting point  */
-   required float y =        8; /* y position relative to starting point */
-   required float z =        10; /* z position relative to starting gps altitude */
-   required float z_ground = 9; /* z position above ground */
+   required float x =        7;  // x position relative to starting point (longitude direction)
+   required float y =        8;  // y position relative to starting point (latitude direction)
+   required float z =        10; // z position relative to starting gps altitude
+   required float z_ground = 9;  // z position above ground
 
-   required float x_speed = 11; /* x speed in m/s */
-   required float y_speed = 12; /* y speed in m/s */
-   required float z_speed = 13; /* z speed in m/s */
+   required float x_speed = 11; // x speed in m/s
+   required float y_speed = 12; // y speed in m/s
+   required float z_speed = 13; // z speed in m/s
    
-   required float x_acc = 14; /* x acceleration in m/s^2 */
-   required float y_acc = 15; /* y acceleration in m/s^2 */
-   required float z_acc = 16; /* z acceleration in m/s^2 */
+   required float x_acc = 14; // x acceleration in m/s^2
+   required float y_acc = 15; // y acceleration in m/s^2
+   required float z_acc = 16; // z acceleration in m/s^2
 
-   required float x_err =   17; /* x error in m */
-   required float y_err =   18; /* y error in m */
-   required float z_err =   19; /* z error in m */
-   required float yaw_err = 20; /* yaw error in rad */
+   required float x_err =   17; // x error in m
+   required float y_err =   18; // y error in m
+   required float z_err =   19; // z error in m
+   required float yaw_err = 20; // yaw error in rad
 
-   required float batt_voltage = 21; /* battery voltage in V */
+   required float batt_voltage = 21; // battery voltage in V
 }
 

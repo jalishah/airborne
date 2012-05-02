@@ -31,6 +31,8 @@ core:
          speed_p: 0.1
          speed_i: 0.4
          speed_imax: 100.0
+         init_setpoint: 2.0
+         init_mode_is_ground: True
 
       yaw:
          manual: false

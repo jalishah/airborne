@@ -53,13 +53,18 @@ class ICARUS_Client:
    def move(self, pos, glob, rel, speed, block):
       req = Request()
       req.type = MOVE
-      if rel:
-         req.rel = rel
-      req.pos.extend(pos)
-      if alt:
-         req.pos.append(alt)
-      if speed:
+      if pos[0] != None:
+         req.move_data.p0 = pos[0]
+      if pos[1] != None:
+         req.move_data.p1 = pos[1]
+      if pos[2] != None:
+         req.move_data.p2 = pos[2]
+      if speed != None:
          req.speed = speed
+      if rel != None:
+         req.rel = rel
+      if glob != None:
+         req.glob = glob
       self._execute(req)
 
 

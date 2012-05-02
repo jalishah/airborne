@@ -31,6 +31,10 @@ def bearing_deg(*args): # lat1, lon1, lat2, lon2
    return rad2deg(bearing(*args))
 
 
+def lineq_n(x1, y1, x2, y2):
+   n = y1 - (y2 - y1) / (x2 - x1) * x1
+
+
 
 if __name__ == '__main__':
 

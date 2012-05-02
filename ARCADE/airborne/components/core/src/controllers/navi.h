@@ -5,8 +5,6 @@
 
 typedef struct
 {
-   float dest_x; /* destination in lon direction, in m (this also true for the fields below) */
-   float dest_y; /* destination in lat direction */
    float pos_x; /* current position in lon direction */
    float pos_y; /* current position in lat direction */
    float speed_x; /* current speed in lon direction */
@@ -40,13 +38,37 @@ void navi_reset(void);
 
 
 /*
+ * setter for x position
+ */
+void navi_set_dest_x(float x);
+
+
+/*
+ * setter for y position
+ */
+void navi_set_dest_y(float y);
+
+
+/*
+ * getter for x position
+ */
+float navi_get_dest_x(void);
+
+
+/*
+ * getter for y position
+ */
+float navi_get_dest_y(void);
+
+
+/*
  * set travel speed to standard
  */
 void navi_reset_travel_speed(void);
 
 
 /*
- * set maximal navi travel speed
+ * set navi travel speed
  */
 int navi_set_travel_speed(float speed);
 

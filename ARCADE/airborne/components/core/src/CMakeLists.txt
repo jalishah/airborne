@@ -5,7 +5,7 @@ ADD_SUBDIRECTORY(sensor_actor)
 ADD_SUBDIRECTORY(controllers)
 ADD_SUBDIRECTORY(platform)
 ADD_SUBDIRECTORY(algorithms)
-ADD_SUBDIRECTORY(interfaces)
+ADD_SUBDIRECTORY(scl_cmd)
 ADD_SUBDIRECTORY(model)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(tests)
@@ -17,7 +17,7 @@ ADD_EXECUTABLE(core main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
-scl_interfaces
+scl_cmd
 sensor_actor_interfaces
 # system:
 controllers

@@ -25,24 +25,17 @@ message TakeoffData
 
 message MoveData // depends on rel, glob
 {
-   // at least one of the following needs to be set:
    optional double p0 = 1;
    optional double p1 = 2;
    optional double p2 = 3;
 }
 
 
-message POI // depends on rel, glob
-{
-   required double p0 = 1;
-   required double p1 = 2;
-}
-
 
 message RotData
 {
    // exactly one of the following has to be set:
-   optional POI poi = 1; // depends on glob, rel
+   repeated double poi = 1; // depends on glob, rel
    optional float heading = 2; // depends on rel
 }
 

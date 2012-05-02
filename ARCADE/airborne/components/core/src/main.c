@@ -22,7 +22,7 @@
 #include <sclhelper.h>
 
 #include "util/logger/logger.h"
-#include "interfaces/cmd.h"
+#include "scl_cmd/scl_cmd.h"
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
 #include "sensor_actor/interfaces/altimeter.h"
 #include "sensor_actor/interfaces/motors.h"

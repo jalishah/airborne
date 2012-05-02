@@ -8,7 +8,7 @@
 # Author: Tobias Simon, Ilmenau University of Technology
 
 
-from icarus_pb2 import Request, Reply, OK, E_SYN
+from icarus_pb2 import Request, Reply, OK, E_SYN, E_SEM
 
 
 class ICARUS_Exception(Exception):
@@ -65,7 +65,6 @@ class ICARUS_Server:
 
 
    def send_err(self, code, msg):
-      print 'send_err', code, msg
       '''
       reply with error code and message
       '''

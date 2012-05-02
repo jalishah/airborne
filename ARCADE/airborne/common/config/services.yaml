@@ -7,16 +7,16 @@
 # 
 
 
-arbiter:
-  binary: 'arbiter/src/arbiter.py'
-  depends: [core]
+icarus:
+  binary: 'icarus/icarus.py'
+  #depends: [core]
 
 gps_sensor:
   binary: 'sensors/gps_sensor/gps_sensor'
 
 core:
   binary: 'core/src/core'
-  depends: [opcd, gps_sensor]
+  #depends: [opcd, gps_sensor]
 
 opcd:
   binary: 'opcd/opcd.py'
