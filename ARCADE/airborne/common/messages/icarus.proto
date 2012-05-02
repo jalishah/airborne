@@ -50,9 +50,9 @@ message Request
    optional RotData rot_data = 4;
    
    // generic fields:
-   optional float speed = 5;
-   optional bool rel = 6;
-   optional bool glob = 7;
+   optional bool rel = 5;
+   optional bool glob = 6;
+   optional float speed = 7;
 
    /*
     * if type == TAKEOFF:

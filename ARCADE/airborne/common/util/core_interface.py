@@ -9,9 +9,8 @@ class CoreError(Exception):
       self.status = status
       self.err_msg = err_msg
 
-
-   def __str__(self):
-      err_map = {E_SYN: 'E_SYN', E_SEM: 'E_SEM', E_HW: 'E_HW'}
+   def __repr__(self):
+      err_map = {E_SYNTAX: 'E_SYNTAX', E_SEMANTIC: 'E_SEMANTIC', E_HARDWARE: 'E_HARDWARE'}
       return 'class: ' + err_map[self.status] + ' message: ' + self.err_msg
 
 
@@ -20,6 +19,7 @@ class CoreInterface(Thread):
    def __init__(self, ctrl_socket, mon_socket):
       Thread.__init__(self)
       self.ctrl_socket = ctrl_socket
+      self.params = self.get_params()
       if mon_socket != None:
          self.mon_socket = mon_socket
          self.mon = MonData()
@@ -64,7 +64,8 @@ class CoreInterface(Thread):
    def get_params(self):
       req = Request()
       req.type = GET_PARAMS
-      return self._exec(req).params
+      rep = self._exec(req)
+      return rep.params
 
 
 

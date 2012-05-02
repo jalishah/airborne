@@ -14,8 +14,8 @@
 enum RequestType
 {
    // requests without parameters:
-   SPIN_UP = 1;    // spin up motors
-   SPIN_DOWN = 2;  // spin down motors
+   SPIN_UP =    1; // spin up motors
+   SPIN_DOWN =  2; // spin down motors
    RESET_CTRL = 3; // reset controllers (I-parts)
    GET_PARAMS = 4; // get parameters
 
@@ -27,15 +27,15 @@ enum RequestType
 enum CtrlParam
 {
    // position setpoints:
-   POS_X = 1;        // X position, relative to starting point
-   POS_Y = 2;        // Y position, relative to starting point
+   POS_X =        1; // X position, relative to starting point
+   POS_Y =        2; // Y position, relative to starting point
    POS_Z_GROUND = 3; // altitude above ground
-   POS_Z_MSL = 4;    // altitude above msl
-   POS_YAW = 5;      // absolute yaw position, north = 0.0
+   POS_Z =        4; // altitude above msl
+   POS_YAW =      5; // absolute yaw position, north = 0.0
 
    // speed setpoints:
-   SPEED_XY = 6;  // xy speed */
-   SPEED_Z = 7;   // z speed */
+   SPEED_XY =  6; // xy speed */
+   SPEED_Z =   7; // z speed */
    SPEED_YAW = 8; // yaw speed */
 }
 
@@ -43,7 +43,7 @@ enum CtrlParam
 message CtrlData
 {
    required CtrlParam param = 1;
-   required float val = 2;
+   required float val =       2;
 }
 
 
@@ -55,15 +55,15 @@ message Params
    required double start_alt = 3;
 
    // position setpoints:
-   required float setp_x = 4;
-   required float setp_y = 5;
-   required float setp_z = 6;
+   required float setp_x =        4;
+   required float setp_y =        5;
+   required float setp_z =        6;
    optional float setp_z_ground = 7; // one of them is required, ...
-   optional float setp_yaw = 8;      // ... but not both!
+   optional float setp_yaw =      8; // ... but not both!
 
    // speed control setpoints:
-   required float setp_speed_xy = 9;
-   required float setp_speed_z = 10;
+   required float setp_speed_xy =   9;
+   required float setp_speed_z =   10;
    required float setp_speed_yaw = 11;
 };
 
@@ -86,9 +86,9 @@ enum Status
 
 message Reply
 {
-   required Status status = 1;
+   required Status status =  1;
    optional string err_msg = 2;
-   optional Params params = 3; // required if type == GET_PARAMS
+   optional Params params =  3; // required if type == GET_PARAMS
 }
 
 

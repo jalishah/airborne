@@ -9,7 +9,7 @@
 #
 
 
-from core_pb2 import POS_YAW, SPEED_YAW
+from core_pb2 import POS_YAW
 from math import atan2
 from time import sleep
 from icarus_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
@@ -30,6 +30,7 @@ class EventHandler:
       self.landing_spots = []
       self.activity = DummyActivity()
       self.activity.start()
+      self.core = core
 
 
    def poi_thread(self):
@@ -61,7 +62,7 @@ class EventHandler:
          sleep(1)
 
 
-   # called externally from ICARUS protocol driver
+   # called externally by ICARUS protocol driver
    def handle(self, req):
       self.arg = req
       if req.type == TAKEOFF:

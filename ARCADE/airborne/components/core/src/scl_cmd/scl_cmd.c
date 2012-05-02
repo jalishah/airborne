@@ -143,9 +143,9 @@ int set_ctrl_param(CtrlParam param, float value)
          break;
       }
 
-      case CTRL_PARAM__POS_Z_MSL:
+      case CTRL_PARAM__POS_Z:
       {
-         LOG(LL_DEBUG, "msl z pos update: %f", value);
+         LOG(LL_DEBUG, "z pos update: %f", value);
          z_setpoint_t setpoint = {value, 0};
          z_ctrl_set_setpoint(setpoint);
          break;

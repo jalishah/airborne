@@ -4,7 +4,7 @@
 from named_daemon import daemonize
 from scl import generate_map
 from protocols.icarus_server import ICARUS_Server
-from protocols.core_interface import CoreInterface
+from core_interface import CoreInterface
 from protocols.state_emitter import StateEmitter
 from event_handler import EventHandler
 

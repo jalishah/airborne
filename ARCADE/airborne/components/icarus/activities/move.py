@@ -4,7 +4,9 @@ from threading import Thread, Timer, current_thread
 from core_pb2 import *
 from math import sqrt
 
+from util.geomath import lineq_n, meter_offset
 from activities import Activity, StabMixIn
+from numpy import array, add, zeros
 
 
 class MoveActivity(Activity, StabMixIn):
@@ -23,40 +25,61 @@ class MoveActivity(Activity, StabMixIn):
 
 
    def run(self):
-      # get position setpoints from message:
-      x_or_y_set = False
-      if self.arg.move_data.p0 != None:
-         x_or_y_set = True
-         self.core.set_ctrl_param(POS_X, self.arg.move_data.p0)
-      if self.arg.move_data.p1 != None:
-         x_or_y_set = True
-         self.core.set_ctrl_param(POS_Y, self.arg.move_data.p1)
-      
-      if x_or_y_set:
-         # set speed:
-         self.core.set_ctrl_param(SPEED_XY, self.arg.speed)
-         self.core.set_ctrl_param(SPEED_Z, self.Z_MAX)
-         # update z setpoint linearly between the the starting position and the destination:
-         n = lineq_n(0.0, self.mon.z, self.arg.move_data.p1)
-         m = self.mon_z
-         while not self.arrived:
-            if self.cancel:
-               self.core.set_ctrl_param(POS_X, self.mon.x)
-               self.core.set_ctrl_param(POS_Y, self.mon.y)
-               self.stabilize()
-               return # not going into hovering state
-            dist = euclid_dist(self.arg.move_data.p0)
-            alt = n * x + m
-            self.core.set_ctrl_param(POS_Z, alt)
-            sleep(1)
+      # shortcut identifiers:
+      move_data = self.msg.move_data
+      mon = self.core.mon
+      params = self.core.params
+
+      # get xyz coordinates
+      avail = [False] * 3
+      xyz = zeros(3)
+      if not self.msg.glob:
+         # local coordinates: (x, y, z) = (p0, p1, p2)
+         for i in xrange(3):
+            name = 'p%d' % i
+            if move_data.HasField(name):
+               avail[i] = True
+               xyz[i] = getattr(move_data, name)
       else:
+         # global coordinates:
+         start_pos = (params.start_lat, params.start_lon)
+         xyz[0:2] = meter_offset(start_pos, xyz[0:2])
+      xyz[2] = params.start_alt - xyz[2]
+         
+
+      if self.msg.rel:
+          # if we move relative, we have to add the current
+          # xyz coordinates to the new ones
+          xyz += array([mon.x, mon.y, mon.z])
+
+      if avail[0 : 2] == [False] * 2:
          # only z position is updated: set speed and position directly:
-         self.core.set_ctrl_param(SPEED_Z, self.arg.speed)
-         if self.arg.move_data.p2 != None:
-            self.core.set_ctrl_param(POS_Z, self.arg.move_data.p2)
- 
+         if self.msg.HasField('speed'):
+            self.core.set_ctrl_param(SPEED_Z, self.msg.speed)
+         self.core.set_ctrl_param(POS_Z, xyz[2])
+      else:
+         # set speed:
+         if self.msg.HasField('speed'):
+            self.core.set_ctrl_param(SPEED_XY, self.msg.speed)
+         self.core.set_ctrl_param(SPEED_Z, self.Z_MAX)
+         # update z setpoint linearly between the starting position and destination:
+         if move_data.HasField('p2'):
+            n = lineq_n(0.0, mon.z, move_data.p2)
+            m = mon_z
+            while not self.arrived:
+               if self.cancel:
+                  self.core.set_ctrl_param(POS_X, mon.x)
+                  self.core.set_ctrl_param(POS_Y, mon.y)
+                  self.stabilize()
+                  return # not going into hovering state
+               dist = euclid_dist(move_data.x)
+               z = n * x + m
+               self.core.set_ctrl_param(POS_Z, z)
+               sleep(1)
+
       self.stabilize()
       self.fsm.done()
+
 
    def cancel(self):
       self.canceled = True

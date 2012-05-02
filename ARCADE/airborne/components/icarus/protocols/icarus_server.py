@@ -40,7 +40,6 @@ class ICARUS_Server:
       '''
       while True:
          # receive message via SCL:
-         req = Request()
          try:
             data = self._socket.recv()
          except:
@@ -49,8 +48,10 @@ class ICARUS_Server:
             print 'could not read SCL message'
             continue
          # parse message into protobuf structure:
+         req = Request()
          try:
             req.ParseFromString(data)
+            print req
          except:
             # syntactic error in ParseFromString
             self.send_err(E_SYN, 'could not parse protobuf payload')

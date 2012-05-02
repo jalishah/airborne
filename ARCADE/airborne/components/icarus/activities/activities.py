@@ -40,9 +40,9 @@ class StabMixIn:
             return
          sleep(self.POLLING_TIMEOUT)
          # read error values from core:
-         x_err, y_err = core.get_ctrl_error(GPS)
-         alt_err = core.get_ctrl_error(ALT)
-         yaw_err = core.get_ctrl_error(YAW)
+         x_err, y_err = core.mon.x_err, core.mon.y_err
+         alt_err = core.mon.z_err
+         yaw_err = core.mon.yaw_err
          # reset counter if one of the errors becomes too huge:
          if alt_err > self.ALT_STAB_EPSILON:
             print 'alt instable', alt_err, count
