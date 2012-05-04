@@ -104,20 +104,18 @@ void _main(int argc, char *argv[])
    if (mlockall(MCL_CURRENT | MCL_FUTURE))
    {
       LOG(LL_ERROR, "mlockall() failed");
-      //exit(EXIT_FAILURE);
+      exit(EXIT_FAILURE);
    }
 
    /* initialize hardware/drivers: */
-   void *x = omap_i2c_bus_init;
-   /*baro_altimeter_init();
+   omap_i2c_bus_init();
+   baro_altimeter_init();
    ultra_altimeter_init();
    ahrs_init();
    motors_init();
    voltage_reader_start();
-   */
    //gps_init();
    
-
    LOG(LL_INFO, "initializing model/controller");
    model_init();
    ctrl_init();
@@ -125,8 +123,6 @@ void _main(int argc, char *argv[])
    /* initialize command interface */
    LOG(LL_INFO, "initializing cmd interface");
    cmd_init();
-   while(1)
-      sleep(1);
    
    /* prepare main loop: */
    for (int i = 0; i < NUM_AVG; i++)

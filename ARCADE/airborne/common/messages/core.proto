@@ -125,7 +125,5 @@ message MonData
    required float y_err =   18; // y error in m
    required float z_err =   19; // z error in m
    required float yaw_err = 20; // yaw error in rad
-
-   required float batt_voltage = 21; // battery voltage in V
 }
 

@@ -20,7 +20,6 @@
 #include <opcd_params.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
-#include <kalman.pb-c.h>
 
 #include "model.h"
 #include "kalman.h"

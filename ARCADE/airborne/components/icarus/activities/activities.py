@@ -89,10 +89,10 @@ class TakeoffActivity(Activity, StabMixIn):
    STD_HOVERING_ALT = 0.5
 
 
-   def __init__(self, sm, core, arg):
+   def __init__(self, fsm, core, arg):
       Activity.__init__(self)
       StabMixIn.__init__(self, core)
-      self.fsm = sm
+      self.fsm = fsm
       self.core = core
       self.arg = arg
       self.canceled = False
@@ -101,9 +101,8 @@ class TakeoffActivity(Activity, StabMixIn):
       self.canceled = True
 
    def run(self):
-      sm = self._sm
-      core = self._core
-      core.set_ctrl_param(POS_Z_MSL, self.LOW_ALT_SETPOINT)
+      core = self.core
+      core.set_ctrl_param(POS_Z, self.LOW_ALT_SETPOINT)
       core.power_on()
 
       if self.canceled:
@@ -113,7 +112,7 @@ class TakeoffActivity(Activity, StabMixIn):
       try:
          core.spin_up()
       except:
-         sm.failed()
+         self.fsm.failed()
          return
 
       core.set_yaw(core.get_state(YAW_POS))
@@ -126,7 +125,7 @@ class TakeoffActivity(Activity, StabMixIn):
       #   core.set_altitude(STD_HOVERING_ALT, RELATIVE)
 
       self.stabilize()
-      fsm.done()
+      self.fsm.done()
 
 
 class LandActivity(Activity):

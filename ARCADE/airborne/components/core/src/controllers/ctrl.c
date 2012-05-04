@@ -166,7 +166,6 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.y_err = pos_y - navi_get_dest_y();
       mon_data.z_err = z_err;
       mon_data.yaw_err = yaw_err;
-      mon_data.batt_voltage = voltage_reader_get();
       
       pthread_mutex_unlock(&mon_data_mutex);
    }

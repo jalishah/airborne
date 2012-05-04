@@ -30,7 +30,6 @@ class EventHandler:
       self.landing_spots = []
       self.activity = DummyActivity()
       self.activity.start()
-      self.core = core
 
 
    def poi_thread(self):

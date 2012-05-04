@@ -33,37 +33,30 @@ static float *rpm = NULL;
 
 static void spin_down(void)
 {
-   return;
    /* switch off motors command: */
    fc_stop_motors();
    
    /* wait until all motors are stopped: */
-   while (1)
+   int done = 0;
+   while (!done)
    {
-      msleep(10);
+      msleep(100);
       fc_read_motors_rpm(rpm);
-      int quit = 1;
       for (int i = 0; i < platform_motors(); i++)
       {
-         printf("rpm: %f\n", rpm[i]);
          if (rpm[i] > 10.0)
          {
-            quit = 0;
+            done = 1;
             break;
          }
       }
-
-      if (quit)
-      {
-         break;
-      }
    }
+   LOG(LL_ERROR, "motors are stopped");
 }
 
 
 static void spin_up(Reply *reply)
 {
-   return;
    int retry_count = 0;
 retry:
    LOG(LL_DEBUG, "starting motors");
@@ -77,6 +70,7 @@ retry:
    }
    int valid_count = 0;
    int fail_timer = 1000;
+   
    while (1)
    {
       msleep(10);
@@ -109,6 +103,7 @@ retry:
       
       if (valid_count > 200)
       {
+         LOG(LL_ERROR, "motors are running");
          ctrl_stop_override();
          return;
       }
@@ -259,6 +254,17 @@ SIMPLE_THREAD_BEGIN(thread_func)
                LOG(LL_DEBUG, "SPIN_DOWN");
                spin_down();
                break;
+
+            case REQUEST_TYPE__SPIN_UP:
+               LOG(LL_DEBUG, "SPIN_UP");
+               spin_up(&reply);
+               break;
+
+            case REQUEST_TYPE__SPIN_DOWN:
+               LOG(LL_DEBUG, "SPIN_DOWN");
+               spin_down();
+               break;
+
 
             case REQUEST_TYPE__RESET_CTRL:
                LOG(LL_DEBUG, "RESET_CTRL");

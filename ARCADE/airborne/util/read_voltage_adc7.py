@@ -1,3 +1,4 @@
+
 data = [0.0] * 100
 count = 0
 while True:
