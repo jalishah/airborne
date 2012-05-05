@@ -18,13 +18,13 @@ from math import atan2
 from time import sleep, time
 from icarus_pb2 import TAKEOFF, LAND, MOVE, STOP, ROT
 from protocols.icarus_server import ICARUS_Exception
-from activities.activities import DummyActivity, TakeoffActivity, LandActivity, StopActivity
 from activities.takeoff import TakeoffActivity
 from activities.land import LandActivity
 from activities.move import MoveActivity
 from activities.stop import StopActivity
 from activities.dummy import DummyActivity
-from flight_sm import flight_sm, flight_Hovering, flight_Moving, flight_Stopping
+from flight_sm import flight_sm, flight_Hovering
+from flight_sm import flight_Standing, flight_Moving, flight_Stopping
 from util.geomath import bearing
 from mtputil import *
 from named_daemon import daemonize
@@ -32,26 +32,34 @@ from scl import generate_map
 from protocols.icarus_server import ICARUS_Server
 from core_interface import CoreInterface
 from protocols.state_emitter import StateEmitter
-from event_handler import EventHandler
 from protocols.powerman import PowerMan
+from logging import basicConfig as log_config, debug as log_debug
+from logging import info as log_info, warning as log_warn, error as log_err
+from logging import DEBUG
 
 
-class OperationRangeEstimate:
-
-   def __init__(self, speed)
-      self.speed = speed
-
-   def estimate(ah_remaining, ampere_rate):
-      time_remaining = ah_remaining / ampere_rate
-      return = self.speed * time_remaining
+#class OperationRangeEstimate:
+#
+#   def __init__(self, speed):
+#      self.speed = speed
+#
+#   def estimate(ah_remaining, ampere_rate):
+#      time_remaining = ah_remaining / ampere_rate
+#      return = self.speed * time_remaining
 
 
 class ICARUS:
 
-   def __init__(self, name):
+   def __init__(self, sockets):
+      log_config(filename = 'icarus.log',
+                 format = '%(asctime)s - %(levelname)s: %(message)s',
+                 level = DEBUG)
+      self.flight_time = 0
+      self.icarus_takeover = False
+      self.emergency_land = False
+      self.return_when_signal_lost = True
       self.fsm = flight_sm(self)
       self.landing_spots = []
-      sockets = generate_map(name)
       self.core = CoreInterface(sockets['core'], sockets['mon'])
       self.state_emitter = StateEmitter(sockets['hlsm'])
       self.powerman = PowerMan(sockets['power_ctrl'], sockets['power_mon'])
@@ -61,10 +69,6 @@ class ICARUS:
       self.activity.start()
       self.icarus_srv = ICARUS_Server(sockets['ctrl'], self)
       self.icarus_srv.start()
-      self.flight_time = 0
-      self.icarus_takeover = False
-      self.emergency_land = False
-      self.return_when_signal_lost = True
 
 
    def state_time_monitor(self):
@@ -121,7 +125,7 @@ class ICARUS:
             last_valid = time()
          else:
             if time() - rc_timeout < last_valid:
-               print 'invalid RC signal'
+               log_err('invalid RC signal')
                self.icarus_takeover = True
 
 
@@ -129,6 +133,7 @@ class ICARUS:
       while True:
          self.power_state = self.powerman.read()
          if self.power_state.critical:
+            log_warn('critical power state: emergency landing')
             # disable system interface and take over control:
             self.icarus_takeover = True
             if not self.emergency_land:
@@ -136,13 +141,6 @@ class ICARUS:
 
 
    def rotate(self, arg):
-      if self.fsm._state is not flight_Landing:
-         raise ICARUS_Exception('rotation is not allowed in landing state')
-      # when not landing, but altitude is too low (e.g. taking off),
-      # setting a new rotation setpoint is not allowed:
-      if self.mon_data.z_ground < self.min_rot_alt:
-         raise ICARUS_Exception('ground distance is too low for rotation')
-
       if len(self.arg.pos) == 1:
          self.yaw_target = self.arg.pos[0]
       else:
@@ -183,7 +181,9 @@ class ICARUS:
    # called by ICARUS protocol driver:
    def handle(self, req):
       if self.icarus_takeover:
-         raise ICARUS_Exception('interface disabled due to ICARUS emergency take-over')
+         msg = 'request rejected due to emergency take-over'
+         log_err(msg)
+         raise ICARUS_Exception(msg)
       self.arg = req
       if req.type == TAKEOFF:
          self.fsm.takeoff()
@@ -245,10 +245,11 @@ class ICARUS:
 
 
 def main(name):
-   ICARUS()   
+   sockets = generate_map(name)
+   ICARUS(sockets)
    await_signal()
 
 
 main('icarus')
-daemonize('icarus', main)
+#daemonize('icarus', main)
 

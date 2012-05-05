@@ -1,6 +1,6 @@
 
 from core_pb2 import *
-from activitiy import Activity, StabMixIn
+from activity import Activity, StabMixIn
 
 
 class StopActivity(Activity, StabMixIn):

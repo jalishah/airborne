@@ -5,7 +5,7 @@ from numpy import array, zeros
 
 from core_pb2 import *
 
-from activitiy import Activity, StabMixIn
+from activity import Activity, StabMixIn
 
 
 class MoveActivity(Activity, StabMixIn):

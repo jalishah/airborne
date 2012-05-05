@@ -1,5 +1,4 @@
 
-from threading import Thread
 from core_pb2 import *
 
 
@@ -17,7 +16,6 @@ class CoreError(Exception):
 class CoreInterface:
 
    def __init__(self, ctrl_socket, mon_socket):
-      Thread.__init__(self)
       self.ctrl_socket = ctrl_socket
       self.params = self.get_params()
       self.mon_socket = mon_socket

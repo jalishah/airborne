@@ -11,8 +11,6 @@ class PowerMan:
    def __init__(self, ctrl_socket, mon_socket):
       self.ctrl_socket = ctrl_socket
       self.mon_socket = mon_socket
-      self.mon_thread = start_daemon_thread(self.monitor)
-
 
    def _exec(self, cmd):
       req = PowerReq()
@@ -25,14 +23,11 @@ class PowerMan:
          else:
             raise PowerException
 
-
    def stand_power(self):
       self._exec(STAND_POWER)
 
-
    def flight_power(self):
       self._exec(FLIGHT_POWER)
-
 
    def read(self):
       state = PowerState()
