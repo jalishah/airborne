@@ -14,8 +14,7 @@ from icarus_pb2 import IcarusReq, IcarusRep, OK, E_SYN, E_SEM
 
 class ICARUS_Exception(Exception):
 
-   def __init__(self, code, msg):
-      self.code = code
+   def __init__(self, msg):
       self.msg = msg
 
 

@@ -1,8 +1,5 @@
 
 from power_pb2 import *
-from threading import Thread
-from time import sleep
-from mtputil import start_daemon_thread
 
 
 class PowerException(Exception):
@@ -37,16 +34,9 @@ class PowerMan:
       self._exec(FLIGHT_POWER)
 
 
-   def monitor(self):
-      self.state = PowerState()
-      while True:
-         try:
-            data = self.mon_socket.recv()
-         except:
-            sleep(0.1)
-            continue
-         try:
-            self.state.ParseFromString(data)
-         except:
-            pass
+   def read(self):
+      state = PowerState()
+      data = self.mon_socket.recv()
+      state.ParseFromString(data)
+      return state
 

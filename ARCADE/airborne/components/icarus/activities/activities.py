@@ -123,11 +123,9 @@ class LandActivity(Activity):
       self.mon = mon
 
    def run(self):
-      print 'x'
       self.core.set_ctrl_param(POS_Z_GROUND, self.MIN_HOVERING_ALT / 3.0)
-      print 'x'
-      #while self.mon.z_ground > self.MIN_HOVERING_ALT:
-         #sleep(self.POLLING_TIMEOUT)
+      while self.mon.z_ground > self.MIN_HOVERING_ALT:
+         sleep(self.POLLING_TIMEOUT)
       self.core.spin_down()
       self.fsm.landing_done()
 
