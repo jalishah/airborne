@@ -16,9 +16,12 @@
 # Python standard lib imports:
 from time import sleep
 from threading import Thread, Timer
+from signal import pause
 from smbus import SMBus
 
+
 # ARCADE imports:
+from mtputil import *
 from power_pb2 import *
 from scl import generate_map
 from named_daemon import daemonize
@@ -44,17 +47,14 @@ class PowerMan:
       self.capacity = self.opcd.get('battery_capacity')
       self.low_battery_voltage = self.cells * self.low_cell_voltage
       self.critical = False
+      self.gpio_mosfet.write()
+      self.warning_started = False
 
       # start threads:
       self.standing = True
-      self.adc_thread = Thread(target=self.adc_reader)
-      self.adc_thread.start()
-      self.emitter_thread = Thread(target=self.power_state_emitter)
-      self.emitter_thread.start()
-      self.request_thread = Thread(target=self.request_handler)
-      self.request_thread.start()
-      self.warning_thread = Thread(target=self.battery_warning)
-
+      self.adc_thread = start_daemon_thread(self.adc_reader)
+      self.emitter_thread = start_daemon_thread(self.power_state_emitter)
+      self.request_thread = start_daemon_thread(self.request_handler)
 
    def battery_warning(self):
       # do something in order to indicate a low battery:
@@ -75,11 +75,12 @@ class PowerMan:
          self.voltage = (voltage_adc.read() - 56.0) / 134.0
          self.current = current_adc.read() / 1024
          self.current_integral += self.current
-         if self.voltage <= self.low_battery_voltage:
-            try:
-               self.warning_thread.start()
-            except:
-               pass
+         if self.voltage < self.low_battery_voltage:
+            self.critical = True
+         if self.critical:
+            if not self.warning_started:
+               self.warning_started = True
+               start_daemon_thread(self.battery_warning)
          sleep(1)
 
 
@@ -93,8 +94,6 @@ class PowerMan:
             state.capacity = self.capacity
             state.consumed = self.current_integral
             state.remaining = self.capacity - self.current_integral
-            if self.voltage <= self.low_battery_voltage:
-               self.critical = True
             state.critical = self.critical
             state.estimate = state.remaining / self.current
          except AttributeError:
@@ -144,6 +143,7 @@ class PowerMan:
 
 def main(name):
    PowerMan(name)
+   await_signal()
 
 
 daemonize('powerman', main)

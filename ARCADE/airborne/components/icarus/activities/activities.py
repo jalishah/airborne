@@ -8,6 +8,7 @@ class Activity(Thread):
 
    def __init__(self):
       Thread.__init__(self)
+      self.daemon = True
 
    def _cancel(self):
       pass

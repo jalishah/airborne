@@ -8,6 +8,7 @@
 # Author: Tobias Simon, Ilmenau University of Technology
 
 
+from threading import Thread
 from icarus_pb2 import IcarusReq, IcarusRep, OK, E_SYN, E_SEM
 
 
@@ -18,7 +19,7 @@ class ICARUS_Exception(Exception):
       self.msg = msg
 
 
-class ICARUS_Server:
+class ICARUS_Server(Thread):
 
    '''
    ICARUS server
@@ -30,6 +31,7 @@ class ICARUS_Server:
       socket: a zmq socket
       delegate: object providing handle(IcarusReq) routine, raising ICARUS_Exception
       '''
+      Thread.__init__(self)
       self._socket = socket
       self._delegate = delegate
 

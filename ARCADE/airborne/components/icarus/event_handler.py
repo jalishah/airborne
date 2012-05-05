@@ -18,6 +18,7 @@ from activities.activities import DummyActivity, TakeoffActivity, LandActivity, 
 from activities.move import MoveActivity
 from flight_sm import flight_sm, flight_Hovering, flight_Moving, flight_Stopping
 from util.geomath import bearing
+from mtputil import *
 
 
 class EventHandler:
@@ -31,6 +32,13 @@ class EventHandler:
       self.landing_spots = []
       self.activity = DummyActivity()
       self.activity.start()
+      start_daemon_thread(self.power_monitor)
+
+
+   def power_monitor(self):
+      while True:
+         print self.powerman.state
+         sleep(5)
 
 
    def poi_thread(self):

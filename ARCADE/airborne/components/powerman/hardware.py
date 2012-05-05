@@ -25,5 +25,7 @@ class GPIO_Bank:
          self.state |= 1 << id;
       else:
          self.state &= ~(1 << id)
-      self.bus.write_byte_data(self.dev, 1, self.state)
+      self.write()
 
+   def write(self):
+      self.bus.write_byte_data(self.dev, 1, self.state)
