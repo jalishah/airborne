@@ -31,8 +31,8 @@ def main():
       swarm_data = swarm_data_pb2.SwarmData()
       swarm_data.ParseFromString(message)
       # send moveto request:
-      req_data = control_pb2.Request()
-      req_data.type = control_pb2.Request.MOVETO
+      req_data = control_pb2.CoreReq()
+      req_data.type = control_pb2.CoreReq.MOVETO
       req_data.moveto_data.lat = swarm_data.lat
       req_data.moveto_data.lon = swarm_data.lon
       ctrl_interface.request(req_data)

@@ -13,7 +13,7 @@ TCP_HOST=('0.0.0.0', 1337)
 
 
 def handle_command(iface, message):
-   req = control_pb2.Request()
+   req = control_pb2.CoreReq()
    req.ParseFromString(message)
    return iface.send(message)
  

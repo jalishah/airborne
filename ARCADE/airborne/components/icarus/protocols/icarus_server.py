@@ -3,12 +3,12 @@
 # ICARUS server
 ###############
 #
-# purpose: responsible for receiving, delegating and replying incoming commands
+# purpose: responsible for receiving, delegating and IcarusReping incoming commands
 #
 # Author: Tobias Simon, Ilmenau University of Technology
 
 
-from icarus_pb2 import Request, Reply, OK, E_SYN, E_SEM
+from icarus_pb2 import IcarusReq, IcarusRep, OK, E_SYN, E_SEM
 
 
 class ICARUS_Exception(Exception):
@@ -22,13 +22,13 @@ class ICARUS_Server:
 
    '''
    ICARUS server
-   responsible for receiving, delegating and replying incoming commands
+   responsible for receiving, delegating and IcarusReping incoming commands
    '''
 
    def __init__(self, socket, delegate):
       '''
       socket: a zmq socket
-      delegate: object providing handle(request) routine, raising ICARUS_Exception
+      delegate: object providing handle(IcarusReq) routine, raising ICARUS_Exception
       '''
       self._socket = socket
       self._delegate = delegate
@@ -48,7 +48,7 @@ class ICARUS_Server:
             print 'could not read SCL message'
             continue
          # parse message into protobuf structure:
-         req = Request()
+         req = IcarusReq()
          try:
             req.ParseFromString(data)
             print req
@@ -56,7 +56,7 @@ class ICARUS_Server:
             # syntactic error in ParseFromString
             self.send_err(E_SYN, 'could not parse protobuf payload')
             continue
-         # handle parsed protobuf message and send reply:
+         # handle parsed protobuf message and send IcarusRep:
          try:
             self._delegate.handle(req)
             self.send_ok()
@@ -67,9 +67,9 @@ class ICARUS_Server:
 
    def send_err(self, code, msg):
       '''
-      reply with error code and message
+      IcarusRep with error code and message
       '''
-      rep = Reply()
+      rep = IcarusRep()
       rep.status = code
       rep.message = msg
       self._send_rep(rep)
@@ -77,9 +77,9 @@ class ICARUS_Server:
 
    def send_ok(self):
       '''
-      reply with OK message
+      IcarusRep with OK message
       '''
-      rep = Reply()
+      rep = IcarusRep()
       rep.status = OK
       self._send_rep(rep)
 

@@ -15,7 +15,7 @@ enum PowerCommand
 }
 
 
-message PowerRequest
+message PowerReq
 {
    required PowerCommand command = 1;   
 }
@@ -29,7 +29,7 @@ enum PowerStatus
 }
 
 
-message PowerReply
+message PowerRep
 {
    required PowerStatus status = 1;   
 }

@@ -19,7 +19,7 @@ from threading import Thread, Timer
 from smbus import SMBus
 
 # ARCADE imports:
-from power_pb2 import PowerState, PowerRequest, PowerReply, PowerRequest, OK, E_SYNTAX, E_POWER, STANDING
+from power_pb2 import PowerState, PowerReq, PowerRep, PowerReq, OK, E_SYNTAX, E_POWER, STANDING
 from scl import generate_map
 from named_daemon import daemonize
 from opcd_interface import OPCD_Interface
@@ -110,8 +110,8 @@ class PowerMan:
 
    def request_handler(self):
       timeout = self.opcd.get('power_save_timeout')
-      req = PowerRequest()
-      rep = PowerReply()
+      req = PowerReq()
+      rep = PowerRep()
       timer = None
       while True:
          rep.status = OK

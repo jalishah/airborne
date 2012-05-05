@@ -21,7 +21,7 @@ class ICARUS_Client:
       self._socket = socket
 
    def _execute(self, req):
-      rep = Reply()
+      rep = IcarusRep()
       req_data = req.SerializeToString()
       self._socket.send(req_data)
       rep_data = self._socket.recv()
@@ -31,7 +31,7 @@ class ICARUS_Client:
 
 
    def takeoff(self, z, glob, speed):
-      req = Request()
+      req = IcarusReq()
       req.type = TAKEOFF
       if not z is None:
          req.takeoff_data.z = z
@@ -43,7 +43,7 @@ class ICARUS_Client:
 
 
    def land(self, speed):
-      req = Request()
+      req = IcarusReq()
       req.type = LAND
       if speed:
          req.speed = speed
@@ -51,7 +51,7 @@ class ICARUS_Client:
 
 
    def move(self, pos, glob, rel, speed, block):
-      req = Request()
+      req = IcarusReq()
       req.type = MOVE
       if pos[0] != None:
          req.move_data.p0 = pos[0]
@@ -69,7 +69,7 @@ class ICARUS_Client:
 
 
    def rotate(self, pos, glob, rel, speed, block):
-      req = Request()
+      req = IcarusReq()
       req.type = ROT
       req.pos.extend(pos)
       if speed:
@@ -80,7 +80,7 @@ class ICARUS_Client:
 
 
    def stop(self):
-      req = Request()
+      req = IcarusReq()
       req.type = STOP
       self._execute(req)
 

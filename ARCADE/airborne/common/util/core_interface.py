@@ -33,36 +33,36 @@ class CoreInterface(Thread):
 
    def _exec(self, req):
       self.ctrl_socket.send(req.SerializeToString())
-      rep = Reply()
+      rep = CoreRep()
       rep.ParseFromString(self.ctrl_socket.recv())
       if rep.status != 0:
          raise CoreError(rep.status, rep.err_msg)
       return rep
 
    def spin_up(self):
-      req = Request()
+      req = CoreReq()
       req.type = SPIN_UP
       self._exec(req)
 
    def spin_down(self):
-      req = Request()
+      req = CoreReq()
       req.type = SPIN_DOWN
       self._exec(req)
 
    def reset_ctrl(self):
-      req = Request()
+      req = CoreReq()
       req.type = RESET_CTRL
       self._exec(req)
   
    def set_ctrl_param(self, param, val):
-      req = Request()
+      req = CoreReq()
       req.type = SET_CTRL_PARAM
       req.ctrl_data.param = param
       req.ctrl_data.val = val
       self._exec(req)
 
    def get_params(self):
-      req = Request()
+      req = CoreReq()
       req.type = GET_PARAMS
       rep = self._exec(req)
       return rep.params

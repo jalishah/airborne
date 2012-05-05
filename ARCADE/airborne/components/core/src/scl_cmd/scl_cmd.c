@@ -55,7 +55,7 @@ static void spin_down(void)
 }
 
 
-static void spin_up(Reply *reply)
+static void spin_up(CoreRep *reply)
 {
    int retry_count = 0;
 retry:
@@ -178,7 +178,7 @@ int set_ctrl_param(CtrlParam param, float value)
 
 
 
-static void check_and_set_ctrl_param(Reply *reply, Request *request)
+static void check_and_set_ctrl_param(CoreRep *reply, CoreReq *request)
 {
    if (request->ctrl_data == NULL)
    {
@@ -223,7 +223,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
-      Reply reply = REPLY__INIT;
+      CoreRep reply = REPLY__INIT;
       reply.status = STATUS__OK;
       unsigned char raw_data[1024];
       int raw_data_size = scl_recv_static(cmd_socket, raw_data, sizeof(raw_data));
@@ -233,7 +233,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          sleep(1);
          continue;
       }
-      Request *request = request__unpack(NULL, raw_data_size, raw_data);
+      CoreReq *request = request__unpack(NULL, raw_data_size, raw_data);
       Params params = PARAMS__INIT;
       if (request == NULL)
       {

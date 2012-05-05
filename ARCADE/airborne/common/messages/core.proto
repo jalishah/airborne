@@ -11,7 +11,7 @@
 /////////////////////////
 
 
-enum RequestType
+enum CoreReqType
 {
    // requests without parameters:
    SPIN_UP =    1; // spin up motors
@@ -68,9 +68,9 @@ message Params
 };
 
 
-message Request
+message CoreReq
 {
-   required RequestType type =   1;
+   required CoreReqType type =   1;
    optional CtrlData ctrl_data = 2; // needed if type == SET_CTRL_DATA
 }
 
@@ -84,7 +84,7 @@ enum Status
 }
 
 
-message Reply
+message CoreRep
 {
    required Status status =  1;
    optional string err_msg = 2;
