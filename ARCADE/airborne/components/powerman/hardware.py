@@ -1,10 +1,5 @@
 
 
-from threading import Thread
-from time import sleep
-
-
-
 class ADC:
 
    def __init__(self, adc_id):
@@ -31,5 +26,4 @@ class GPIO_Bank:
       else:
          self.state &= ~(1 << id)
       self.bus.write_byte_data(self.dev, 1, self.state)
-
 

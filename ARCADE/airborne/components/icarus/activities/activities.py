@@ -65,24 +65,6 @@ class DummyActivity(Activity):
       pass
 
 
-class PowerSaveActivity(Activity):
-
-   POWERSAVE_TIMEOUT = 60 * 5
-
-   def __init__(self, ctrl):
-      Activity.__init__(self)
-      self.ctrl = ctrl
-
-   def _cancel(self):
-      self.timer.cancel()
-      self.timer.join()
-
-   def run(self):
-      self.timer = Timer(self.POWERSAVE_TIMEOUT, self.ctrl.power_off)
-      self.timer.start()
-      self.timer.join()
-
-
 class TakeoffActivity(Activity, StabMixIn):
 
    LOW_ALT_SETPOINT = -10.0

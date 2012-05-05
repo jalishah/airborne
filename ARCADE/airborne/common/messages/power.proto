@@ -9,15 +9,15 @@
 
 enum PowerCommand
 {
-   STANDING = 0; // the system is allowed to shut down main power
-                 // and turn off signaling lights
-   FLYING =   1; // the system must be fully powered up
+   STAND_POWER =  0; // the system is allowed to shut down main power
+                     // and turn off signaling lights
+   FLIGHT_POWER = 1; // the system must be fully powered up
 }
 
 
 message PowerReq
 {
-   required PowerCommand command = 1;   
+   required PowerCommand cmd = 1;   
 }
 
 

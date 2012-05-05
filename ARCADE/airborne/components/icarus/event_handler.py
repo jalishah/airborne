@@ -23,9 +23,10 @@ from util.geomath import bearing
 class EventHandler:
 
 
-   def __init__(self, core, state_emitter):
+   def __init__(self, core, state_emitter, powerman):
       self.core = core
       self.state_emitter = state_emitter
+      self.powerman = powerman
       self.fsm = flight_sm(self)
       self.landing_spots = []
       self.activity = DummyActivity()
@@ -95,16 +96,15 @@ class EventHandler:
 
 
    def _save_power_activity(self):
-      print 'save_power_activity'
-      self.activity.cancel_and_join()
-      self.activity = PowerSaveActivity(self.core)
-      self.activity.start()
+      print 'save_power'
+      self.powerman.stand_mode()
 
 
    def _takeoff_activity(self):
       print 'takeoff_activity'
       self.landing_spots.append((self.core.mon.x, self.core.mon.y))
       self.activity.cancel_and_join()
+      self.powerman.flight_mode()
       self.activity = TakeoffActivity(self.fsm, self.core, self.arg)
       self.activity.start()
 

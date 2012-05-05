@@ -19,7 +19,7 @@ from threading import Thread, Timer
 from smbus import SMBus
 
 # ARCADE imports:
-from power_pb2 import PowerState, PowerReq, PowerRep, PowerReq, OK, E_SYNTAX, E_POWER, STANDING
+from power_pb2 import *
 from scl import generate_map
 from named_daemon import daemonize
 from opcd_interface import OPCD_Interface
@@ -129,7 +129,7 @@ class PowerMan:
                timer.cancel()
             except:
                pass
-            if req.command == STANDING:
+            if req.cmd == STAND_POWER:
                timer = Timer(timeout, self.power_off)
                timer.start()
             else:
