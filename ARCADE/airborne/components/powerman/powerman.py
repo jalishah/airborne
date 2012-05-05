@@ -72,10 +72,12 @@ class PowerMan:
    def adc_reader(self):
       voltage_adc = ADC(self.opcd.get('voltage_adc'))
       current_adc = ADC(self.opcd.get('current_adc'))
+      voltage_lambda = eval(self.opcd.get('adc_2_voltage'))
+      current_lambda = eval(self.opcd.get('adc_2_current'))
       self.current_integral = 0.0
       while True:
-         self.voltage = (voltage_adc.read() - 56.0) / 134.0
-         self.current = current_adc.read() / 1024
+         self.voltage = voltage_lambda(voltage_adc.read())  
+         self.current = current_lambda(current_adc.read())
          self.current_integral += self.current
          if self.voltage < self.low_battery_voltage:
             self.critical = True

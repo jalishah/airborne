@@ -1,12 +1,11 @@
 
 from time import sleep
-from threading import Thread, Timer, current_thread
-from core_pb2 import *
-from math import sqrt
-
 from util.geomath import lineq_n, meter_offset
-from activities import Activity, StabMixIn
-from numpy import array, add, zeros
+from numpy import array, zeros
+
+from core_pb2 import *
+
+from activitiy import Activity, StabMixIn
 
 
 class MoveActivity(Activity, StabMixIn):

@@ -7,7 +7,7 @@
  */
 
 
-enum CoreReqType 
+enum RequestType 
 {
    TAKEOFF = 1;
    LAND = 2;
@@ -42,7 +42,7 @@ message RotData
 
 message IcarusReq
 {
-   required CoreReqType type = 1;
+   required RequestType type = 1;
 
    // type-depending fields:
    optional TakeoffData takeoff_data = 2;

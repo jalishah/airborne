@@ -14,22 +14,13 @@ class CoreError(Exception):
       return 'class: ' + err_map[self.status] + ' message: ' + self.err_msg
 
 
-class CoreInterface(Thread):
+class CoreInterface:
 
    def __init__(self, ctrl_socket, mon_socket):
       Thread.__init__(self)
       self.ctrl_socket = ctrl_socket
       self.params = self.get_params()
-      if mon_socket != None:
-         self.mon_socket = mon_socket
-         self.mon = MonData()
-         self.daemon = True
-         self.start()
-
-   def run(self):
-      while True:
-         data = self.mon_socket.recv()
-         self.mon.ParseFromString(data)
+      self.mon_socket = mon_socket
 
    def _exec(self, req):
       self.ctrl_socket.send(req.SerializeToString())
@@ -67,5 +58,7 @@ class CoreInterface(Thread):
       rep = self._exec(req)
       return rep.params
 
-
+   def mon_read(self, mon):
+      data = self.mon_socket.recv()
+      mon.ParseFromString(data)
 
