@@ -18,7 +18,7 @@ from time import sleep
 from threading import Thread, Timer
 from signal import pause
 from smbus import SMBus
-
+from os import system
 
 # ARCADE imports:
 from mtputil import *
@@ -56,8 +56,10 @@ class PowerMan:
       self.emitter_thread = start_daemon_thread(self.power_state_emitter)
       self.request_thread = start_daemon_thread(self.request_handler)
 
+
    def battery_warning(self):
       # do something in order to indicate a low battery:
+      system('echo CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED | wall')
       while True:
          for i in range(1, 8):
             self.gpio_mosfet.set_gpio(i, False)
