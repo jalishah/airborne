@@ -223,7 +223,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
-      CoreRep reply = REPLY__INIT;
+      CoreRep reply = CORE_REP__INIT;
       reply.status = STATUS__OK;
       unsigned char raw_data[1024];
       int raw_data_size = scl_recv_static(cmd_socket, raw_data, sizeof(raw_data));
@@ -233,7 +233,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          sleep(1);
          continue;
       }
-      CoreReq *request = request__unpack(NULL, raw_data_size, raw_data);
+      CoreReq *request = core_req__unpack(NULL, raw_data_size, raw_data);
       Params params = PARAMS__INIT;
       if (request == NULL)
       {
@@ -274,9 +274,9 @@ SIMPLE_THREAD_BEGIN(thread_func)
             default:
                LOG(LL_DEBUG, "unknown request type");
          }
-         request__free_unpacked(request, NULL);
+         core_req__free_unpacked(request, NULL);
       }
-      SCL_PACK_AND_SEND_DYNAMIC(cmd_socket, reply, reply);
+      SCL_PACK_AND_SEND_DYNAMIC(cmd_socket, core_rep, reply);
    }
    SIMPLE_THREAD_LOOP_END
 }
