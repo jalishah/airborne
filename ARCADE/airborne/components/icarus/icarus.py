@@ -54,6 +54,7 @@ class ICARUS:
       log_config(filename = 'icarus.log',
                  format = '%(asctime)s - %(levelname)s: %(message)s',
                  level = DEBUG)
+      log_info('icarus starting up')
       self.flight_time = 0
       self.icarus_takeover = False
       self.emergency_land = False
@@ -69,6 +70,7 @@ class ICARUS:
       self.activity.start()
       self.icarus_srv = ICARUS_Server(sockets['ctrl'], self)
       self.icarus_srv.start()
+      log_info('icarus up and running')
 
 
    def state_time_monitor(self):
@@ -92,7 +94,11 @@ class ICARUS:
       except:
          pass
       try:
-         self.fsm.move_xy(x, y)
+         self.arg = IcarusReq()
+         self.arg.type = MOVE
+         self.arg.move_data.p0 = x
+         self.arg.move_data.p1 = y
+         self.fsm.move()
       except:
          pass
       try:
@@ -201,43 +207,47 @@ class ICARUS:
 
 
    def _error(self):
-      raise ICARUS_Exception('flight state machine error')
+      msg = 'flight state machine error'
+      log_err(msg)
+      raise ICARUS_Exception(msg)
 
 
    def _broadcast(self):
+      log_info('new state: %d' % self.fsm_state)
       self.state_emitter.send(self.fsm._state)
 
 
    def _save_power_activity(self):
-      print 'save_power'
+      log_info('standing')
       self.powerman.stand_mode()
 
 
    def _takeoff_activity(self):
-      print 'takeoff_activity'
+      log_info('taking off')
       self.landing_spots.append((self.mon_data.x, self.mon_data.y))
       self.activity.cancel_and_join()
       self.powerman.flight_mode()
+      self.yaw_setpoint = self.mon.yaw
       self.activity = TakeoffActivity(self.fsm, self.core, self.arg)
       self.activity.start()
 
 
    def _land_activity(self):
-      print 'land_activity'
+      log_info('landing')
       self.activity.cancel_and_join()
       self.activity = LandActivity(self.fsm, self.core, self.mon_data)
       self.activity.start()
 
 
    def _move_activity(self):
-      print 'move_activity'
+      log_info('moving')
       self.activity.cancel_and_join()
       self.activity = MoveActivity(self.fsm, self.core, self.arg)
       self.activity.start()
 
 
    def _stop_activity(self):
-      print 'stop_activity'
+      log_info('stopping')
       self.activity.cancel_and_join()
       self.activity = StopActivity(self.fsm, self.core)
       self.activity.start()

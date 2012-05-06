@@ -19,6 +19,12 @@ powerman:
    adc_2_voltage: 'lambda x: (x - 56.0) / 134.0'
    adc_2_current: 'lambda x: (2.5 - x / 1024.0) / 0.028'
 
+
+icarus:
+   landing_motors_off_z: 0.4
+   landing_z_low: 1.0
+
+
 core:
    flash_enabled: false
 
@@ -86,17 +92,14 @@ core:
          setting: 4
 
    sensors:
-      
       rc_dsl:
          serial_port: "/dev/ttyUSB3"
-      
       chr_6dm:
          serial_port: "/dev/ttyUSB0"
          device_conf_file: "config/chr-6dm.conf"
          process_covar: 1.0e-6
          mag_covar: 1.0e-3
          acc_covar: 1000.0
-      
       voltage:
          sysfs_path: "/sys/class/hwmon/hwmon0/device/in7_input"
 
