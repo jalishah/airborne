@@ -36,6 +36,8 @@ from protocols.powerman import PowerMan
 from logging import basicConfig as log_config, debug as log_debug
 from logging import info as log_info, warning as log_warn, error as log_err
 from logging import DEBUG
+from os import sep
+from paths import user_data_dir
 
 
 #class OperationRangeEstimate:
@@ -51,9 +53,9 @@ from logging import DEBUG
 class ICARUS:
 
    def __init__(self, sockets):
-      log_config(filename = 'icarus.log',
-                 format = '%(asctime)s - %(levelname)s: %(message)s',
-                 level = DEBUG)
+      logfile = user_data_dir() + os.sep + 'ICARUS.log'
+      log_config(filename = logfile, level = DEBUG,
+                 format = '%(asctime)s - %(levelname)s: %(message)s')
       log_info('icarus starting up')
       self.flight_time = 0
       self.icarus_takeover = False

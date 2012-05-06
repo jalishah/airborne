@@ -1,12 +1,15 @@
+
 #
 # file: config.py
 # purpose: overridable configuration file based on yaml
 # author: Tobias Simon, Ilmenau University of Technology
 #
 
+
 import yaml
 import copy
 import os
+from paths import user_data_dir
 
 
 class ConfigError(Exception):
@@ -19,15 +22,14 @@ class ConfigError(Exception):
       return self.msg
 
 
+
 class Config:
 
-   def __init__(self, config_prefix):
+   def __init__(self):
       self.LEAF_TYPES = [str, int, float, bool]
-      assert isinstance(config_prefix, str)
-      # build config paths from prefix:
-      self.config_prefix = config_prefix
-      self.base_path = config_prefix + '-base.yaml'
-      self.overlay_path = config_prefix + '-overlay.yaml'
+      self.base_path = os.getenv('MOBICOM_SUBPROJECT_PATH') + os.sep + 'common' + os.sep + 'config' + os.sep + 'sys_params_base.yaml'
+      self.overlay_path = user_data_dir() + os.sep + 'sys_params_overlay.yaml'
+      print self.overlay_path
       # load base config and overlay of present:
       self.base = yaml.load(file(self.base_path))
       if os.path.isfile(self.overlay_path):

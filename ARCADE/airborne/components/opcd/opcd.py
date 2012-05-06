@@ -20,11 +20,11 @@ from re import match
 class OPCD:
 
 
-   def __init__(self, name, conf_prefix):
+   def __init__(self, name):
       map = generate_map(name)
       self.ctrl_socket = map['ctrl']
       self.event_socket = map['event']
-      self.conf = Config(conf_prefix)
+      self.conf = Config()
       self.map = {str: 'str_val', int: 'int_val', float: 'dbl_val', bool: 'bool_val'}
 
 
@@ -97,11 +97,9 @@ class OPCD:
 
 
 def main(name):
-   opcd = OPCD(name, argv[1])
+   opcd = OPCD(name)
    opcd.run()
 
 
-if len(argv) != 2:
-   print 'expected configuration file prefix as first argument'
 daemonize('opcd', main)
 
