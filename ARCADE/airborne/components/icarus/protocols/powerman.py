@@ -16,7 +16,8 @@ class PowerMan:
       req = PowerReq()
       req.cmd = cmd
       self.ctrl_socket.send(req.SerializeToString())
-      rep.ParseFromString(socket.recv())
+      rep = PowerRep()
+      rep.ParseFromString(self.ctrl_socket.recv())
       if rep.status != OK:
          if rep.status == E_SYNTAX:
             print 'received reply garbage'

@@ -9,7 +9,7 @@
 
 
 from threading import Thread
-from icarus_pb2 import IcarusReq, IcarusRep, OK, E_SYN, E_SEM
+from icarus_pb2 import IcarusReq, IcarusRep, OK, E_SYNTAX, E_SEMANTIC
 
 
 class ICARUS_Exception(Exception):
@@ -33,6 +33,7 @@ class ICARUS_Server(Thread):
       Thread.__init__(self)
       self._socket = socket
       self._delegate = delegate
+      self.daemon = True
 
 
    def run(self):
@@ -55,7 +56,7 @@ class ICARUS_Server(Thread):
             print req
          except:
             # syntactic error in ParseFromString
-            self.send_err(E_SYN, 'could not parse protobuf payload')
+            self.send_err(E_SYNTAX, 'could not parse protobuf payload')
             continue
          # handle parsed protobuf message and send IcarusRep:
          try:
@@ -63,7 +64,7 @@ class ICARUS_Server(Thread):
             self.send_ok()
          except ICARUS_Exception, ex:
             # semantic error:
-            self.send_err(E_SEM, ex.msg)
+            self.send_err(E_SEMANTIC, ex.msg)
 
 
    def send_err(self, code, msg):

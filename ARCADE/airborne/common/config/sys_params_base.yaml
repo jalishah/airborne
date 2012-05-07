@@ -12,13 +12,13 @@ powerman:
    gpio_power_pin: 0
    battery_cells: 4
    battery_low_cell_voltage: 3.3
+   low_voltage_hysteresis: 10.0 # battery needs to go below battery_low_cell_voltage for this time period in order to trigger a low power event
    battery_capacity: 6.6
    power_save_timeout: 60.0
    voltage_adc: 7
    current_adc: 0
    adc_2_voltage: 'lambda x: (x - 56.0) / 134.0'
    adc_2_current: 'lambda x: (2.5 - x / 1024.0) / 0.028'
-
 
 icarus:
    takeoff:
@@ -29,8 +29,6 @@ icarus:
 
 
 core:
-   flash_enabled: false
-
    logger:
       level: 3
       details: 2

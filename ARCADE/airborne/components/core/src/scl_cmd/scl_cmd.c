@@ -66,7 +66,6 @@ retry:
    for (int i = 0; i < 6; i++)
    {
       ctrl_override(0.0f, 0.0f, 0.0f, (i & 1)? 0.3f : 0.1f);
-      msleep(100);
    }
    int valid_count = 0;
    int fail_timer = 1000;

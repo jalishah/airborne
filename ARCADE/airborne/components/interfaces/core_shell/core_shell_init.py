@@ -20,7 +20,7 @@ readline.parse_and_bind("tab: complete")
 atexit.register(_save_history)
 
 
-_ctrl_socket = generate_map('icarus')['core']
+_ctrl_socket = generate_map('shell')['ctrl']
 i = CoreInterface(_ctrl_socket, None)
 
 print 'type help(i) for help'

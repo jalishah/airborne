@@ -9,21 +9,15 @@
 # - monitor health and react on different low battery states
 
 
-class ICARUS_Error(Exception):
-   pass
+from icarus_pb2 import *
 
 
-
-class ICARUS_Interface:
+class ICARUS_MissionFactory:
 
    '''
    human- and machine-friendly interface to the UAV's ICARUS system
    '''
 
-   def __init__(self, backend):
-      self.backend = backend
-   
-   
    def takeoff(self, **kwargs):
       '''
       take-off
@@ -38,7 +32,7 @@ class ICARUS_Interface:
          raise AssertionError('glob provided without z')
       glob = self._get_glob(kwargs)
       speed = self._get_speed(kwargs)
-      return self.backend.takeoff(z, glob, speed)
+      return self._build_takeoff(z, glob, speed)
 
 
    def land(self, speed = None):
@@ -49,7 +43,7 @@ class ICARUS_Interface:
          - speed: landing speed. Overrides z speed until landing is complete
       '''
       speed = self._cast(speed, float)
-      return self.backend.land(speed)
+      return self._build_land(speed)
 
 
 
@@ -57,7 +51,7 @@ class ICARUS_Interface:
       '''
       stop the system when moving
       '''
-      return self.backend.stop()
+      return self._build_stop()
 
 
 
@@ -234,7 +228,7 @@ class ICARUS_Interface:
       rel = self._get_rel(kwargs)
       speed = self._get_speed(kwargs)
       block = self._get_block(kwargs)
-      return self.backend.move(pos, glob, rel, speed, block)
+      return self._build_move(pos, glob, rel, speed, block)
 
 
    # private utility methods:
@@ -280,84 +274,89 @@ class ICARUS_Interface:
       kwargs['rel'] = val
 
 
+   def _build_takeoff(self, z, glob, speed):
+      req = IcarusReq()
+      req.type = TAKEOFF
+      if not z is None:
+         req.takeoff_data.z = z
+      if not glob is None:
+         req.glob = glob
+      if not speed is None:
+         req.speed = speed
+      return req
 
 
-if __name__ == '__main__':   
- 
-   import unittest
+   def _build_land(self, speed):
+      req = IcarusReq()
+      req.type = LAND
+      if speed:
+         req.speed = speed
+      return req
 
 
-   class TestBackend:
+   def _build_move(self, pos, glob, rel, speed, block):
+      req = IcarusReq()
+      req.type = MOVE
+      if pos[0] != None:
+         req.move_data.p0 = pos[0]
+      if pos[1] != None:
+         req.move_data.p1 = pos[1]
+      if pos[2] != None:
+         req.move_data.p2 = pos[2]
+      if speed != None:
+         req.speed = speed
+      if rel != None:
+         req.rel = rel
+      if glob != None:
+         req.glob = glob
+      return req
 
-      def takeoff(self, z, glob, speed):
-         return z, glob, speed
 
-      def land(self, speed):
-         return speed
-   
-      def stop(self):
-         pass
+   def _build_rotate(self, pos, glob, rel, speed, block):
+      req = IcarusReq()
+      req.type = ROT
+      req.pos.extend(pos)
+      if speed:
+         req.speed = speed
+      if rel:
+         req.rel = rel
+      return req
 
-      def move(self, pos, glob, rel, speed, block):
-         return pos, glob, rel, speed, block
 
-
-   class TestTakeoff(unittest.TestCase):
-
-      def __init__(self, arg):
-         unittest.TestCase.__init__(self, arg)
-         backend = TestBackend()
-         self.mi = MissionInterface(backend)
-
-      def test_takeoff(self):
-         self.assertEqual(self.mi.takeoff(), (None, False, None))
-         self.assertEqual(self.mi.takeoff(z = 1.0), (1.0, False, None))
-         self.assertEqual(self.mi.takeoff(speed = 10), (None, False, 10.0))
-         self.assertRaises(AssertionError, self.mi.takeoff, glob = False)
-         self.assertEqual(self.mi.takeoff(z = 1.0), (1.0, False, None))
-         self.assertEqual(self.mi.takeoff(z = 1.0), (1.0, False, None))
-         self.assertEqual(self.mi.takeoff(z = 1.0, speed = 2.0), (1.0, False, 2.0))
-         self.assertEqual(self.mi.takeoff(z = 7.0, speed = 3.0), (7.0, False, 3.0))
-         self.assertRaises(TypeError, self.mi.takeoff, z = 'text')
-         self.assertRaises(TypeError, self.mi.takeoff, z = 'text')
-         self.assertRaises(TypeError, self.mi.takeoff, speed = 'text')
-
-      def test_land(self):
-         self.assertEqual(self.mi.land(), None)
-         self.assertEqual(self.mi.land(20), 20.0)
-         self.assertRaises(TypeError, self.mi.land, 'text')
- 
-      def test_stop(self):
-         self.assertEqual(self.mi.stop(), None)
-
-      def test_move(self):
-         self.assertEqual(self.mi.move_x(1.0), ((1.0, None, None), False, False, None, True))
-         self.assertEqual(self.mi.move_y('1'), ((None, 1.0, None), False, False, None, True))
-         self.assertEqual(self.mi.move_z(1), ((None, None, 1.0), False, False, None, True))
-         self.assertEqual(self.mi.move_xy(1.0, 2.0), ((1.0, 2.0, None), False, False, None, True))
-         self.assertEqual(self.mi.move_xyz(1.0, 2.0, 3.0), ((1.0, 2.0, 3.0), False, False, None, True))
-         self.assertEqual(self.mi.move_xyz(1.0, 2.0, 3.0, speed = 2), ((1.0, 2.0, 3.0), False, False, 2.0, True))
-         self.assertEqual(self.mi.move_xyz(1.0, 2.0, 3.0, rel = True, speed = 2), ((1.0, 2.0, 3.0), False, True, 2.0, True))
-         self.assertEqual(self.mi.move_xyz(1.0, 2.0, 3.0, rel = True, speed = 2, block = False), ((1.0, 2.0, 3.0), False, True, 2.0, False))
-         self.assertEqual(self.mi.move_lon(1.0, speed = 2, block = False), ((1.0, None, None), True, False, 2.0, False))
-         self.assertEqual(self.mi.move_lat(1.0), ((None, 1.0, None), True, False, None, True))
-         self.assertEqual(self.mi.move_lon_lat(1.0, 2.0), ((1.0, 2.0, None), True, False, None, True))
-         self.assertEqual(self.mi.move_gps(1.0, 2.0, 3.0), ((1.0, 2.0, 3.0), True, False, None, True))
-         self.assertRaises(TypeError, self.mi.move_gps, 'text')
-         self.assertRaises(TypeError, self.mi.move_gps, 1.0, 'text')
-         self.assertRaises(TypeError, self.mi.move_gps, 1.0, 2.0, 'text')
-         self.assertRaises(TypeError, self.mi.move_gps, 1.0, 2.0, 3.0, speed = 'text')
-         self.assertRaises(TypeError, self.mi.move_gps, 1.0, 2.0, 3.0, speed = 'text')
-         self.assertRaises(AssertionError, self.mi.move_gps, 1.0, 2.0, 3.0, speed = 'text', glob = True)
-
-   unittest.main()
+   def _build_stop(self):
+      req = IcarusReq()
+      req.type = STOP
+      return req
 
 
 
-def mission():
-   m.takeoff(z = 10, glob = True)
-   for x, y in [(0, 1), (1, 1), (1, 0), (0, 0)]:
-      scale = 10
-      m.move_xy(scale * x, scale * y)
-   m.land()
+# ICARUS client interface
+# sends ICARUS commands and reads status
+
+
+class ICARUS_ClientError(Exception):
+
+   def __init__(self, status, err_msg):
+      self.status = status
+      self.err_msg = err_msg
+
+   def __str__(self):
+      err_map = {E_SYNTAX: 'E_SYNTAX', E_SEMANTIC: 'E_SEMANTIC', E_HARDWARE: 'E_HARDWARE'}
+      return 'class: ' + err_map[self.status] + ' message: ' + self.err_msg
+
+
+class ICARUS_Client:
+
+   def __init__(self, socket):
+      self._socket = socket
+
+   def execute(self, req):
+      rep = IcarusRep()
+      req_data = req.SerializeToString()
+      self._socket.send(req_data)
+      rep_data = self._socket.recv()
+      rep.ParseFromString(rep_data)
+      if rep.status != 0:
+         raise ICARUS_ClientError(rep.status, rep.message)
+      return rep
 

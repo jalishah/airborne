@@ -29,7 +29,6 @@ rc_dsl
 scl_gps
 maxsonar
 bmp085
-leds
 chr_6dm
 # generic algorithms:
 algorithms

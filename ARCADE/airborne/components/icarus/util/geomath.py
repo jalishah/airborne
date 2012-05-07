@@ -5,6 +5,8 @@
 # purpose: various geodetic math functions
 #
 # author: Tobias Simon, Ilmenau University of Technology
+# calc_rad, earth_distance and meter_offset code taken from:
+# http://code.google.com/p/gmapcatcher
 #
 
 

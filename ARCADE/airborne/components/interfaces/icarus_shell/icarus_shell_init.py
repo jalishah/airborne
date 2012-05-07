@@ -6,12 +6,13 @@ import readline
 import rlcompleter
 
 from scl import generate_map
-from icarus_client import ICARUS_Client
-from icarus_interface import ICARUS_Interface
+from icarus_interface import ICARUS_Client, ICARUS_MissionFactory
+from paths import user_data_dir
 
 
 # set-up command history:
-_history = os.path.expanduser("~/.ARCADE_cmdshell_history")
+_path = user_data_dir() + os.sep + 'ICARUS_shell.history'
+_history = os.path.expanduser(_path)
 def _save_history(historyPath = _history):
    readline.write_history_file(_history)
 if os.path.exists(_history):
@@ -21,7 +22,13 @@ atexit.register(_save_history)
 
 
 # define
-_socket = generate_map('cmdshell')['ctrl']
+_socket = generate_map('shell')['ctrl']
 _client = ICARUS_Client(_socket)
-i = ICARUS_Interface(_client)
+i = ICARUS_MissionFactory()
+
+def request(item):
+   try:
+      _client.execute(item)
+   except Exception, e:
+      print e
 

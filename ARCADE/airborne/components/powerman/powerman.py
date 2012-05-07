@@ -26,6 +26,7 @@ from power_pb2 import *
 from scl import generate_map
 from named_daemon import daemonize
 from opcd_interface import OPCD_Interface
+from timeutil import Hysteresis
 
 # component imports:
 from hardware import ADC, GPIO_Bank
@@ -59,14 +60,12 @@ class PowerMan:
 
    def battery_warning(self):
       # do something in order to indicate a low battery:
-      system('echo CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED | wall')
+      system('echo "CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED" | wall')
       while True:
-         for i in range(1, 8):
-            self.gpio_mosfet.set_gpio(i, False)
-            sleep(0.1)
-         for i in range(1, 8):
-            self.gpio_mosfet.set_gpio(i, True)
-            sleep(0.1)
+         self.gpio_mosfet.set_gpio(5, False)
+         sleep(0.1)
+         self.gpio_mosfet.set_gpio(5, True)
+         sleep(0.1)
 
 
    def adc_reader(self):
@@ -75,12 +74,16 @@ class PowerMan:
       voltage_lambda = eval(self.opcd.get('adc_2_voltage'))
       current_lambda = eval(self.opcd.get('adc_2_current'))
       self.current_integral = 0.0
+      hysteresis = Hysteresis(self.opcd.get('low_voltage_hysteresis'))
       while True:
          self.voltage = voltage_lambda(voltage_adc.read())  
          self.current = current_lambda(current_adc.read())
          self.current_integral += self.current
+         print self.voltage, self.low_battery_voltage
          if self.voltage < self.low_battery_voltage:
-            self.critical = True
+            self.critical = hysteresis.set()
+         else:
+            hysteresis.reset()
          if self.critical:
             if not self.warning_started:
                self.warning_started = True

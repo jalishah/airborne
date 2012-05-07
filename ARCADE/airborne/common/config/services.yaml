@@ -9,7 +9,7 @@
 
 icarus:
   binary: 'icarus/icarus.py'
-  #depends: [core]
+  depends: [core, powerman]
 
 gps_sensor:
   binary: 'sensors/gps_sensor/gps_sensor'

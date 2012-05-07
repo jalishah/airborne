@@ -26,7 +26,6 @@
 #include "sensor_actor/lib/i2c/omap_i2c_bus.h"
 #include "sensor_actor/interfaces/altimeter.h"
 #include "sensor_actor/interfaces/motors.h"
-#include "sensor_actor/leds/leds_overo.h"
 #include "sensor_actor/interfaces/ahrs.h"
 #include "sensor_actor/interfaces/gps.h"
 #include "sensor_actor/interfaces/motors.h"
@@ -50,7 +49,6 @@ enum
 };
 
 
-static tsint_t flash_enabled;
 static sliding_avg_t *output_avg[NUM_AVG];
 
 
@@ -72,14 +70,6 @@ void _main(int argc, char *argv[])
    syslog(LOG_INFO, "initializing opcd interface");
    opcd_params_init("core.", 1);
    
-   /* load parameters: */
-   opcd_param_t params[] =
-   {
-      {"flash_enabled", &flash_enabled},
-      OPCD_PARAMS_END
-   };
-   opcd_params_apply("", params);
-
    /* initialize logger: */
    syslog(LOG_INFO, "opening logger");
    if (logger_open() != 0)
@@ -128,11 +118,6 @@ void _main(int argc, char *argv[])
    for (int i = 0; i < NUM_AVG; i++)
    {
       output_avg[i] = sliding_avg_create(OUTPUT_RATIO, 0.0f);
-   }
-
-   if (tsint_get(&flash_enabled))
-   {
-      leds_overo_initialize();
    }
 
    LOG(LL_INFO, "system up and running");
@@ -184,10 +169,6 @@ void _cleanup(void)
    static int killing = 0;
    if (!killing)
    {
-      if (tsint_get(&flash_enabled))
-      {
-         leds_overo_finalize();
-      }
       killing = 1;
       LOG(LL_INFO, "system shutdown by user");
       sleep(1);

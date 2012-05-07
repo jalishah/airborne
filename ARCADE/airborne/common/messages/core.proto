@@ -125,5 +125,7 @@ message MonData
    required float y_err =   18; // y error in m
    required float z_err =   19; // z error in m
    required float yaw_err = 20; // yaw error in rad
+   
+   required bool signal_valid = 21; // indicates is the rc signal valid
 }
 

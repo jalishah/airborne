@@ -1,4 +1,4 @@
-%start flight::standing
+%start flight::hovering
 %class flight
 
 %map flight

@@ -5,9 +5,12 @@ import readline
 import pprint
 from opcd_interface import OPCD_Interface
 from scl import generate_map
+from paths import user_data_dir
+
 
 # set-up command history:
-_history = os.path.expanduser("~/.ARCADE_opcd_shell_history")
+_path = user_data_dir() + os.sep + 'OPCD_shell.history'
+_history = os.path.expanduser(_path)
 def _save_history(historyPath = _history):
    readline.write_history_file(_history)
 if os.path.exists(_history):
@@ -17,7 +20,7 @@ atexit.register(_save_history)
 
 
 #initialize and define interface:
-_interface = OPCD_Interface(generate_map('opcd_shell')['ctrl'])
+_interface = OPCD_Interface(generate_map('shell')['ctrl'])
 _pp = pprint.PrettyPrinter(indent = 3)
 
 

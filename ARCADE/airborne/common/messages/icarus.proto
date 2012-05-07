@@ -111,10 +111,10 @@ message IcarusReq
 
 enum Status
 {
-   OK =     0; /* everything ok */
-   E_SYN = -1; /* syntactic error in data */
-   E_SEM = -2; /* semantic errror in protobuf data */
-   E_HW =  -3; /* hardware error */
+   OK =           0; /* everything ok */
+   E_SYNTAX =    -1; /* syntactic error in data */
+   E_SEMANTIC =  -2; /* semantic errror in protobuf data */
+   E_HARDWARE =  -3; /* hardware error */
 }
 
 

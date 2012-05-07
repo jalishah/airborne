@@ -18,5 +18,8 @@ def start_daemon_thread(target):
 
 
 def await_signal():
-   pause()
+   try:
+      pause()
+   except:
+      print 'killed by user'
 

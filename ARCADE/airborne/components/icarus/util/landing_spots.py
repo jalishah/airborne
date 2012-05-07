@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
    import unittest
 
-   class TestGeoMath(unittest.TestCase):
+   class TestLandingSpots(unittest.TestCase):
 
       def test_empty(self):
          spots = LandingSpots(2.0)
