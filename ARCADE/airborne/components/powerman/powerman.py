@@ -90,20 +90,22 @@ class PowerMan:
       self.current_integral = 0.0
       hysteresis = Hysteresis(self.opcd.get('low_voltage_hysteresis'))
       while True:
-         self.voltage = voltage_lambda(voltage_adc.read())  
-         self.current = current_lambda(current_adc.read())
-         self.current_integral += self.current / 3600
-         print self.voltage, self.low_battery_voltage
-         if self.voltage < self.low_battery_voltage:
-            self.critical = hysteresis.set()
-         else:
-            hysteresis.reset()
-         if self.critical:
-            if not self.warning_started:
-               self.warning_started = True
-               start_daemon_thread(self.battery_warning)
          sleep(1)
-
+         try:
+            self.voltage = voltage_lambda(voltage_adc.read())  
+            self.current = current_lambda(current_adc.read())
+            self.current_integral += self.current / 3600
+            print self.voltage, self.low_battery_voltage
+            if self.voltage < self.low_battery_voltage:
+               self.critical = hysteresis.set()
+            else:
+               hysteresis.reset()
+            if self.critical:
+               if not self.warning_started:
+                  self.warning_started = True
+                  start_daemon_thread(self.battery_warning)
+         except Exception, e:
+            log_err(str(e))
 
    def power_state_emitter(self):
       while True:

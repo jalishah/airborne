@@ -54,10 +54,3 @@ class SrtmElevMap:
       # return elevation:
       return ds.ReadAsArray(int(pixel[0]), int(pixel[1]), 1, 1).ravel()[0]
 
-
-m = SrtmElevMap('data/')
-el = m.lookup((10.88114, 50.66544))
-
-print 'kickelhahn elevation (lookup):', el
-print 'kickelhahn real: 861'
-

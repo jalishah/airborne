@@ -25,7 +25,7 @@ from activities.stop import StopActivity
 from activities.dummy import DummyActivity
 from flight_sm import flight_sm, flight_Hovering
 from flight_sm import flight_Standing, flight_Moving, flight_Stopping
-from util.geomath import bearing GPS_Shifter
+from util.geomath import bearing, gps_add_meters
 from mtputil import *
 from named_daemon import daemonize
 from scl import generate_map
@@ -94,6 +94,8 @@ class ICARUS:
       last_valid = time()
       while True:
          self.core.mon_read(self.mon_data)
+         lat, lon = gps_add_meters(core.params.start_lat, core.params.start_lon,
+                                   self.icarus.setpoints[0], self.icarus.setpoints[1])
          if self.mon_data.signal_valid:
             last_valid = time()
          else:

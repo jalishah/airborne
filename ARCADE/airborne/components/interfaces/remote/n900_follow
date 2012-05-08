@@ -24,7 +24,6 @@ def main():
    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
    s.bind(ADDRESS)
 
-
    while True:
       # read data from swarm sender:
       message, address = s.recvfrom(8192)
