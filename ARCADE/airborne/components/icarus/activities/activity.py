@@ -7,8 +7,9 @@ from math import sqrt, hypot
 
 class Activity(Thread):
 
-   def __init__(self):
+   def __init__(self, icarus):
       Thread.__init__(self)
+      self.icarus = icarus
       self.daemon = True
 
    def _cancel(self):
@@ -17,6 +18,7 @@ class Activity(Thread):
    def cancel_and_join(self):
       if self != current_thread():
          self._cancel()
+         print 'joining'
          self.join()
 
 
@@ -28,11 +30,8 @@ class StabMixIn:
    POLLING_TIMEOUT = 0.1
    STAB_COUNT = 20
 
-   def __init__(self, core):
-      self.core = core
-
    def stabilize(self):
-      core = self.core
+      core = self.icarus.core
       count = 0
       while True:
          sleep(self.POLLING_TIMEOUT)
@@ -48,13 +47,13 @@ class StabMixIn:
          # reset counter if one of the errors becomes too huge:
          print x_err, y_err
          if abs(alt_err) > self.ALT_STAB_EPSILON:
-            print 'alt instable', alt_err, count
+            #print 'alt instable', alt_err, count
             count = 0
          elif hypot(x_err, y_err) > self.LAT_STAB_EPSILON:
-            print 'gps instable', x_err, y_err, count
+            #print 'gps instable', x_err, y_err, count
             count = 0
          elif abs(yaw_err) > self.YAW_STAB_EPSILON:
-            print 'yaw instable', yaw_err, count
+            #print 'yaw instable', yaw_err, count
             count = 0
-      print 'stabilized'
+      #print 'stabilized'
 

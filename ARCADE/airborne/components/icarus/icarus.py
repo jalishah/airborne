@@ -25,7 +25,7 @@ from activities.stop import StopActivity
 from activities.dummy import DummyActivity
 from flight_sm import flight_sm, flight_Hovering
 from flight_sm import flight_Standing, flight_Moving, flight_Stopping
-from util.geomath import bearing
+from util.geomath import bearing GPS_Shifter
 from mtputil import *
 from named_daemon import daemonize
 from scl import generate_map
@@ -50,6 +50,7 @@ class ICARUS:
       log_config(filename = logfile, level = DEBUG,
                  format = '%(asctime)s - %(levelname)s: %(message)s')
       log_info('icarus starting up')
+      self.setpoints = [0.0, 0.0, 2.0] # x, y, z
       self.flight_time = 0
       self.icarus_takeover = False
       self.emergency_land = False
@@ -57,6 +58,7 @@ class ICARUS:
       self.fsm = flight_sm(self)
       self.landing_spots = LandingSpots(3.0)
       self.core = CoreInterface(sockets['core'], sockets['mon'])
+      self.gps_shifter = GPS_Shifter()
       self.state_emitter = StateEmitter(sockets['hlsm'])
       self.powerman = PowerMan(sockets['power_ctrl'], sockets['power_mon'])
       start_daemon_thread(self.power_state_monitor)
@@ -231,28 +233,28 @@ class ICARUS:
       self.activity.cancel_and_join()
       self.powerman.flight_power()
       self.yaw_setpoint = self.mon_data.yaw
-      self.activity = TakeoffActivity(self.fsm, self.core, self.mon_data, self.arg)
+      self.activity = TakeoffActivity(self)
       self.activity.start()
 
 
    def _land_activity(self):
       log_info('landing')
       self.activity.cancel_and_join()
-      self.activity = LandActivity(self.fsm, self.core, self.mon_data)
+      self.activity = LandActivity(self)
       self.activity.start()
 
 
    def _move_activity(self):
       log_info('moving')
       self.activity.cancel_and_join()
-      self.activity = MoveActivity(self.fsm, self.core, self.mon_data, self.arg)
+      self.activity = MoveActivity(self)
       self.activity.start()
 
 
    def _stop_activity(self):
       log_info('stopping')
       self.activity.cancel_and_join()
-      self.activity = StopActivity(self.fsm, self.core)
+      self.activity = StopActivity(self)
       self.activity.start()
 
 

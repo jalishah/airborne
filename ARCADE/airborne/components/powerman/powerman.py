@@ -13,14 +13,15 @@
 #
 
 
-# Python standard lib imports:
 from time import sleep
 from threading import Thread, Timer
 from signal import pause
 from smbus import SMBus
-from os import system
+from os import system, sep
+from logging import basicConfig as log_config, debug as log_debug
+from logging import info as log_info, warning as log_warn, error as log_err
+from logging import DEBUG
 
-# ARCADE imports:
 from mtputil import *
 from power_pb2 import *
 from scl import generate_map
@@ -28,14 +29,24 @@ from named_daemon import daemonize
 from opcd_interface import OPCD_Interface
 from timeutil import Hysteresis
 
-# component imports:
+from paths import user_data_dir
 from hardware import ADC, GPIO_Bank
 
+
+class ICARUS:
+
+   def __init__(self, sockets):
+      self.flight_time = 0
 
 class PowerMan:
 
    def __init__(self, name):
+      # set-up logger:
+      logfile = user_data_dir() + sep + 'PowerMan.log'
+      log_config(filename = logfile, level = DEBUG,
+                 format = '%(asctime)s - %(levelname)s: %(message)s')
       # initialized and load config:
+      log_info('powerman starting up')
       map = generate_map(name)
       self.ctrl_socket = map['ctrl']
       self.monitor_socket = map['mon']
@@ -56,11 +67,14 @@ class PowerMan:
       self.adc_thread = start_daemon_thread(self.adc_reader)
       self.emitter_thread = start_daemon_thread(self.power_state_emitter)
       self.request_thread = start_daemon_thread(self.request_handler)
+      log_info('powerman running')
 
 
    def battery_warning(self):
       # do something in order to indicate a low battery:
-      system('echo "CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED" | wall')
+      msg = 'CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED'
+      log_warn(msg)
+      system('echo "%s" | wall' % msg)
       while True:
          self.gpio_mosfet.set_gpio(5, False)
          sleep(0.1)
@@ -78,7 +92,7 @@ class PowerMan:
       while True:
          self.voltage = voltage_lambda(voltage_adc.read())  
          self.current = current_lambda(current_adc.read())
-         self.current_integral += self.current
+         self.current_integral += self.current / 3600
          print self.voltage, self.low_battery_voltage
          if self.voltage < self.low_battery_voltage:
             self.critical = hysteresis.set()
@@ -100,9 +114,13 @@ class PowerMan:
             state.current = self.current
             state.capacity = self.capacity
             state.consumed = self.current_integral
-            state.remaining = self.capacity - self.current_integral
+            remaining = self.capacity - self.current_integral
+            if remaining < 0:
+               remaining = 0
+            state.remaining = remaining
             state.critical = self.critical
-            state.estimate = state.remaining / self.current
+            state.estimate = state.remaining / self.current * 3600
+            log_info(str(state).replace('\n', ' '))
          except AttributeError:
             continue
          except: # division by zero in last try block line

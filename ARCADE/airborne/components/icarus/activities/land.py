@@ -9,16 +9,17 @@ class LandActivity(Activity):
 
    MIN_HOVERING_ALT = 0.57
 
-   def __init__(self, fsm, core, mon):
-      Activity.__init__(self)
-      self.fsm = fsm
-      self.core = core
-      self.mon = mon
+   def __init__(self, icarus):
+      Activity.__init__(self, icarus)
 
    def run(self):
-      self.core.set_ctrl_param(POS_Z_GROUND, self.MIN_HOVERING_ALT / 3.0)
-      while self.mon.z_ground > self.MIN_HOVERING_ALT:
+      core = self.icarus.core
+      mon_data = self.icarus.mon_data
+      fsm = self.icarus.fsm
+      
+      core.set_ctrl_param(POS_Z_GROUND, self.MIN_HOVERING_ALT / 3.0)
+      while mon_data.z_ground > self.MIN_HOVERING_ALT:
          sleep(self.POLLING_TIMEOUT)
-      self.core.spin_down()
-      self.fsm.landing_done()
+      core.spin_down()
+      fsm.landing_done()
 

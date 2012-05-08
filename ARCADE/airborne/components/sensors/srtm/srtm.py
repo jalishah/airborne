@@ -39,7 +39,7 @@ class SrtmElevMap:
             raise AssertionError('file does not exist: ' + f)
          ds = gdal.Open(f, GA_ReadOnly)
          if ds is None:
-            raise AssertionError('could not loaad file')
+            raise AssertionError('could not load file')
          self.cache[f] = ds
       
       # Transform from map space to image space.

@@ -20,7 +20,6 @@ class StateEmitter:
 
    def send(self, state):
       sm = StateUpdate()
-      print state
       sm.state = to_protocol(state)
       self._socket.send(sm.SerializeToString())
 

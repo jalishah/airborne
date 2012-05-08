@@ -10,7 +10,8 @@
 #
 
 
-from math import sin, cos, acos, atan2, pi
+from math import sin, cos, acos, atan2, pi, fmod, hypot, asin
+from pyproj import Proj, transform
 
 
 def deg2rad(deg):
@@ -83,11 +84,31 @@ def earth_distance((lat1, lon1), (lat2, lon2)):
 
 def meter_offset((lat1, lon1), (lat2, lon2)):
     "Return offset in meters of second arg from first."
-    dx = earth_distance((lat1, lon1), (lat1, lon2))
-    dy = earth_distance((lat1, lon1), (lat2, lon1))
-    if lat1 < lat2: dy *= -1
-    if lon1 < lon2: dx *= -1
+    dy = earth_distance((lat1, lon1), (lat1, lon2))
+    dx = earth_distance((lat1, lon1), (lat2, lon1))
+    if lat1 < lat2: dx *= -1
+    if lon1 < lon2: dy *= -1
     return (dx, dy)
+
+
+class GPS_Shifter:
+   '''
+   takes initial gps position, adds relative shift in meters
+   and transforms it back into a gps position
+   '''
+
+   def __init__(self, lat, lon):
+      self.gps = Proj(proj='latlong', datum='WGS84')
+      self.aeqd = Proj(proj='aeqd')
+      self.start_lat = lat
+      self.start_lon = lon
+
+   def calc(self, dx, dy):
+      aey, aex = transform(self.gps, self.aeqd,
+                           self.start_lat, self.start_lon)
+      aey += dy
+      aex += dx
+      return transform(self.aeqd, self.gps, aey, aex)
 
 
 
@@ -103,7 +124,11 @@ if __name__ == '__main__':
 
       def test_earth_distance(self):
          self.assertEqual(earth_distance((0, 0), (0, 0)), 0.0)
-         self.assertEqual(meter_offset((0, 0), (0, 1)), (-110587.64409758021, 0.0))
+         self.assertEqual(meter_offset((0, 0), (0, 1)), (0.0, -110587.64409758021))
+
+      def test_shifter(self):
+         shifter = GPS_Shifter(50.0, 10.0)
+         self.assertEqual(shifter.calc(1000000, 0), (51.292293466969085, 17.86742449270132))
 
    unittest.main()
 

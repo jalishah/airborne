@@ -12,13 +12,8 @@ class TakeoffActivity(Activity, StabMixIn):
    STD_HOVERING_ALT = 0.0
 
 
-   def __init__(self, fsm, core, mon_data, arg):
-      Activity.__init__(self)
-      StabMixIn.__init__(self, core)
-      self.fsm = fsm
-      self.core = core
-      self.mon_data = mon_data
-      self.arg = arg
+   def __init__(self, fsm, icarus):
+      Activity.__init__(self, icarus)
       self.canceled = False
 
 
@@ -27,10 +22,10 @@ class TakeoffActivity(Activity, StabMixIn):
 
 
    def run(self):
-      arg = self.arg
-      core = self.core
-      mon_data = self.mon_data
-      params = core.params
+      arg = self.icarus.arg
+      core = self.icarus.core
+      mon_data = self.icarus.mon_data
+      params = self.icarus.core.params
 
       if arg.HasField('move_data'):
          z_setpoint = arg.move_data.z

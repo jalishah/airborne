@@ -132,6 +132,7 @@ enum State
    HOVERING = 3;
    LANDING = 4;
    MOVING = 5;
+   STOPPING = 6;
 }
 
 
