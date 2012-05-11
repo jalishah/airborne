@@ -1,7 +1,7 @@
 
 from bridge import Bridge
 from threading import Thread, Timer
-from monitor_data_pb2 import CoreMonData
+from core_pb2 import MonData
 from math import sqrt
 from mavlinkv10 import *
 from psutil import cpu_percent
@@ -15,7 +15,9 @@ class CoreBridge(Bridge):
       Bridge.__init__(self, socket_map, mav_iface, send_interval)
       self.dead = False
       recv_thread = Thread(target = self._receive)
+      recv_thread.daemon = True
       send_thread = Thread(target = self._send)
+      send_thread.daemon = True
       self.dispatcher = dispatcher
       self.auto_mode_flags = MAV_MODE_FLAG_SAFETY_ARMED \
          | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED \
@@ -38,7 +40,7 @@ class CoreBridge(Bridge):
       self.dead = True
 
    def _receive(self):
-      mon = CoreMonData()
+      mon = MonData()
       socket = self.socket_map['core_mon']
       last_read = time.time()
       while True:
@@ -73,7 +75,7 @@ class CoreBridge(Bridge):
             throttle = 0.5 # todo: fix me
             self.mav_iface.mavio.mav.vfr_hud_send(airspeed, ground_speed,
                mon.yaw, throttle, -mon.z, -mon.z_speed)
-            voltage_battery = 1000 * mon.batt_voltage;
+            voltage_battery = 1000 #* mon.batt_voltage;
             current_battery = 0
             battery_remaining = -1
             drop_rate_comm = int(10000.0 * self.dispatcher.loss_rate)

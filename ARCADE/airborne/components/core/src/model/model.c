@@ -29,10 +29,6 @@
 #include "../util/math/lmath.h"
 
 
-#define THREAD_NAME       "acc_avg_updater"
-#define THREAD_PRIORITY   0
-
-
 /* configuration parameters: */
 static tsfloat_t process_noise;
 static tsfloat_t ultra_noise;
@@ -219,20 +215,6 @@ void model_step(model_state_t *out, model_input_t *in)
 }
 
 
-SIMPLE_THREAD_BEGIN(thread_func)
-{
-   SIMPLE_THREAD_LOOP_BEGIN
-   {
-      sleep(1); //sleep(tsint_get(&acc_avg_update_s));
-      opcd_float_param_set("core.model.x_acc_avg", sliding_avg_get(x_acc_avg));
-      opcd_float_param_set("core.model.y_acc_avg", sliding_avg_get(y_acc_avg));
-      opcd_float_param_set("core.model.z_acc_avg", sliding_avg_get(z_acc_avg));
-   }
-   SIMPLE_THREAD_LOOP_END
-}
-SIMPLE_THREAD_END
-
-
 void model_init(void)
 {
    ASSERT_ONCE();
@@ -301,8 +283,5 @@ void model_init(void)
    x_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&x_acc_avg_conf));
    y_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&y_acc_avg_conf));
    z_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&z_acc_avg_conf));
-   
-   /* start acc avg updater: */
-   simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 }
 

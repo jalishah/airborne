@@ -1,10 +1,12 @@
 
-from mavlinkv10 import MAVLINK_TYPE_FLOAT, MAVLINK_TYPE_INT32_T
 from opcd_interface import OPCD_Interface
 from threading import Thread
 import re
 from scl import generate_map
+#from mavlinkv10 import MAVLINK_TYPE_FLOAT_T, MAVLINK_TYPE_INT32_T
 
+MAVLINK_TYPE_FLOAT_T = 1
+MAVLINK_TYPE_INT32_T = 2
 
 class ParamHandler(Thread):
 
@@ -16,7 +18,7 @@ class ParamHandler(Thread):
       self.param_name_map = {}
       list = self.opcd_interface.get('')
       c = 0
-      type_map = {float: MAVLINK_TYPE_FLOAT, long: MAVLINK_TYPE_INT32_T}
+      type_map = {float: MAVLINK_TYPE_FLOAT_T, long: MAVLINK_TYPE_INT32_T}
       cast_map = {float: float, long: int}
       for name, val in list:
          try:
