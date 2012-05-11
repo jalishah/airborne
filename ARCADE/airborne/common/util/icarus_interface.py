@@ -133,21 +133,6 @@ class ICARUS_MissionFactory:
       return self.move((x, y, z), **kwargs)
 
 
-   def move_lon(self, lon, **kwargs):
-      '''
-      move to GPS longitude
-
-      arguments:
-         lon: longitude in radians
-      keyword arguments:
-         rel: indicates, if the movement is incremental (default: False)
-         speed: movement speed
-         block: indicates if the interface should wait for completion (default: True)
-      '''
-      self._set_glob(kwargs, True)
-      return self.move((lon, None, None), **kwargs)
-
-
    def move_lat(self, lat, **kwargs):
       '''
       move to GPS latitude
@@ -160,7 +145,22 @@ class ICARUS_MissionFactory:
          block: indicates if the interface should wait for completion (default: True)
       '''
       self._set_glob(kwargs, True)
-      return self.move((None, lat, None), **kwargs)
+      return self.move((lat, None, None), **kwargs)
+
+
+   def move_lon(self, lon, **kwargs):
+      '''
+      move to GPS longitude
+
+      arguments:
+         lon: longitude in radians
+      keyword arguments:
+         rel: indicates, if the movement is incremental (default: False)
+         speed: movement speed
+         block: indicates if the interface should wait for completion (default: True)
+      '''
+      self._set_glob(kwargs, True)
+      return self.move((None, lon, None), **kwargs)
 
 
    def move_alt(self, alt, **kwargs):
@@ -178,7 +178,7 @@ class ICARUS_MissionFactory:
       return self.move((None, None, alt), **kwargs)
 
 
-   def move_lon_lat(self, lon, lat, **kwargs):
+   def move_lon_lat(self, lat, lon, **kwargs):
       '''
       move to GPS longitude, latitude
 
@@ -194,7 +194,7 @@ class ICARUS_MissionFactory:
       return self.move((lon, lat, None), **kwargs)
 
 
-   def move_gps(self, lon, lat, alt, **kwargs):
+   def move_gps(self, lat, lon, alt, **kwargs):
       '''
       move to GPS position longitude, latitude, altitude
 
@@ -208,7 +208,7 @@ class ICARUS_MissionFactory:
          block: indicates if the interface should wait for completion (default: True)
       '''
       self._set_glob(kwargs, True)
-      return self.move((lon, lat, alt), **kwargs)
+      return self.move((lat, lon, alt), **kwargs)
 
 
    def move(self, pos, **kwargs):

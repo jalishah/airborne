@@ -31,10 +31,10 @@ class SrtmElevMap:
       f = self._file_from_coord(coord)
       try:
          # try to use file in cache:
-         print 'loading: ' + f
          ds = self.cache[f]
       except:
          # load file:
+         print 'loading: ' + f
          if not os.path.isfile(f):
             raise AssertionError('file does not exist: ' + f)
          ds = gdal.Open(f, GA_ReadOnly)
@@ -53,4 +53,11 @@ class SrtmElevMap:
 
       # return elevation:
       return ds.ReadAsArray(int(pixel[0]), int(pixel[1]), 1, 1).ravel()[0]
+
+
+from time import sleep
+m = SrtmElevMap('./')
+while True:
+   sleep(0.01)
+   print m.lookup((10.9142, 50.6872))
 

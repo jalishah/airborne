@@ -18,7 +18,6 @@ class Activity(Thread):
    def cancel_and_join(self):
       if self != current_thread():
          self._cancel()
-         print 'joining'
          self.join()
 
 
@@ -31,7 +30,9 @@ class StabMixIn:
    STAB_COUNT = 20
 
    def stabilize(self):
+      return
       core = self.icarus.core
+      mon_data = self.icarus.mon_data
       count = 0
       while True:
          sleep(self.POLLING_TIMEOUT)
@@ -41,19 +42,18 @@ class StabMixIn:
          if self.canceled:
             return
          # read error values from core:
-         x_err, y_err = self.mon_data.x_err, self.mon_data.y_err
-         alt_err = self.mon_data.z_err
-         yaw_err = self.mon_data.yaw_err
+         x_err, y_err = mon_data.x_err, mon_data.y_err
+         alt_err = mon_data.z_err
+         yaw_err = mon_data.yaw_err
          # reset counter if one of the errors becomes too huge:
-         print x_err, y_err
          if abs(alt_err) > self.ALT_STAB_EPSILON:
-            #print 'alt instable', alt_err, count
+            print 'alt instable', alt_err, count
             count = 0
          elif hypot(x_err, y_err) > self.LAT_STAB_EPSILON:
-            #print 'gps instable', x_err, y_err, count
+            print 'gps instable', x_err, y_err, count
             count = 0
          elif abs(yaw_err) > self.YAW_STAB_EPSILON:
-            #print 'yaw instable', yaw_err, count
+            print 'yaw instable', yaw_err, count
             count = 0
-      #print 'stabilized'
+      print 'stabilized'
 

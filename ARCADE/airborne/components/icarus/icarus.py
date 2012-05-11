@@ -58,7 +58,7 @@ class ICARUS:
       self.fsm = flight_sm(self)
       self.landing_spots = LandingSpots(3.0)
       self.core = CoreInterface(sockets['core'], sockets['mon'])
-      self.gps_shifter = GPS_Shifter()
+      #self.gps_shifter = GPS_Shifter()
       self.state_emitter = StateEmitter(sockets['hlsm'])
       self.powerman = PowerMan(sockets['power_ctrl'], sockets['power_mon'])
       start_daemon_thread(self.power_state_monitor)
@@ -94,8 +94,9 @@ class ICARUS:
       last_valid = time()
       while True:
          self.core.mon_read(self.mon_data)
-         lat, lon = gps_add_meters(core.params.start_lat, core.params.start_lon,
-                                   self.icarus.setpoints[0], self.icarus.setpoints[1])
+         self.kalman_lat, self.kalman_lon = gps_add_meters((self.core.params.start_lat,
+                                                           self.core.params.start_lon),
+                                                           self.setpoints[0 : 2])
          if self.mon_data.signal_valid:
             last_valid = time()
          else:
