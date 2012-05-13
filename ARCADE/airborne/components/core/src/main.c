@@ -107,7 +107,8 @@ void _main(int argc, char *argv[])
    //gps_init();
    
    LOG(LL_INFO, "initializing model/controller");
-   model_init();
+   float dt = 0.03;
+   model_init(dt);
    ctrl_init();
    
    /* initialize command interface */
@@ -137,9 +138,7 @@ void _main(int argc, char *argv[])
 
       /* read sensor values into model input structure: */
       model_input_t model_input;
-      model_input.dt = dt;
       ahrs_read(&model_input.ahrs_data);
-      
       gps_read(&model_input.gps_data);
       model_input.ultra_z = ultra_altimeter_read();
       model_input.baro_z = baro_altimeter_read();

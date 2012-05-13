@@ -27,15 +27,16 @@ kalman_out_t;
 
 typedef struct
 {
-   float dt; /* delta t in sec */
    float pos; /* position in m */
-   float acc; /* acceleration min m/sec */
+   //float speed; /* speed in m/s */
+   float acc; /* acceleration min m/s^2 */
 }
 kalman_in_t;
 
 
 typedef struct
 {
+   float dt; /* delta t in sec */
    float process_var;
    float measurement_var;
 }

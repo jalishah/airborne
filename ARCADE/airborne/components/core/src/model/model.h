@@ -67,7 +67,6 @@ typedef struct
    float baro_z;
    ahrs_data_t ahrs_data;
    gps_data_t gps_data;
-   float dt;
 }
 model_input_t;
 
@@ -75,17 +74,7 @@ model_input_t;
 /*
  * state access primitives
  */
-void model_init(void);
-
-float model_get_yaw(void);
-
-float model_get_ultra_alt(void);
-
-float model_get_baro_alt(void);
-
-float model_get_x(void);
-
-float model_get_y(void);
+void model_init(float dt);
 
 
 /*

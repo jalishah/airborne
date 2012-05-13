@@ -39,6 +39,6 @@ zmq_inproc
 util network_messages
 scl_messages
 # external libraries:
-cxcore cv meschach zmq yaml-cpp rt pthread m glib-2.0 protobuf-c)
+meschach zmq yaml-cpp rt pthread m glib-2.0 protobuf-c)
 
 INSTALL_TARGETS(/bin core)
