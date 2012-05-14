@@ -8,9 +8,6 @@ ADD_SUBDIRECTORY(algorithms)
 ADD_SUBDIRECTORY(scl_cmd)
 ADD_SUBDIRECTORY(model)
 ADD_SUBDIRECTORY(util)
-ADD_SUBDIRECTORY(tests)
-
-INCLUDE_DIRECTORIES(${Glib_INCLUDE_DIRS})
 
 ADD_EXECUTABLE(core main.c)
 
@@ -21,7 +18,6 @@ sensor_actor_interfaces
 # system:
 controllers
 model
-char_queue
 platform
 # sensor/actor:
 holger_fc
@@ -34,11 +30,11 @@ chr_6dm
 algorithms
 # sensor actor support:
 i2c gpio twl4030_madc serial logger opcd_params voltage threads ltime lmath scl
-zmq_inproc
 # ARCADE libraries
+glib-2.0
 util network_messages
 scl_messages
 # external libraries:
-meschach zmq yaml-cpp rt pthread m glib-2.0 protobuf-c)
+meschach zmq yaml-cpp rt pthread m protobuf-c)
 
 INSTALL_TARGETS(/bin core)
