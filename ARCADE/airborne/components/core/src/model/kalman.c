@@ -44,7 +44,7 @@ struct kalman
 };
 
 
-static void kalman_init(kalman_t *kf, float dt, float q, float r, float pos, float speed)
+static void kalman_init(kalman_t *kf, float q, float r, float pos, float speed)
 {
    kf->t0 = v_get(2);
    kf->t1 = v_get(2);
@@ -76,20 +76,19 @@ static void kalman_init(kalman_t *kf, float dt, float q, float r, float pos, flo
    kf->H = m_get(2, 2);
    m_set_val(kf->H, 0, 0, 1.0);
    //m_ident(kf->H);
-   
+    
    /* A = | 1.0   dt  |
-          | 0.0   1.0 | */
+          | 0.0   1.0 |
+      dt values is set in kalman_run */
    kf->A = m_get(2, 2);
    m_set_val(kf->A, 0, 0, 1.0);
-   m_set_val(kf->A, 0, 1, dt);
    m_set_val(kf->A, 1, 0, 0.0);
    m_set_val(kf->A, 1, 1, 1.0);
 
    /* B = | 0.5 * dt ^ 2 |
-          |     dt       | */
+          |     dt       |
+      dt values are set in kalman_run */
    kf->B = m_get(2, 1);
-   m_set_val(kf->B, 0, 0, 0.5 * dt * dt);
-   m_set_val(kf->B, 1, 0, dt);
 }
 
 
@@ -141,6 +140,15 @@ static void kalman_correct(kalman_t *kf, float p, float v)
  */
 void kalman_run(kalman_out_t *out, kalman_t *kalman, const kalman_in_t *in)
 {
+   /* A = | init   dt  |
+          | init  init | */
+   m_set_val(kalman->A, 0, 1, in->dt);
+
+   /* B = | 0.5 * dt ^ 2 |
+          |     dt       | */
+   m_set_val(kalman->B, 0, 0, 0.5 * in->dt * in->dt);
+   m_set_val(kalman->B, 1, 0, in->dt);
+
    kalman_predict(kalman, in->acc);
    kalman_correct(kalman, in->pos, 0.0);
    out->pos = v_entry(kalman->x, 0);
@@ -154,6 +162,6 @@ void kalman_run(kalman_out_t *out, kalman_t *kalman, const kalman_in_t *in)
 kalman_t *kalman_create(const kalman_config_t *config, const kalman_out_t *init_state)
 {
    kalman_t *kalman = (kalman_t *)malloc(sizeof(kalman_t));
-   kalman_init(kalman, config->dt, config->process_var, config->measurement_var, init_state->pos, init_state->speed);
+   kalman_init(kalman, config->process_var, config->measurement_var, init_state->pos, init_state->speed);
    return kalman;
 }

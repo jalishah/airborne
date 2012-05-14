@@ -63,6 +63,7 @@ model_state_t;
  */
 typedef struct
 {
+   float dt;
    float ultra_z;
    float baro_z;
    ahrs_data_t ahrs_data;
@@ -74,7 +75,7 @@ model_input_t;
 /*
  * state access primitives
  */
-void model_init(float dt);
+void model_init(void);
 
 
 /*

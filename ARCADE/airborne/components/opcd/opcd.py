@@ -89,7 +89,8 @@ class OPCD:
             try:
                self.conf.persist()
                rep.status = CtrlRep.OK
-            except:
+            except Exception, e:
+               print str(e)
                rep.status = CtrlRep.IO_ERROR
 
          # send reply:
@@ -100,6 +101,6 @@ def main(name):
    opcd = OPCD(name)
    opcd.run()
 
-
+main('opcd')
 daemonize('opcd', main)
 

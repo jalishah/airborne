@@ -32,9 +32,9 @@ class Config:
       print self.overlay_path
       # load base config and overlay of present:
       self.base = yaml.load(file(self.base_path))
-      if os.path.isfile(self.overlay_path):
+      try:
          self.overlay = yaml.load(file(self.overlay_path))
-      else:
+      except:
          self.overlay = {}
       # check single document integrity:
       for doc in self.base, self.overlay:
@@ -71,7 +71,6 @@ class Config:
       '''
       write configuration overlay to filesystem
       '''
-      self._clean_overlay()
       if len(self.overlay) == 0:
          try:
             os.unlink(self.overlay_path)
@@ -139,32 +138,6 @@ class Config:
       return head, tail
 
    
-   def _delete_key(self, node, key):
-      if isinstance(node, dict):
-         head, tail = self._split_key(key)
-         next_node = node[head]
-         return self._delete_key(next_node, tail) + [(node, head)]
-      else:
-         return []
-
-
-   def _clean_overlay(self):
-      keys = self.get_all_keys(self.overlay)
-      for key in keys:
-         overlay_val = self._find_entry(self.overlay, key)
-         base_val = self._find_entry(self.base, key)
-         if overlay_val == base_val:
-            l = self._delete_key(self.overlay, key)
-            i = l[0]
-            del i[0][i[1]]
-            prev_i = i[0]
-            for i in l[1:]:
-               if len(prev_i) == 0:
-                  del i[0][i[1]]
-               else:
-                  break
-   
-
    def _validate_overlay_key_against(self, key, val):
       cls = val.__class__
       try:

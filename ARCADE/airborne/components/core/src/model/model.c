@@ -92,24 +92,28 @@ void model_step(model_state_t *out, model_input_t *in)
    /* set-up kalman filter inputs: */
    const kalman_in_t x_in =
    {
+      in->dt,
       in->gps_data.delta_x,
       world_acc_x
    };
 
    const kalman_in_t y_in =
    {
+      in->dt,
       in->gps_data.delta_y,
       world_acc_y
    };
 
    const kalman_in_t ultra_z_in =
    {
+      in->dt,
       in->ultra_z,
       -world_acc_z
    };
 
    const kalman_in_t baro_z_in =
    {
+      in->dt,
       in->baro_z,
       -world_acc_z
    };
@@ -153,7 +157,7 @@ void model_step(model_state_t *out, model_input_t *in)
 }
 
 
-void model_init(float dt)
+void model_init(void)
 {
    ASSERT_ONCE();
 
@@ -182,21 +186,18 @@ void model_init(float dt)
    
    kalman_config_t alt_kalman_config = 
    {
-      dt,
       tsfloat_get(&process_noise),
       tsfloat_get(&ultra_noise)
    };
 
    kalman_config_t baro_kalman_config = 
    {
-      dt,
       tsfloat_get(&process_noise), 
       tsfloat_get(&baro_noise)
    };
 
    kalman_config_t lateral_kalman_config = 
    {
-      dt,
       tsfloat_get(&process_noise),
       tsfloat_get(&gps_noise)
    };
