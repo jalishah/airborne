@@ -107,7 +107,7 @@ void _main(int argc, char *argv[])
    //gps_init();
    
    LOG(LL_INFO, "initializing model/controller");
-   float dt = 0.03;
+   float dt = 0.003;
    model_init(dt);
    ctrl_init();
    

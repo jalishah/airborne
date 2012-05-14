@@ -20,7 +20,7 @@ atexit.register(_save_history)
 
 
 #initialize and define interface:
-_interface = OPCD_Interface(generate_map('shell')['ctrl'])
+_interface = OPCD_Interface(generate_map('opcd_shell')['ctrl'])
 _pp = pprint.PrettyPrinter(indent = 3)
 
 

@@ -14,7 +14,7 @@
  */
 
 
-
+#include <stdint.h>
 #include <opcd_params.h>
 #include <periodic_thread.h>
 #include <threadsafe_types.h>
@@ -33,9 +33,6 @@
 #include "../sensor_actor/voltage/voltage_reader.h"
 
 
-static pthread_mutex_t mon_data_mutex = PTHREAD_MUTEX_INITIALIZER;
-static periodic_thread_t monitor_thread;
-
 static pid_controller_t pitch_controller;
 static pid_controller_t roll_controller;
 
@@ -51,6 +48,7 @@ static tsfloat_t angle_max;
 
 /* mon data emitter thread: */
 
+static pthread_mutex_t mon_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *mon_socket = NULL;
 static MonData mon_data = MON_DATA__INIT;
 static periodic_thread_t emitter_thread;
@@ -166,7 +164,7 @@ void ctrl_step(mixer_in_t *data, float dt, model_state_t *model_state)
       mon_data.y_err = pos_y - navi_get_dest_y();
       mon_data.z_err = z_err;
       mon_data.yaw_err = yaw_err;
-      
+      mon_data.dt = dt;
       pthread_mutex_unlock(&mon_data_mutex);
    }
 
@@ -241,6 +239,8 @@ void ctrl_init(void)
    
    mon_socket = scl_get_socket("mon");
    ASSERT_NOT_NULL(mon_socket);
+   int64_t hwm = 1;
+   zmq_setsockopt(mon_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
    /* create monitoring connection: */
    const struct timespec period = {0, 100 * NSEC_PER_MSEC};

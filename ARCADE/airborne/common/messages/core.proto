@@ -127,5 +127,7 @@ message MonData
    required float yaw_err = 20; // yaw error in rad
    
    required bool signal_valid = 21; // indicates is the rc signal valid
+
+   required float dt = 22; // control loop dt in s
 }
 

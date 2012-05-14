@@ -43,11 +43,7 @@ components:
      gates:
       - hlsm: sub
       - ctrl: req
-   
-   - name: shell # generic shell for opcd, core, ICARUS
-     gates:
-      - ctrl: req
-   
+
    - name: blackbox
      gates:
       - state_machine: sub
@@ -62,6 +58,10 @@ components:
       - power_ctrl: req
       - power_mon: sub
 
+   - name: icarus_shell
+     gates:
+      - ctrl: req
+ 
    - name: netscan
      gates:
       - networks: pub
@@ -80,6 +80,11 @@ components:
       - mon: pub
       - opcd_ctrl: req
       - opcd_event: sub
+
+   - name: core_shell
+     gates:
+      - ctrl: req
+      - mon: sub
  
    - name: mavlink
      gates:
@@ -100,6 +105,10 @@ components:
       - ctrl: rep
       - event: pub
 
+   - name: opcd_shell
+     gates:
+      - ctrl: req
+ 
 #
 # component connections (component_a.gate_x -- component_b.gate_y)
 #
@@ -107,9 +116,9 @@ components:
 connections:
 
    - [ opcd.event,               core.opcd_event      ]
+   - [ opcd.ctrl,                opcd_shell.ctrl      ]
    - [ opcd.ctrl,                core.opcd_ctrl       ]
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
-   - [ opcd.ctrl,                shell.ctrl           ]
    - [ opcd.ctrl,                powerman.opcd_ctrl   ]
    - [ localizer.mon,            core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
@@ -128,9 +137,11 @@ connections:
    - [ blackbox.state_machine,   icarus.hlsm          ]
    - [ blackbox.core_log,        core.log             ]
    - [ icarus.hlsm,              localizer.hlsm       ]
-   - [ icarus.ctrl,              shell.ctrl           ]
+   - [ icarus.ctrl,              icarus_shell.ctrl    ]
    - [ core.ctrl,                icarus.core          ]
    - [ core.mon,                 icarus.mon           ]
+   - [ core.ctrl,                core_shell.ctrl      ]
+   - [ core.mon,                 core_shell.mon       ]
    - [ gpx_logger.gps,           gps_sensor.gps       ]
    - [ gps_sensor.gps,           gps_test.gps         ]
    
