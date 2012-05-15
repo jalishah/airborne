@@ -4,7 +4,7 @@
 from random import random
 from zmq import HWM
 from time import sleep
-from named_daemon import daemonize
+from misc import daemonize
 from gps_data_pb2 import GpsData, SatInfo
 from scl import generate_map
 

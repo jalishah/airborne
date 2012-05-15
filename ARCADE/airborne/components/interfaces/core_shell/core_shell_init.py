@@ -8,7 +8,7 @@ import rlcompleter
 from scl import generate_map
 from core_pb2 import *
 from core_interface import CoreInterface
-from paths import user_data_dir
+from misc import user_data_dir
 
 
 # set-up command history:

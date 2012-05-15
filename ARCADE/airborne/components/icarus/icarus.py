@@ -26,8 +26,8 @@ from activities.dummy import DummyActivity
 from flight_sm import flight_sm, flight_Hovering
 from flight_sm import flight_Standing, flight_Moving, flight_Stopping
 from util.geomath import bearing, gps_add_meters
-from mtputil import *
-from named_daemon import daemonize
+from misc import *
+from misc import daemonize
 from scl import generate_map
 from protocols.icarus_server import ICARUS_Server
 from core_interface import CoreInterface
@@ -37,7 +37,7 @@ from logging import basicConfig as log_config, debug as log_debug
 from logging import info as log_info, warning as log_warn, error as log_err
 from logging import DEBUG
 from os import sep
-from paths import user_data_dir
+from misc import user_data_dir
 from util.landing_spots import LandingSpots
 from icarus_interface import ICARUS_MissionFactory
 from util.flight_state import to_string

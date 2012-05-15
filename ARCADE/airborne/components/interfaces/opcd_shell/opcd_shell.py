@@ -5,7 +5,7 @@ import readline
 import pprint
 from opcd_interface import OPCD_Interface
 from scl import generate_map
-from paths import user_data_dir
+from misc import user_data_dir
 
 
 # set-up command history:

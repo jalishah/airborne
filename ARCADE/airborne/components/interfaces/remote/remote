@@ -3,7 +3,7 @@
 import time, zmq, socket, os, sys
 from threading import Thread
 import control_pb2
-from named_daemon import daemonize
+from misc import daemonize
 from zmq_ipc import generate_map
 from mission import ControlInterface
 

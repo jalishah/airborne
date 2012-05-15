@@ -7,7 +7,7 @@ from networks_pb2 import Networks, Network
 from zmq_ipc import generate_map
 from time import sleep, time
 from threading import Thread, Event
-from named_daemon import daemonize
+from misc import daemonize
 from mission import HLSM_Reader
 
 

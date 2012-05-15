@@ -12,7 +12,7 @@
 from config import Config, ConfigError
 from opcd_pb2 import CtrlReq, CtrlRep, Pair
 from scl import generate_map
-from named_daemon import daemonize
+from misc import daemonize
 from sys import argv
 from re import match
 

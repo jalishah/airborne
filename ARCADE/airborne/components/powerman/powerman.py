@@ -22,14 +22,11 @@ from logging import basicConfig as log_config, debug as log_debug
 from logging import info as log_info, warning as log_warn, error as log_err
 from logging import DEBUG
 
-from mtputil import *
+from misc import *
 from power_pb2 import *
 from scl import generate_map
-from named_daemon import daemonize
 from opcd_interface import OPCD_Interface
-from timeutil import Hysteresis
-
-from paths import user_data_dir
+from misc import daemonize, Hysteresis, user_data_dir
 from hardware import ADC, GPIO_Bank
 
 

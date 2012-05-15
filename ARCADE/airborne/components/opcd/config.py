@@ -9,7 +9,7 @@
 import yaml
 import copy
 import os
-from paths import user_data_dir
+from misc import user_data_dir
 
 
 class ConfigError(Exception):

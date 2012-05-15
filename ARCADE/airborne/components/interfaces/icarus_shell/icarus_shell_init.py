@@ -7,7 +7,7 @@ import rlcompleter
 
 from scl import generate_map
 from icarus_interface import ICARUS_Client, ICARUS_MissionFactory
-from paths import user_data_dir
+from misc import user_data_dir
 
 
 # set-up command history:

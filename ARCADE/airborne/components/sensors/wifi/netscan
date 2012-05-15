@@ -10,7 +10,7 @@ from daemon import DaemonContext
 import os
 from threading import Thread
 import time
-from named_daemon import daemonize
+from misc import daemonize
 import pcap
 import struct
 

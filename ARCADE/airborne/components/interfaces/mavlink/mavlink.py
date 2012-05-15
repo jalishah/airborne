@@ -14,7 +14,7 @@ from time import sleep
 
 # get socket map and open mavio:
 socket_map = generate_map('mavlink')
-mavio = MAVIO_UDP('10.0.0.2', 14550, source_system = 1)
+mavio = MAVIO_UDP('10.0.0.7', 14550, source_system = 1)
 #mavio = MAVIO_Serial('/dev/ttyUSB1', 9600, source_system = 1)
 #arbiter_interface = ArbiterInterface(socket_map['arbiter_ctrl'])
 
