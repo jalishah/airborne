@@ -89,6 +89,7 @@ components:
    - name: mavlink
      gates:
       - core_mon: sub
+      - power_mon: sub
       - ctrl: req # opcd
       - gps: sub
       - icarus_ctrl: req
@@ -122,6 +123,7 @@ connections:
    - [ opcd.ctrl,                powerman.opcd_ctrl   ]
    - [ localizer.mon,            core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
+   - [ mavlink.power_mon,        powerman.mon         ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
    - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
    - [ mavlink.hlsm,             icarus.hlsm          ]

@@ -8,6 +8,7 @@ from psutil import cpu_percent
 from util.mavlink_util import ControlSensorBits
 import time
 from util.load import LoadReader
+from util.power import PowerReader
 
 
 class CoreBridge(Bridge):
@@ -34,9 +35,12 @@ class CoreBridge(Bridge):
       self.sensors_enabled = self.sensors_present
       self.sensors_health = self.sensors_present
       self._load_reader = LoadReader()
+      self._power_reader = PowerReader(socket_map['power_mon'])
       recv_thread.start()
       send_thread.start()
       self._load_reader.start()
+      self._power_reader.start()
+      self._power_reader.wait_data()
 
    def _dead(self):
       self.dead = True
@@ -70,7 +74,7 @@ class CoreBridge(Bridge):
             throttle = 0.5 # todo: fix me
             self.mav_iface.mavio.mav.vfr_hud_send(airspeed, ground_speed,
                mon.yaw, throttle, -mon.z, -mon.z_speed)
-            voltage_battery = 1000 #* mon.batt_voltage;
+            voltage = self._power_reader.power.voltage
             current_battery = 0
             battery_remaining = -1
             drop_rate_comm = int(10000.0 * self.dispatcher.loss_rate)
@@ -93,7 +97,7 @@ class CoreBridge(Bridge):
         
             self.mav_iface.mavio.mav.heartbeat_send(MAV_TYPE_QUADROTOR, MAV_AUTOPILOT_GENERIC, self.auto_mode_flags, 0, MAV_STATE_ACTIVE)
             self.mav_iface.mavio.mav.sys_status_send(self.sensors_present, sensors_enabled, 0,
-               self._load_reader.load, voltage_battery, current_battery, battery_remaining, drop_rate_comm, 
+               self._load_reader.load * 10, voltage * 1000, current_battery, battery_remaining, drop_rate_comm, 
                errors_comm, errors_count1, errors_count2, errors_count3, errors_count4)
          except Exception, e:
             print str(e)

@@ -10,6 +10,7 @@ class LoadReader(Thread):
       Thread.__init__(self)
       self.daemon = True
       self.load_avg = [ float(cpu_percent()) ] * 10
+      self.load = 0
 
    def run(self):
       while True:
