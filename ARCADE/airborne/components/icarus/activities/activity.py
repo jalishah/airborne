@@ -25,12 +25,11 @@ class StabMixIn:
    
    LAT_STAB_EPSILON = 3.0
    ALT_STAB_EPSILON = 10.4
-   YAW_STAB_EPSILON = 0.3
+   YAW_STAB_EPSILON = 100.3 # TODO: revert
    POLLING_TIMEOUT = 0.1
    STAB_COUNT = 20
 
    def stabilize(self):
-      return
       core = self.icarus.core
       mon_data = self.icarus.mon_data
       count = 0

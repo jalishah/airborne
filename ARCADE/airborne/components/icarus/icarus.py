@@ -59,7 +59,7 @@ class ICARUS:
       self.landing_spots = LandingSpots(3.0)
       self.core = CoreInterface(sockets['core'], sockets['mon'])
       #self.gps_shifter = GPS_Shifter()
-      self.state_emitter = StateEmitter(sockets['hlsm'])
+      self.state_emitter = StateEmitter(sockets['state'])
       self.powerman = PowerMan(sockets['power_ctrl'], sockets['power_mon'])
       start_daemon_thread(self.power_state_monitor)
       start_daemon_thread(self.state_time_monitor)
@@ -139,6 +139,7 @@ class ICARUS:
 
 
    def emergency_landing(self):
+      return # TODO: test
       # we don't care about the system's state:
       # just try to stop and land it!
       try:
@@ -268,6 +269,6 @@ def main(name):
    await_signal()
 
 
-main('icarus')
-#daemonize('icarus', main)
+#main('icarus')
+daemonize('icarus', main)
 

@@ -6,7 +6,8 @@
 
 
 from threading import Thread, Event
-from state_update_pb2 import _STATE, StateUpdate
+from icarus_pb2 import _STATE, StateUpdate
+from state_map import to_string
 
 
 class StateReader:
@@ -33,12 +34,15 @@ class StateEventMap(Thread):
       Thread.__init__(self)
       self.daemon = True
       self.reader = state_reader
-      self.event = {}
+      self.events = {}
       for state in _STATE.values:
-         self._map[state.number] = Event()
+         self.events[state.number] = Event()
 
    def run(self):
-      for state in self.reader.generate():
+      for state in self.reader.generator():
          self.state = state
-         self.event[state].set()
+         print 'new state:', to_string(state)
+         self.events[state].set()
+
+
 

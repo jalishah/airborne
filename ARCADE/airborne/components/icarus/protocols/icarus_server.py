@@ -53,7 +53,6 @@ class ICARUS_Server(Thread):
          req = IcarusReq()
          try:
             req.ParseFromString(data)
-            print req
          except:
             # syntactic error in ParseFromString
             self.send_err(E_SYNTAX, 'could not parse protobuf payload')

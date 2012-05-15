@@ -16,7 +16,7 @@ from signal import signal, SIGTERM
 def main():
    ctrl_interface = ControlInterface(generate_map('n900_follow'))
 
-   HOST = '10.0.1.255'
+   HOST = '10.0.0.255'
    PORT = 1337
    ADDRESS = (HOST, PORT)
    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
