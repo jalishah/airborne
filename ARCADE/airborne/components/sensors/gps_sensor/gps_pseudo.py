@@ -13,6 +13,7 @@ def main(name):
    socket = generate_map(name)['gps']
    socket.setsockopt(HWM, 1)
    while True:
+      print 'send'
       gps_data = GpsData()
       sleep(0.2)
       gps_data.fix = 3

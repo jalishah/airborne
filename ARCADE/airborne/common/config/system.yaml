@@ -120,12 +120,30 @@ components:
       - imms_data: sub
       - core_data: sub
 
+   - name: nrf_swarm
+     gates:
+      - ctrl: req
+      - gps: sub
+      - aircomm_in: sub
+      - aircomm_out: pub
+
+   - name: aircomm
+     gates:
+      - in: sub
+      - out: pub
+      - opcd_ctrl: req
+
 #
 # component connections (component_a.gate_x -- component_b.gate_y)
 #
 
 connections:
 
+   - [ aircomm.in,               nrf_swarm.aircomm_out]
+   - [ aircomm.out,              nrf_swarm.aircomm_in ]
+   - [ opcd.ctrl,                aircomm.opcd_ctrl    ]
+   - [ icarus.ctrl,              nrf_swarm.ctrl       ]
+   - [ gps_sensor.gps,           nrf_swarm.gps        ]
    - [ imms_sensor.data,         girlscamp.imms_data  ]
    - [ icarus.ctrl,              girlscamp.ctrl       ]
    - [ core.mon,                 girlscamp.core_data  ]

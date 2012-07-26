@@ -7,6 +7,14 @@
 # 
 
 
+aircomm_swarm:
+  binary: 'missions/aircomm_swarm/aircomm_swarm.py'
+  depends: [aircomm]
+
+aircomm:
+  binary: 'aircomm/aircomm_server.py'
+  depends: [opcd]
+
 icarus:
   binary: 'icarus/icarus.py'
   depends: [core, powerman]

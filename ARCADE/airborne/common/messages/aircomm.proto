@@ -1,0 +1,8 @@
+
+message AirComm
+{
+   required uint32 addr = 1; // 8 bit, source or destination address
+   required uint32 type = 2; // 8 bit, packet type
+   required bytes  data = 3; // packet payload
+}
+

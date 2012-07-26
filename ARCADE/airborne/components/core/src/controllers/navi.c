@@ -24,6 +24,7 @@ static tsfloat_t square_shift;
 static tsfloat_t pos_i;
 static tsfloat_t pos_i_max;
 static tsfloat_t ortho_p;
+static tsint_t direct_speed_ctrl;
 
 
 /* vectors for use in navigation algorithm: */
@@ -95,6 +96,7 @@ void navi_init(void)
       {"pos_i", &pos_i},
       {"pos_i_max", &pos_i_max},
       {"ortho_p", &ortho_p},
+      {"direct_speed_ctrl", &direct_speed_ctrl},
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.navigation.", params);
@@ -125,7 +127,6 @@ void navi_init(void)
    tsfloat_init(&travel_speed, 0.0f);
    tsfloat_init(&dest_x, 0.0f);
    tsfloat_init(&dest_y, 0.0f);
-
 
    navi_reset_travel_speed();
 }
@@ -230,6 +231,10 @@ void navi_run(navi_output_t *output, const navi_input_t *input)
    vector2d_scalar_multiply(&speed_setpoint, speed_val, &dest_dir);
 
    /* calculate controller thrust vector: */
+   if (tsint_get(&direct_speed_ctrl))
+   {
+      vector2d_set(&speed_setpoint, _dest_x, _dest_y);
+   }
    vector2d_sub(&speed_err, &speed_setpoint, &curr_speed);
    vector2d_scalar_multiply(&world_thrust, tsfloat_get(&speed_p), &speed_err);
 
