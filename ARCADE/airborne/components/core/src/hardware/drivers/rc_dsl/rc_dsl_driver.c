@@ -37,8 +37,9 @@ SIMPLE_THREAD_BEGIN(thread_func)
 SIMPLE_THREAD_END
 
 
-void rc_dsl_reader_start(void)
+void rc_dsl_driver_init(void)
 {
+   int status = 0;
    memset(&data, 0, sizeof(rc_data_t));
    opcd_param_t params[] =
    {
@@ -47,8 +48,14 @@ void rc_dsl_reader_start(void)
    };
    opcd_params_apply("sensors.rc_dsl.", params);
    
-   serial_open(&port, dev_path, 38400, 0, 0, 0);
+   if ((status = serial_open(&port, dev_path, 38400, 0, 0, 0)) != 0)
+   {
+      goto out;
+   }
    rc_dsl = rc_dsl_create();
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
+
+out:
+   return status;
 }
 

@@ -48,11 +48,15 @@ gps_data_t;
 
 #define GPS_DATA_INITIALIZER {FIX_NOT_SEEN, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
-double gps_start_lon(void);
 
-double gps_start_lat(void);
+typedef struct
+{
+   int (*init)(void);
+   void (*read)(gps_data_t *data);
+   float covar;
+}
+gps_interface_t;
 
-float gps_start_alt(void);
 
 int gps_init(void);
 
@@ -60,11 +64,5 @@ int gps_init(void);
 void gps_read(gps_data_t *data);
 
 
-/*
- * return offset in meters of second arg from first
- */
-void meter_offset(double *dx, double *dy, double lat1, double lon1, double lat2, double lon2);
-
-
-#endif /* GPS_SENSOR_H */
+#endif /* __GPS_H__ */
 

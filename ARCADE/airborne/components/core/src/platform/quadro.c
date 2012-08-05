@@ -13,6 +13,8 @@
 #include "coupling.h"
 #include "platform.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
+#include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
+#include "../hardware/interfaces/rc.h"
 
 
 /* arm length */
@@ -55,6 +57,7 @@ platform_t *quadro_create(void)
    plat->gps = malloc(sizeof(gps_t));
    plat->gps->init = scl_gps_init;
    plat->gps->read = scl_gps_read;
+   plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);
    return plat;
 }
 

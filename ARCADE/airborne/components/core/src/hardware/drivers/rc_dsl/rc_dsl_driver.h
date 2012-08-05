@@ -3,7 +3,10 @@
 #define __RC_DSL_DRIVER_H__
 
 
-void rc_dsl_driver_start(void);
+#include "../../interfaces/rc.h"
+
+
+int rc_dsl_driver_init(void);
 
 void rc_dsl_driver_read(rc_data_t *data);
 

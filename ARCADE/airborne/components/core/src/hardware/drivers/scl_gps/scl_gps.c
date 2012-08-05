@@ -78,22 +78,6 @@ int scl_gps_init(void)
    simple_thread_start(&thread, gps_reader_thread_func,
                        GPS_THREAD_NAME, GPS_THREAD_PRIORITY, NULL);
 
-   gps_input_data.fix = FIX_NOT_SEEN;
-   while (1)
-   {
-      sleep(1);
-      if (gps_input_data.fix == FIX_3D)
-      {
-         break;
-      }
-      LOG(LL_INFO, "waiting for 3d fix, current is: %d", gps_input_data.fix);
-   }
-
-   gps_input_data.start_lat = gps_input_data.lat;
-   gps_input_data.start_lon = gps_input_data.lon;
-   gps_input_data.start_alt = gps_input_data.alt;
-
-   LOG(LL_INFO, "we have a fix: %f, %f, %f", gps_input_data.start_lat, gps_input_data.start_lon, gps_input_data.start_alt);
    return 0;
 }
 

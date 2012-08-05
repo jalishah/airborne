@@ -13,14 +13,6 @@
 #include "../hardware/interfaces/rc.h"
 
 
-typedef struct
-{
-   int (*init)(void);
-   void (*read)(gps_data_t *data);
-   float covar;
-}
-gps_t;
-
 
 typedef struct
 {
@@ -49,13 +41,6 @@ typedef struct
 ahrs_t;
 
 
-typedef struct
-{
-   int (*init)(void);
-   void (*read)(rc_data_t *data);
-}
-rc_t;
-
 
 typedef struct
 {
@@ -83,7 +68,7 @@ typedef struct
    ultra_t *ultra;
    baro_t *baro;
    ahrs_t *ahrs;
-   rc_t *rc;
+   rc_interface_t *rc;
    batt_t *batt;
    /* actuators: */
    motors_t *motors;
