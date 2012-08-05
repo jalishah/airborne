@@ -1,13 +1,18 @@
 
-
 /*
- * file: quad_coupling.c
+ * file: quad.c
  *
- * author: Benjamin Jahn; Alexander Barth; Tobias Simon, Ilmenau University of Technology
+ * author: Alexander Barth
+ *         Benjamin Jahn
+ *         Tobias Simon, Ilmenau University of Technology
  */
 
 
+#include <malloc.h>
+
 #include "coupling.h"
+#include "platform.h"
+#include "../hardware/drivers/scl_gps/scl_gps.h"
 
 
 /* arm length */
@@ -43,4 +48,13 @@ coupling_t *quad_coupling(void)
    return coupling_create(N_MOTORS, matrix);
 }
 
+
+platform_t *quadro_create(void)
+{
+   platform_t *plat = platform_create();
+   plat->gps = malloc(sizeof(gps_t));
+   plat->gps->init = scl_gps_init;
+   plat->gps->read = scl_gps_read;
+   return plat;
+}
 
