@@ -22,10 +22,10 @@
 #include <sclhelper.h>
 
 #include "model.h"
-#include "kalman.h"
 #include "body_to_world.h"
+#include "../filters/kalman.h"
+#include "../filters/sliding_avg.h"
 #include "../util/logger/logger.h"
-#include "../algorithms/sliding_avg.h"
 #include "../util/math/lmath.h"
 
 

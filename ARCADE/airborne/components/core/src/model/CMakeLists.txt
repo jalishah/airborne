@@ -1,1 +1,2 @@
-ADD_LIBRARY(model STATIC model.c kalman.c body_to_world.c)
+ADD_LIBRARY(model STATIC model.c)
+TARGET_LINK_LIBRARIES(model filters geometry)

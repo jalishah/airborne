@@ -9,9 +9,9 @@
 #define __MODEL_H__
 
 
-#include "../sensor_actor/interfaces/altimeter.h"
-#include "../sensor_actor/interfaces/ahrs.h"
-#include "../sensor_actor/interfaces/gps.h"
+#include "../hardware/interfaces/altimeter.h"
+#include "../hardware/interfaces/ahrs.h"
+#include "../hardware/interfaces/gps.h"
 
 
 /*

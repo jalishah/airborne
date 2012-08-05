@@ -22,18 +22,16 @@
 #include <sclhelper.h>
 
 #include "util/logger/logger.h"
-#include "scl_cmd/scl_cmd.h"
-#include "sensor_actor/lib/i2c/omap_i2c_bus.h"
-#include "sensor_actor/interfaces/altimeter.h"
-#include "sensor_actor/interfaces/motors.h"
-#include "sensor_actor/interfaces/ahrs.h"
-#include "sensor_actor/interfaces/gps.h"
-#include "sensor_actor/interfaces/motors.h"
-#include "sensor_actor/voltage/voltage_reader.h"
+#include "command/scl_cmd.h"
+#include "hardware/interfaces/altimeter.h"
+#include "hardware/interfaces/motors.h"
+#include "hardware/interfaces/ahrs.h"
+#include "hardware/interfaces/gps.h"
+#include "hardware/interfaces/motors.h"
 #include "util/time/ltime.h"
-#include "algorithms/sliding_avg.h"
+#include "filters/sliding_avg.h"
 #include "model/model.h"
-#include "controllers/ctrl.h"
+#include "control/ctrl.h"
 
 
 #define OUTPUT_RATIO 3 /* 300Hz/OUTPUT_RATIO = output rate (averaged) */
@@ -148,17 +146,17 @@ void _main(int argc, char *argv[])
       model_step(&model_state, &model_input);
 
       /* execute controller step: */
-      mixer_in_t mixer_in;
-      ctrl_step(&mixer_in, dt, &model_state);
+      ctrl_out_t out;
+      ctrl_step(&out, dt, &model_state);
  
       /* set up mixer input: */
-      mixer_in.pitch = sliding_avg_calc(output_avg[AVG_PITCH], mixer_in.pitch);
-      mixer_in.roll = sliding_avg_calc(output_avg[AVG_ROLL], mixer_in.roll);
-      mixer_in.yaw = sliding_avg_calc(output_avg[AVG_YAW], mixer_in.yaw);
-      mixer_in.gas = sliding_avg_calc(output_avg[AVG_GAS], mixer_in.gas);
+      out.pitch = sliding_avg_calc(output_avg[AVG_PITCH], out.pitch);
+      out.roll = sliding_avg_calc(output_avg[AVG_ROLL], out.roll);
+      out.yaw = sliding_avg_calc(output_avg[AVG_YAW], out.yaw);
+      out.gas = sliding_avg_calc(output_avg[AVG_GAS], out.gas);
 
       /* write data to motor mixer: */
-      EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&mixer_in));
+      //EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&out));
    }
 }
 

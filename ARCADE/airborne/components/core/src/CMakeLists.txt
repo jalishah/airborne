@@ -1,35 +1,38 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-ADD_SUBDIRECTORY(sensor_actor)
-ADD_SUBDIRECTORY(controllers)
+ADD_SUBDIRECTORY(hardware)
+ADD_SUBDIRECTORY(control)
+ADD_SUBDIRECTORY(geometry)
 ADD_SUBDIRECTORY(platform)
-ADD_SUBDIRECTORY(algorithms)
-ADD_SUBDIRECTORY(scl_cmd)
 ADD_SUBDIRECTORY(model)
 ADD_SUBDIRECTORY(util)
+ADD_SUBDIRECTORY(filters)
+ADD_SUBDIRECTORY(command)
+
 
 ADD_EXECUTABLE(core main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
 scl_cmd
-sensor_actor_interfaces
 # system:
-controllers
+control
 model
-platform
 # sensor/actor:
+sensor_actor_interfaces
 holger_fc
 rc_dsl
 scl_gps
 maxsonar
 bmp085
 chr_6dm
+platform
 # generic algorithms:
-algorithms
+geometry
+filters
 # sensor actor support:
-i2c gpio twl4030_madc serial logger opcd_params voltage threads ltime lmath scl
+i2c serial logger opcd_params voltage threads ltime lmath scl
 # ARCADE libraries
 glib-2.0
 util network_messages
