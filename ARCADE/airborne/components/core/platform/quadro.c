@@ -54,9 +54,7 @@ coupling_t *quad_coupling(void)
 platform_t *quadro_create(void)
 {
    platform_t *plat = platform_create();
-   plat->gps = malloc(sizeof(gps_t));
-   plat->gps->init = scl_gps_init;
-   plat->gps->read = scl_gps_read;
+   plat->gps = gps_interface_create(scl_gps_init, scl_gps_read);
    plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);
    return plat;
 }

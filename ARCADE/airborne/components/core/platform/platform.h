@@ -64,7 +64,7 @@ motors_t;
 typedef struct
 {
    /* sensors: */
-   gps_t *gps;
+   gps_interface_t *gps;
    ultra_t *ultra;
    baro_t *baro;
    ahrs_t *ahrs;

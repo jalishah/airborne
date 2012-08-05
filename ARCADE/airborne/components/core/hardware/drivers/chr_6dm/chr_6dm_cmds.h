@@ -10,7 +10,7 @@
 #define CHR6DM_COMMANDS_H
 
 
-#include "../../../../../../common/util/serial/serial.h"
+#include "../../../../../common/util/serial/serial.h"
 
 
 const char *chr6dm_get_rx_command_name(unsigned char cmd);

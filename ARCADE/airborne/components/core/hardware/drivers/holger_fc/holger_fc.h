@@ -13,9 +13,6 @@
 #define __HOLGER_FC_H__
 
 
-#include "../../interfaces/altimeter.h"
-
-
 int fc_init(void);
 
 

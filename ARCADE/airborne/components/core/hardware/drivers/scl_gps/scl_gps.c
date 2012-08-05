@@ -14,7 +14,7 @@
 #include "../../../util/time/ltime.h"
 #include "../../../util/logger/logger.h"
 #include "../../util/threads/simple_thread.h"
-#include "../../../../../../../../common/scl/src/sclhelper.h"
+#include "sclhelper.h"
 
 
 #define GPS_THREAD_NAME       "gps-reader"

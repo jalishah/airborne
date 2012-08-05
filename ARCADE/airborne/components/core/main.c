@@ -22,12 +22,7 @@
 #include <sclhelper.h>
 
 #include "util/logger/logger.h"
-#include "command/scl_cmd.h"
-#include "hardware/interfaces/altimeter.h"
-#include "hardware/interfaces/motors.h"
-#include "hardware/interfaces/ahrs.h"
-#include "hardware/interfaces/gps.h"
-#include "hardware/interfaces/motors.h"
+#include "command/command.h"
 #include "util/time/ltime.h"
 #include "filters/sliding_avg.h"
 #include "model/model.h"

@@ -1,7 +1,9 @@
 
 
+#include <unistd.h>
+
 #include "gps.h"
-#include "../geometry/earth.h"
+#include "../../util/logger/logger.h"
 
 
 int gps_init(gps_interface_t *interface)
@@ -12,11 +14,11 @@ int gps_init(gps_interface_t *interface)
       goto out;   
    }
 
+   gps_data_t data;
    /* wait for 3d fix: */
    while (1)
    {
-      gps_data_t data;
-      gps_read(interface, &data)
+      interface->read(&data);
       if (data.fix == FIX_3D)
       {
          break;

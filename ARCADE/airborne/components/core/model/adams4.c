@@ -20,7 +20,6 @@ void adams4_init(Adams4_f *f,const unsigned int dim)
         f->f2[i] = 0.0;
         f->f3[i] = 0.0;
     }
-    return 0;
 }
 
 void adams4_term(Adams4_f *f)

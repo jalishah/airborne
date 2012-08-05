@@ -58,10 +58,10 @@ typedef struct
 gps_interface_t;
 
 
-int gps_init(void);
+int gps_init(gps_interface_t *interface);
 
 
-void gps_read(gps_data_t *data);
+void gps_read(gps_interface_t *interface, gps_data_t *data);
 
 
 #endif /* __GPS_H__ */
