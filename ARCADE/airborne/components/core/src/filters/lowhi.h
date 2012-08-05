@@ -1,8 +1,16 @@
-#ifndef __FILTER_H__
-#define __FILTER_H__
+
+/*
+ * purpose: various filters
+ * authors: Alexander Barth; Benjamin Jahn; Tobias Simon, Ilmenau University of Technology
+ */
+
+
+#ifndef __FILTER_LOWHI_H__
+#define __FILTER_LOWHI_H__
+
+
 
 /* type definitions */
-
 typedef struct 
 {
     float Ts;
@@ -12,7 +20,8 @@ typedef struct
     float a1;
     float a2;
     float b;
-}Filter2nd;
+}
+Filter2nd;
 
 typedef struct 
 {
@@ -28,7 +37,9 @@ typedef struct
     float b0;
     float b1;
     float b2;
-}Filter2ndFull;
+}
+Filter2ndFull;
+
 
 void filter_lp_init(Filter2nd *filter, const float fg, const float damping, const float Ts, const int dim);
 void filter_hp_init(Filter2nd *filter, const float fg, const float damping, const float Ts, const int dim);
@@ -38,9 +49,11 @@ void filter_lp_run(Filter2nd *filter, const float *u, float *y);
 void filter_hp_run(Filter2nd *filter, const float *u, float *y);
 void filter_hpd_run(Filter2nd *filter, const float *u, float *y);
 
-const float filter_run(Filter2ndFull *filter, float u);
+float filter_run(Filter2ndFull *filter, const float u);
 void filter_init(Filter2ndFull *filter, const float *a, const float *b, const float Ts);
 
 void filter_term(Filter2nd *filter);
 
-#endif /* __FILTER_H__ */
+
+#endif /* __FILTER_LOWHI_H__ */
+

@@ -9,7 +9,7 @@
 #include <threadsafe_types.h>
 
 #include "navi.h"
-#include "lib/rot2d.h"
+#include "../geometry/rot2d.h"
 #include "../geometry/vector2d.h"
 
 

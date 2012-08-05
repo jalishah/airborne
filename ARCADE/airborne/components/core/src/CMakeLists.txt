@@ -15,7 +15,7 @@ ADD_EXECUTABLE(core main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
-scl_cmd
+command
 # system:
 control
 model

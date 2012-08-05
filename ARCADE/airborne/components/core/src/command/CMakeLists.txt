@@ -1,1 +1,1 @@
-ADD_LIBRARY(scl_cmd STATIC scl_cmd.c)
+ADD_LIBRARY(command STATIC command.c)

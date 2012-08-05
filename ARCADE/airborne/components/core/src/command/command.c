@@ -10,7 +10,7 @@
 #include <util.h>
 #include <sclhelper.h>
 
-#include "scl_cmd.h"
+#include "command.h"
 #include "../util/logger/logger.h"
 #include "../control/ctrl.h"
 #include "../model/model.h"

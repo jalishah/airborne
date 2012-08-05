@@ -16,7 +16,7 @@
 
 
 #include "z_ctrl.h"
-#include "lib/pid.h"
+#include "pid.h"
 #include "util.h"
 #include "opcd_params.h"
 #include "threadsafe_types.h"

@@ -24,7 +24,7 @@
 
 #include "navi.h"
 #include "ctrl.h"
-#include "lib/pid.h"
+#include "pid.h"
 #include "z_ctrl.h"
 #include "yaw_ctrl.h"
 #include "../util/logger/logger.h"
