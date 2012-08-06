@@ -42,17 +42,21 @@ angle_state_t;
  */
 typedef struct
 {
+   /* local position estimates: */
    position_state_t x; /* x state */
    position_state_t y; /* y state */
    position_state_t ultra_z; /* ultrasonoc altitude over ground */
    position_state_t baro_z; /* barometric altitude above sea level */
    
+   /* absolute euler angles: */
    angle_state_t yaw;
    angle_state_t pitch;
    angle_state_t roll;
    
-   float gps_ground_speed;
-   float gps_yaw;
+   /* gyro speeds: */
+   float gyro_x;
+   float gyro_y;
+   float gyro_z;
 }
 model_state_t;
 

@@ -1,1 +1,6 @@
-ADD_LIBRARY(control STATIC z_ctrl.c ctrl.c navi.c yaw_ctrl.c pid.c)
+ADD_SUBDIRECTORY(basic)
+ADD_SUBDIRECTORY(position)
+ADD_SUBDIRECTORY(util)
+
+ADD_LIBRARY(control STATIC control.c)
+TARGET_LINK_LIBRARIES(control basic_control position_control control_util)

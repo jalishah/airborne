@@ -12,12 +12,11 @@
 
 #include "command.h"
 #include "../util/logger/logger.h"
-#include "../control/ctrl.h"
+#include "../control/control.h"
 #include "../model/model.h"
-//#include "../sensor_actor/holger_fc/holger_fc.h"
-#include "../control/z_ctrl.h"
-#include "../control/navi.h"
-#include "../control/yaw_ctrl.h"
+#include "../control/position/z_ctrl.h"
+#include "../control/position/navi.h"
+#include "../control/position/yaw_ctrl.h"
 
 
 #define THREAD_NAME     "cmd_interface"

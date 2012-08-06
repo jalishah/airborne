@@ -26,7 +26,8 @@
 #include "util/time/ltime.h"
 #include "filters/sliding_avg.h"
 #include "model/model.h"
-#include "control/ctrl.h"
+#include "control/control.h"
+#include "platform/platform.h"
 
 
 #define OUTPUT_RATIO 3 /* 300Hz/OUTPUT_RATIO = output rate (averaged) */
@@ -91,13 +92,7 @@ void _main(int argc, char *argv[])
    }
 
    /* initialize hardware/drivers: */
-   omap_i2c_bus_init();
-   baro_altimeter_init();
-   ultra_altimeter_init();
-   ahrs_init();
-   motors_init();
-   voltage_reader_start();
-   gps_init();
+   platforms_init(0);
    
    LOG(LL_INFO, "initializing model/controller");
    model_init();
@@ -131,10 +126,10 @@ void _main(int argc, char *argv[])
       /* read sensor values into model input structure: */
       model_input_t model_input;
       model_input.dt = dt;
-      ahrs_read(&model_input.ahrs_data);
-      gps_read(&model_input.gps_data);
-      model_input.ultra_z = ultra_altimeter_read();
-      model_input.baro_z = baro_altimeter_read();
+      ahrs_read(platform, &model_input.ahrs_data);
+      gps_read(platform, &model_input.gps_data);
+      model_input.ultra_z = ultra_read(platform);
+      model_input.baro_z = baro_read(platform);
 
       /* execute model step: */
       model_state_t model_state;

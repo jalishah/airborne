@@ -13,6 +13,11 @@
 
 typedef struct
 {
+   /* gyro measurements: */
+   float gyro_x;
+   float gyro_y;
+   float gyro_z;
+
    /* euler angles: */
    float pitch; /* -PI .. PI, 0 is horizontal */
    float roll; /* -PI .. PI, 0 is horizontal */

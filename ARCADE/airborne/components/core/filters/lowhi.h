@@ -13,7 +13,7 @@
 /* type definitions */
 typedef struct 
 {
-    float Ts;
+    float ts;
     int signal_dim;
     float *z1;
     float *z2;
@@ -21,38 +21,37 @@ typedef struct
     float a2;
     float b;
 }
-Filter2nd;
+filt2nd_t;
 
 typedef struct 
 {
-    float Ts;
+    float ts;
     
-    /* Memories */
+    /* filter memories: */
     float z1;
     float z2;
     
-    /* Filter Coefficients */
+    /* filter coefficients: */
     float a1;
     float a2;
     float b0;
     float b1;
     float b2;
 }
-Filter2ndFull;
+filt2nd_full_t;
 
 
-void filter_lp_init(Filter2nd *filter, const float fg, const float damping, const float Ts, const int dim);
-void filter_hp_init(Filter2nd *filter, const float fg, const float damping, const float Ts, const int dim);
-void filter_hpd_init(Filter2nd *filter, const float fg, const float damping, const float Ts, const int dim);
+void filter_lp_init(filt2nd_t *filt, const float fg, const float damping, const float ts, const int dim);
+void filter_lp_run(filt2nd_t *filt, const float *u, float *y);
 
-void filter_lp_run(Filter2nd *filter, const float *u, float *y);
-void filter_hp_run(Filter2nd *filter, const float *u, float *y);
-void filter_hpd_run(Filter2nd *filter, const float *u, float *y);
+void filter_hp_init(filt2nd_t *filt, const float fg, const float damping, const float ts, const int dim);
+void filter_hp_run(filt2nd_t *filt, const float *u, float *y);
 
-float filter_run(Filter2ndFull *filter, const float u);
-void filter_init(Filter2ndFull *filter, const float *a, const float *b, const float Ts);
+void filter_hpd_init(filt2nd_t *filt, const float fg, const float damping, const float ts, const int dim);
+void filter_hpd_run(filt2nd_t *filt, const float *u, float *y);
 
-void filter_term(Filter2nd *filter);
+void filter_full_init(filt2nd_full_t *filt, const float *a, const float *b, const float ts);
+float filter_full_run(filt2nd_full_t *filt, const float u);
 
 
 #endif /* __FILTER_LOWHI_H__ */

@@ -1,7 +1,7 @@
 
 /*
- * File: ctrl.c
- * Type: set of PID controllers
+ * File: control.c
+ * Type: main controller interface
  * Purpose: runs multiple controllers (x,y,z,yaw) and executes attitude control
  * Design Pattern: Singleton using ctrl_init
  *
@@ -22,8 +22,8 @@
 #include <core.pb-c.h>
 #include <util.h>
 
+#include "control.h"
 #include "navi.h"
-#include "ctrl.h"
 #include "pid.h"
 #include "z_ctrl.h"
 #include "yaw_ctrl.h"
