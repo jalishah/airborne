@@ -1,28 +1,17 @@
 
-#ifndef NAVIGATOR_H
-#define NAVIGATOR_H
+#ifndef __NAVI_H__
+#define __NAVI_H__
 
 
 typedef struct
 {
-   float pos_x; /* current position in lon direction */
-   float pos_y; /* current position in lat direction */
-   float speed_x; /* current speed in lon direction */
-   float speed_y; /* current speed in lat direction */
-   float acc_x;
-   float acc_y;
+   float pos[2];
+   float speed[2];
+   float acc[2];
    float dt; /* control loop iteration time delta, in seconds */
    float yaw; /* angle between magnetic north and device front, in rad */
 }
 navi_input_t;
-
-
-typedef struct
-{
-   float pitch; /* desired pitch angle (implies certain acceleration, depending on gas value) */
-   float roll; /* desired roll angle ("-") */
-}
-navi_output_t;
 
 
 /*
@@ -76,9 +65,9 @@ int navi_set_travel_speed(float speed);
 /*
  * executes navigation control subsystem
  */
-void navi_run(navi_output_t *output, const navi_input_t *input);
+void navi_run(float output[2], const navi_input_t *input);
 
 
 
-#endif /* NAVIGATOR_H */
+#endif /* __NAVI_H__ */
 

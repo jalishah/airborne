@@ -1,9 +1,7 @@
 
-#include <util.h>
 #include <serial.h>
 #include <simple_thread.h>
 #include <opcd_params.h>
-#include "../../util/time/ltime.h"
 
 
 #include "rc_dsl.h"
@@ -29,7 +27,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       uint8_t b = serial_read_char(&port);
       if (rc_dsl_parse_dsl_data(rc_dsl, b) == 1)
       {
-         
+         // TODO
       }
    }
    SIMPLE_THREAD_LOOP_END

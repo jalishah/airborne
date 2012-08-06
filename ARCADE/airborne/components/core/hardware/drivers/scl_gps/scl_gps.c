@@ -1,20 +1,11 @@
 
-#include <pthread.h>
-#include <time.h>
-#include <math.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
+#include <util.h>
+#include <simple_thread.h>
+#include <gps_data.pb-c.h>
+#include <sclhelper.h>
 
 #include "scl_gps.h"
-#include "util.h"
-#include "gps_data.pb-c.h"
-#include "../../../util/types.h"
-#include "../../../util/time/ltime.h"
-#include "../../../util/logger/logger.h"
-#include "../../util/threads/simple_thread.h"
-#include "sclhelper.h"
+#include "../../../geometry/earth.h"
 
 
 #define GPS_THREAD_NAME       "gps-reader"

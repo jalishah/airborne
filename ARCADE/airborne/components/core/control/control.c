@@ -15,7 +15,6 @@
 
 
 #include <stdint.h>
-#include <opcd_params.h>
 #include <periodic_thread.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
@@ -23,31 +22,15 @@
 #include <util.h>
 
 #include "control.h"
-#include "navi.h"
-#include "pid.h"
-#include "z_ctrl.h"
-#include "yaw_ctrl.h"
+#include "position/navi.h"
+#include "position/att_ctrl.h"
+#include "position/z_ctrl.h"
+#include "position/yaw_ctrl.h"
 #include "../util/logger/logger.h"
 #include "../util/time/ltime.h"
-//#include "../sensor_actor/interfaces/gps.h"
-//#include "../sensor_actor/voltage/voltage_reader.h"
-
-
-static pid_controller_t pitch_controller;
-static pid_controller_t roll_controller;
-
-static tsfloat_t angle_p;
-static tsfloat_t angle_i;
-static tsfloat_t angle_i_max;
-static tsfloat_t angle_d;
-static tsfloat_t pitch_bias;
-static tsfloat_t roll_bias;
-static tsint_t angle_cal;
-static tsfloat_t angle_max;
 
 
 /* mon data emitter thread: */
-
 static pthread_mutex_t mon_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *mon_socket = NULL;
 static MonData mon_data = MON_DATA__INIT;
@@ -112,34 +95,18 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    );
 
    /* run navi controller: */
-   navi_output_t navi_output;
+   float navi_output[2];
    navi_input_t navi_input = 
    {
-      pos_x, pos_y, speed_x, speed_y,
-      acc_x, acc_y, dt, yaw
+      {pos_x, pos_y}, {speed_x, speed_y},
+      {acc_x, acc_y}, dt, yaw
    };
-   navi_run(&navi_output, &navi_input);
+   navi_run(navi_output, &navi_input);
    
    
-   /* run pitch / roll angle controllers: */
-   if (tsint_get(&angle_cal))
-   {
-      navi_output.pitch = 0.0;
-      navi_output.roll = 0.0;
-   }
-   float _angle_max = tsfloat_get(&angle_max);
-   float pitch_ctrl_val = pid_control
-   (
-      &pitch_controller,
-      model_state->pitch.angle + sym_limit(navi_output.pitch, _angle_max)
-      + tsfloat_get(&pitch_bias), dt
-   );
-   float roll_ctrl_val = -pid_control
-   (
-      &roll_controller,
-      -model_state->roll.angle + sym_limit(navi_output.roll, _angle_max)
-      + tsfloat_get(&roll_bias), dt
-   );
+   float att_ctrl[2];
+   float att_pos[2] = {model_state->pitch.angle, model_state->roll.angle};
+   att_ctrl_step(att_ctrl, dt, att_pos, navi_output);
 
    /* set monitoring data: */
    if (pthread_mutex_trylock(&mon_data_mutex) == 0)
@@ -179,8 +146,8 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    }
    else
    {
-      out->pitch = pitch_ctrl_val;
-      out->roll = roll_ctrl_val;
+      out->pitch = att_ctrl[0];
+      out->roll = att_ctrl[1];
       out->yaw = yaw_ctrl_val;
       out->gas = gas_ctrl_val;
    }
@@ -192,8 +159,7 @@ void ctrl_reset(void)
 {
    yaw_ctrl_reset();
    z_ctrl_reset();
-   pid_reset(&pitch_controller);
-   pid_reset(&roll_controller);
+   att_ctrl_reset();
    navi_reset(); // TODO: not threadsafe
 }
 
@@ -222,21 +188,6 @@ void ctrl_init(void)
 {
    ASSERT_ONCE();
 
-   /* load parameters: */
-   opcd_param_t params[] =
-   {
-      {"p", &angle_p.value},
-      {"i", &angle_i.value},
-      {"i_max", &angle_i_max.value},
-      {"d", &angle_d.value},
-      {"pitch_bias", &pitch_bias},
-      {"roll_bias", &roll_bias},
-      {"calibrate", &angle_cal},
-      {"angle_max", &angle_max},
-      OPCD_PARAMS_END
-   };
-   opcd_params_apply("controllers.attitude.", params);
-   
    mon_socket = scl_get_socket("mon");
    ASSERT_NOT_NULL(mon_socket);
    int64_t hwm = 1;
@@ -247,8 +198,7 @@ void ctrl_init(void)
    periodic_thread_start(&emitter_thread, mon_emitter, "mon_thread", 0, period, NULL);
 
    /* initialize controllers: */
-   pid_init(&pitch_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
-   pid_init(&roll_controller, &angle_p, &angle_i, &angle_d, &angle_i_max);
+   att_ctrl_init();
    yaw_ctrl_init();
    z_ctrl_init();
    navi_init();

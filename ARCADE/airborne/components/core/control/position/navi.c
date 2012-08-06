@@ -9,8 +9,9 @@
 #include <threadsafe_types.h>
 
 #include "navi.h"
-#include "../geometry/rot2d.h"
-#include "../geometry/vector2d.h"
+
+#include "../../geometry/rot2d.h"
+#include "../../geometry/vector2d.h"
 
 
 /* configurable parameters: */
@@ -182,13 +183,10 @@ int navi_set_travel_speed(float speed)
 /*
  * executes navigation control subsystem
  */
-void navi_run(navi_output_t *output, const navi_input_t *input)
+void navi_run(float out[2], const navi_input_t *input)
 {
-   ASSERT_NOT_NULL(output);
-   ASSERT_NOT_NULL(input);
-
    /* set-up input vectors: */
-   vector2d_set(&curr_speed, input->speed_x, input->speed_y);
+   vector2d_set(&curr_speed, input->speed[0], input->speed[1]);
    
    float _dest_x = tsfloat_get(&dest_x);
    float _dest_y = tsfloat_get(&dest_y);
@@ -199,7 +197,7 @@ void navi_run(navi_output_t *output, const navi_input_t *input)
       vector2d_copy(&prev_dest_pos, &dest_pos);
       vector2d_set(&dest_pos, _dest_x, _dest_y);
    }
-   vector2d_set(&curr_pos, input->pos_x, input->pos_y);
+   vector2d_set(&curr_pos, input->pos[0], input->pos[1]);
    vector2d_sub(&pos_err, &dest_pos, &curr_pos);
  
    /* add correction for inter-setpoint trajectory */
@@ -240,11 +238,6 @@ void navi_run(navi_output_t *output, const navi_input_t *input)
 
    /* transform thrust vector to global coordinate system: */
    float in[2] = {vector2d_get_x(&world_thrust), vector2d_get_y(&world_thrust)};
-   float out[2];
    rot2d_calc(rot2d_context, out, in, input->yaw);
-
-   /* fill output structure: */
-   output->roll = out[0];
-   output->pitch = out[1];
 }
 

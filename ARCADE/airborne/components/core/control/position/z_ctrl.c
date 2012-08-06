@@ -15,11 +15,12 @@
  */
 
 
+#include <util.h>
+#include <opcd_params.h>
+#include <threadsafe_types.h>
+
 #include "z_ctrl.h"
-#include "pid.h"
-#include "util.h"
-#include "opcd_params.h"
-#include "threadsafe_types.h"
+#include "../util/pid.h"
 
 
 static pid_controller_t controller;

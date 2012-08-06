@@ -11,6 +11,7 @@
 #include <sclhelper.h>
 
 #include "command.h"
+#include "../platform/platform.h"
 #include "../util/logger/logger.h"
 #include "../control/control.h"
 #include "../model/model.h"
@@ -197,9 +198,9 @@ static void check_and_set_ctrl_param(CoreRep *reply, CoreReq *request)
 
 static void get_state(Params *params)
 {
-   params->start_lon = gps_start_lon();
-   params->start_lat = gps_start_lat();
-   params->start_alt = gps_start_alt();
+   params->start_lon = gps_start_coord[0];
+   params->start_lat = gps_start_coord[1];
+   params->start_alt = gps_start_coord[2];
    params->setp_x = navi_get_dest_x();
    params->setp_y = navi_get_dest_y();
    float setp_z = z_ctrl_get_setpoint();
@@ -287,7 +288,7 @@ int cmd_init(void)
    {
       return -1;
    }
-   rpm = malloc(sizeof(float) * platform_motors());
+   rpm = malloc(sizeof(float) * platform->motors->count);
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
 }

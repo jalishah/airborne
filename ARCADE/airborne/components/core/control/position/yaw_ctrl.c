@@ -15,8 +15,8 @@
 #include <threadsafe_types.h>
 
 #include "yaw_ctrl.h"
-#include "pid.h"
-#include "../util/logger/logger.h"
+#include "../util/pid.h"
+#include "../../util/logger/logger.h"
 
 
 static pid_controller_t controller;

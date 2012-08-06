@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 
+#include "control_param.h"
 #include "../util/adams4.h"
 #include "../../filters/lowhi.h"
 
@@ -36,7 +37,7 @@ piid_t;
 
 int piid_init(piid_t *ctrl, const float sample_time);
 
-void piid_run(piid_t *ctrl, const float gyro[3], const float rc[3], float *u_ctrl);
+void piid_run(piid_t *ctrl, const float gyro[3], const float rc[3], float u_ctrl[3]);
 
 void piid_term(piid_t *ctrl);
 

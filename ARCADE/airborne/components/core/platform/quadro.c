@@ -12,9 +12,14 @@
 
 #include "coupling.h"
 #include "platform.h"
+
+/* interface includes: */
+#include "../hardware/interfaces/rc.h"
+#include "../hardware/interfaces/gps.h"
+
+/* hardware includes: */
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
-#include "../hardware/interfaces/rc.h"
 
 
 /* arm length */

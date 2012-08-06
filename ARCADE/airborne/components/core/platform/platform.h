@@ -56,7 +56,7 @@ typedef struct
    int (*init)(void);
    void (*write)(float *forces);
    void (*read)(float *rpm);
-   unsigned int n;
+   unsigned int count;
 }
 motors_t;
 

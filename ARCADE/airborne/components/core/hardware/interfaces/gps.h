@@ -58,6 +58,9 @@ typedef struct
 gps_interface_t;
 
 
+extern double gps_start_coord[3];
+
+
 int gps_init(gps_interface_t *interface);
 
 

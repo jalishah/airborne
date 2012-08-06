@@ -55,7 +55,7 @@ void att_ctrl_reset(void)
 {
    FOR_EACH(i, controllers)
    {
-      pid_reset(&controllers[i];
+      pid_reset(&controllers[i]);
    }
 }
 
@@ -66,9 +66,9 @@ void att_ctrl_step(float out[2], const float dt, const float pos[2], const float
    FOR_EACH(i, out)
    {
       /* limit setpoint: */
-      float lim_sp = sym_limit(sp[i], _angle_max);
+      float lim_sp = sym_limit(setp[i], _angle_max);
       /* run controller: */
-      out[i] = pid_control(&controllers[i], (lim_sp + bias[i]) - pos[i], dt);
+      out[i] = pid_control(&controllers[i], lim_sp + tsfloat_get(&bias[i]) - pos[i], dt);
    }
 }
 
