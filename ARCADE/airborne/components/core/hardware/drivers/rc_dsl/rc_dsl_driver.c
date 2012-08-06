@@ -1,10 +1,13 @@
 
+
+#include <string.h>
 #include <serial.h>
 #include <simple_thread.h>
 #include <opcd_params.h>
 
 
-#include "rc_dsl.h"
+#include "rc_dsl_driver.h"
+#include "../../libs/rc_dsl/rc_dsl.h"
 
 
 #define THREAD_NAME       "rc_dsl"
@@ -35,7 +38,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 SIMPLE_THREAD_END
 
 
-void rc_dsl_driver_init(void)
+int rc_dsl_driver_init(void)
 {
    int status = 0;
    memset(&data, 0, sizeof(rc_data_t));

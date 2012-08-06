@@ -27,6 +27,7 @@
 #include "../../util/threads/threadsafe_types.h"
 #include "../../util/threads/simple_thread.h"
 #include "../../util/threads/periodic_thread.h"
+#include "../../../platform/platform.h"
 
 
 static int is_initialized = 0;

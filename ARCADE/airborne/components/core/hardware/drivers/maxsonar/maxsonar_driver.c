@@ -5,10 +5,10 @@
 #include <serial.h>
 #include <simple_thread.h>
 #include <threadsafe_types.h>
-#include "../../algorithms/median_filter.h"
 
-#include "maxsonar_reader.h"
-#include "maxsonar.h"
+#include "maxsonar_driver.h"
+#include "../../libs/maxsonar/maxsonar.h"
+#include "../../../filters/median_filter.h"
 
 
 #define THREAD_NAME       "maxsonar"
@@ -53,7 +53,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 SIMPLE_THREAD_END
 
 
-int maxsonar_reader_init(void)
+int maxsonar_driver_init(void)
 {
    ASSERT_ONCE();
    int status = serial_open(&port, "/dev/ttyO0", 9600, 0, 0, 0);
@@ -68,7 +68,7 @@ int maxsonar_reader_init(void)
 }
 
 
-float maxsonar_reader_get_alt(void)
+float maxsonar_driver_get_alt(void)
 {
    return tsfloat_get(&altitude);
 }

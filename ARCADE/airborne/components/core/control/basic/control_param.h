@@ -24,8 +24,6 @@
 /* tau = d*rpm^2 */
 #define CTRL_F_D 4.0174e-009f
 
-/* minimum rpm */
-#define I2C_MIN 20
 
 
 /* ----- control parameter ----- */

@@ -25,7 +25,7 @@ typedef struct coupling coupling_t;
  *
  * g = gas, p = pitch, r = roll, y = yaw, n = #motors
  */
-coupling_t *coupling_create(size_t motors, float *init);
+coupling_t *coupling_create(const unsigned int motors, const float *init);
 
 
 /*
@@ -35,7 +35,13 @@ coupling_t *coupling_create(size_t motors, float *init);
  * v_x = motor setpoint [0..1]
  * n = #motors
  */
-void coupling_calc(coupling_t *coupling, float *out, float *in);
+void coupling_calc(const coupling_t *coupling, float *out, const float *in);
+
+
+/*
+ * returns number of motors in coupling
+ */
+unsigned int coupling_motors(const coupling_t *coupling);
 
 
 #endif /* __COUPLING__ */

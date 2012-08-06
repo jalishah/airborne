@@ -8,20 +8,19 @@
 
 
 
-#include <pthread.h>
 #include <time.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <math.h>
 
-#include "bmp085.h"
-#include "util.h"
-#include "../lib/i2c/omap_i2c_bus.h"
-#include "../../algorithms/sliding_avg.h"
-#include "../../util/time/ltime.h"
-#include "../../util/threads/simple_thread.h"
-#include "../../util/threads/threadsafe_types.h"
+#include <simple_thread.h>
+#include <threadsafe_types.h>
+#include <util.h>
 
+#include "bmp085_driver.h"
+#include "../../libs/bmp085/bmp085.h"
+#include "../../../filters/sliding_avg.h"
+#include "../../../util/time/ltime.h"
 
 
 #define THREAD_NAME       "bmp085"
@@ -36,17 +35,22 @@ static i2c_dev_t device;
 static bmp085_ctx_t context;
 
 
+static float pressure_2_alt(float pressure, float start_pressure)
+{
+   return 44330.75 * (1.0 - powf(pressure / start_pressure, 0.19029));
+}
+
+
 SIMPLE_THREAD_BEGIN(thread_func)
 {
    bmp085_read_temperature(&device, &context);
-   float pressure = bmp085_read_pressure(&device, &context);
-   float start_alt = 44330.75 * (1.0 - pow(pressure / 101325.0, 0.19029));
+   float start_pressure = bmp085_read_pressure(&device, &context);
 
    SIMPLE_THREAD_LOOP_BEGIN
    {
       bmp085_read_temperature(&device, &context);
-      pressure = bmp085_read_pressure(&device, &context);
-      float _alt = 44330.75 * (1.0 - pow(pressure / 101325.0, 0.19029)) - start_alt;
+      float pressure = bmp085_read_pressure(&device, &context);
+      float _alt = pressure_2_alt(pressure, start_pressure);
       _alt = sliding_avg_calc(avg, _alt);
       tsfloat_set(&alt, _alt);
       msleep(1);
@@ -62,11 +66,11 @@ float bmp085_reader_get_alt(void)
 }
 
 
-int bmp085_reader_init(void)
+int bmp085_reader_init(i2c_bus_t *bus)
 {
    ASSERT_ONCE();
 
-   i2c_dev_init(&device, omap_i2c_bus_get(), "bmp085", 0x77);
+   i2c_dev_init(&device, bus, "bmp085", 0x77);
    int status = bmp085_init(&device, &context);
    if (status != 0)
    {

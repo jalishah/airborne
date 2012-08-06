@@ -11,10 +11,13 @@
 #define __BMP085_DRIVER_H__
 
 
+#include "../../../hardware/bus/i2c/i2c_generic.h"
+
+
 /*
  * initializes the driver
  */
-int bmp085_driver_init(void);
+int bmp085_driver_init(i2c_bus_t *bus);
 
 
 /*

@@ -1,7 +1,7 @@
 
 /*
  * file: coupling.c
- * author: Tobias Simon (Ilmenau University of Technology)
+ * author: Tobias Simon, Ilmenau University of Technology
  */
 
 
@@ -11,14 +11,14 @@
 
 struct coupling
 {
-   size_t motors;
+   unsigned int motors;
    MAT *matrix;
    VEC *in;
    VEC *out;
 };
 
 
-coupling_t *coupling_create(size_t motors, float *init)
+coupling_t *coupling_create(const unsigned int motors, const float *init)
 {
    coupling_t *coupling = malloc(sizeof(coupling_t));
    coupling->matrix = m_get(motors, 4);
@@ -36,7 +36,7 @@ coupling_t *coupling_create(size_t motors, float *init)
 }
 
 
-void coupling_calc(coupling_t *coupling, float *out, float *in)
+void coupling_calc(const coupling_t *coupling, float *out, const float *in)
 {
    /* copy data into input vector: */
    for (int i = 0; i < 4; i++)
@@ -54,4 +54,9 @@ void coupling_calc(coupling_t *coupling, float *out, float *in)
    }
 }
 
+
+unsigned int coupling_motors(const coupling_t *coupling)
+{
+   return coupling->motors;
+}
 

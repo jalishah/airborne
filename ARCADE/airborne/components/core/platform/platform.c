@@ -8,6 +8,7 @@
 #include "platform.h"
 #include "quadro.h"
 
+#include <string.h>
 #include <malloc.h>
 #include <assert.h>
 
@@ -22,7 +23,7 @@ void platforms_init(unsigned int select)
 {
    assert(select < N_PLATFORMS);
    platforms = malloc(N_PLATFORMS * sizeof(platform_t *));
-   platforms[0] = quadro_platform_create();
+   platforms[0] = quadro_create();
    platform = platforms[select];
 }
 
