@@ -20,6 +20,7 @@ command
 control
 model
 # sensor/actor:
+platform
 sensor_actor_interfaces
 holger_fc
 rc_dsl
@@ -27,12 +28,11 @@ scl_gps
 maxsonar
 bmp085
 chr_6dm
-platform
 # generic algorithms:
 geometry
 filters
 # sensor actor support:
-i2c serial logger opcd_params voltage threads ltime lmath scl
+i2c serial logger opcd_params scl_voltage threads ltime lmath scl
 # ARCADE libraries
 glib-2.0
 util network_messages

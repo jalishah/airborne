@@ -107,7 +107,7 @@ class PowerMan:
    def power_state_emitter(self):
       while True:
          state = PowerState()
-         sleep(5)
+         sleep(1)
          try:
             state.voltage = self.voltage
             state.current = self.current

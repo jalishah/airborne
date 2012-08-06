@@ -126,10 +126,10 @@ void _main(int argc, char *argv[])
       /* read sensor values into model input structure: */
       model_input_t model_input;
       model_input.dt = dt;
-      ahrs_read(platform, &model_input.ahrs_data);
-      gps_read(platform, &model_input.gps_data);
-      model_input.ultra_z = ultra_read(platform);
-      model_input.baro_z = baro_read(platform);
+      platform_ahrs_read(&model_input.ahrs_data);
+      platform_gps_read(&model_input.gps_data);
+      model_input.ultra_z = platform_ultra_read();
+      model_input.baro_z = platform_baro_read();
 
       /* execute model step: */
       model_state_t model_state;

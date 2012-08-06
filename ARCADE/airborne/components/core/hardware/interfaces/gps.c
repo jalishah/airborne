@@ -1,6 +1,7 @@
 
 
 #include <unistd.h>
+#include <malloc.h>
 
 #include "gps.h"
 #include "../../util/logger/logger.h"
