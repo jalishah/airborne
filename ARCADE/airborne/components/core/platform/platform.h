@@ -77,11 +77,33 @@ platform_t;
 
 
 
-extern platform_t *platform;
-
 void platforms_init(unsigned int select);
 
 platform_t *platform_create(void);
+
+
+/*
+ * returns the number of motors
+ */
+int platform_motors(void);
+
+
+/*
+ * start the motors
+ */
+void platform_start_motors(void);
+
+
+/*
+ * reads the current motor RPM
+ */
+void platform_read_motors(float *rpm);
+
+
+/*
+ * stops the motors
+ */
+void platform_stop_motors(void);
 
 
 #endif /* __PLATFORM_H__ */

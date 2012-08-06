@@ -32,14 +32,14 @@ static float *rpm = NULL;
 static void spin_down(void)
 {
    /* switch off motors command: */
-   fc_stop_motors();
+   platform_stop_motors();
    
    /* wait until all motors are stopped: */
    int done = 0;
    while (!done)
    {
       msleep(100);
-      fc_read_motors_rpm(rpm);
+      platform_read_motors(rpm);
       for (int i = 0; i < platform_motors(); i++)
       {
          if (rpm[i] > 10.0)
@@ -59,7 +59,7 @@ static void spin_up(CoreRep *reply)
 retry:
    LOG(LL_DEBUG, "starting motors");
    ctrl_override(0.0f, 0.0f, 0.0f, 0.0f);
-   fc_start_motors();
+   platform_start_motors();
    sleep(1);
    for (int i = 0; i < 6; i++)
    {
@@ -88,7 +88,7 @@ retry:
       }
       
       /* reset valid_count, if motor rpm too low */
-      fc_read_motors_rpm(rpm);
+      platform_read_motors(rpm);
       for (int i = 0; i < platform_motors(); i++)
       {
          if (rpm[i] < 1000.0f || rpm[i] > 50000.0f)
@@ -288,7 +288,7 @@ int cmd_init(void)
    {
       return -1;
    }
-   rpm = malloc(sizeof(float) * platform->motors->count);
+   rpm = malloc(sizeof(float) * platform_motors());
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
 }
