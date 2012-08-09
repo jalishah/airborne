@@ -23,13 +23,15 @@ model
 platform
 sensor_actor_interfaces
 holger_fc
-rc_dsl
+holger_blmc_driver
+holger_blmc
 rc_dsl_driver
+rc_dsl
 scl_gps
-maxsonar
 maxsonar_driver
-bmp085
+maxsonar
 bmp085_driver
+bmp085
 chr_6dm
 # generic algorithms:
 geometry

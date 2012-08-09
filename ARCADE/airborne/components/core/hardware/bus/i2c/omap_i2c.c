@@ -71,6 +71,19 @@ static int omap_i2c_bus_set_slave_address_if_needed(omap_bus_data_t *data, unsig
 }
 
 
+static int omap_i2c_bus_write_simple(i2c_dev_t *dev, unsigned char val)
+{
+   ASSERT_NOT_NULL(dev);
+   omap_bus_data_t *data = (omap_bus_data_t *)dev->bus->context->priv;
+   ASSERT_NOT_NULL(data);
+   int status = omap_i2c_bus_set_slave_address_if_needed(data, dev->addr);
+   if (status < 0)
+   {
+      return status;
+   }
+   return i2c_smbus_write_quick(data->handle, val);
+}
+
 static int omap_i2c_bus_write_byte(i2c_dev_t *dev, unsigned char cmd, unsigned char val)
 {
    ASSERT_NOT_NULL(dev);
@@ -131,6 +144,7 @@ void omap_i2c_bus_interface_setup(i2c_bus_interface_t *bus_interface)
 
    bus_interface->open = omap_i2c_bus_open;
    bus_interface->close = omap_i2c_bus_close;
+   bus_interface->write_simple = omap_i2c_bus_write_simple;
    bus_interface->write_byte = omap_i2c_bus_write_byte;
    bus_interface->read_byte = omap_i2c_bus_read_byte;
    bus_interface->read_block = omap_i2c_bus_read_block;

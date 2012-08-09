@@ -11,12 +11,14 @@
 
 
 #include <stdint.h>
-#include <stddef.h>
+#include <stdbool.h>
 
 
 #include "../../bus/i2c/i2c_generic.h"
+#include "../../../platform/coupling.h"
 
 
+#define HOLGER_I2C_OFF   0
 #define HOLGER_I2C_MIN  20
 #define HOLHER_I2C_MAX 255
 
@@ -24,13 +26,27 @@
 /*
  * creates a holger BLMC interface
  */
-void holger_blmcs_init(i2c_bus_t *bus, const uint8_t *addrs, const size_t n_motors);
+void holger_blmc_driver_init(i2c_bus_t *bus, const uint8_t *addrs, const coupling_t *coupling, const unsigned int n_motors);
+
+
+/*
+ * spins up the motors
+ */
+void holger_blmc_driver_start_motors(void);
+
+
+/*
+ * spins down the motors
+ */
+void holger_blmc_driver_stop_motors(void);
+
 
 
 /*
  * writes holger BLMC setpoints
  */
-void holger_blmc_write(uint8_t *setpoints);
+bool holger_blmc_driver_write_forces(const float forces[4], const float voltage);
+
 
 
 #endif /* __HOLGER_BLMC_DRIVER_H__ */

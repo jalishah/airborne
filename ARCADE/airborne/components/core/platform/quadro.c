@@ -10,8 +10,10 @@
 
 #include <malloc.h>
 
+#include <util.h>
 #include "coupling.h"
 #include "platform.h"
+#include "../util/logger/logger.h"
 
 /* interface includes: */
 #include "../hardware/interfaces/rc.h"
@@ -20,7 +22,8 @@
 /* hardware includes: */
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
-
+#include "../hardware/drivers/holger_blmc/holger_blmc_driver.h"
+#include "../hardware/bus/i2c/omap_i2c_bus.h"
 
 /* arm length */
 #define CTRL_L (0.2025f)
@@ -43,7 +46,7 @@
 #define IMTX3 (1.0f / (4.0f * F_D))
 
 
-float coupling_matrix[N_FORCES * N_MOTORS] =
+static const float coupling_matrix[N_FORCES * N_MOTORS] =
 {          /* gas   pitch    roll     yaw */
    /* m0 */ IMTX1,  IMTX2,    0.0,  IMTX3,
    /* m1 */ IMTX1, -IMTX2,    0.0,  IMTX3,
@@ -51,18 +54,34 @@ float coupling_matrix[N_FORCES * N_MOTORS] =
    /* m3 */ IMTX1,    0.0,  IMTX2, -IMTX3
 };
 
-
-coupling_t *quadro_coupling(void)
-{
-   return coupling_create(N_MOTORS, coupling_matrix);
-}
+                                           /* m0    m1    m2    m3 */
+static const uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 
 
 platform_t *quadro_create(void)
 {
+   /* create plain platform structure: */
    platform_t *plat = platform_create();
-   plat->gps = gps_interface_create(scl_gps_init, scl_gps_read);
-   plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);
+   /* initialize buses: */
+   int status = omap_i2c_bus_init();
+   if (status != 0)
+   {
+      LOG(LL_ERROR, "could not open OMAP bus" );
+      exit(1);
+   }
+   /* initialize actuator subsystems: */
+   coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
+   holger_blmc_driver_init(omap_i2c_bus_get(), motor_addrs, coupling, N_MOTORS);
+   float forces[4] = {0.0, 0.0, 0.0, 0.4};
+   holger_blmc_driver_start_motors();
+   while (1)
+   {
+      holger_blmc_driver_write_forces(forces, 16.0);
+      msleep(100);
+   }
+   /* initialize sensor subsystems: */
+   //plat->gps = gps_interface_create(scl_gps_init, scl_gps_read);
+   //plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);
    return plat;
 }
 

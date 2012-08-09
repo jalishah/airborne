@@ -106,5 +106,14 @@ void platform_read_motors(float *rpm);
 void platform_stop_motors(void);
 
 
+void platform_ahrs_read(ahrs_data_t *data);
+
+void platform_gps_read(gps_data_t *data);
+
+float platform_ultra_read(void);
+
+float platform_baro_read(void);
+
+
 #endif /* __PLATFORM_H__ */
 

@@ -32,6 +32,7 @@ typedef struct
 {
    int (*open)(i2c_bus_context_t *bus_context);
    int (*close)(i2c_bus_context_t *bus_context);
+   int (*write_simple)(i2c_dev_t *dev, unsigned char val);
    int (*write_byte)(i2c_dev_t *dev, unsigned char cmd, unsigned char val);
    int (*read_byte)(i2c_dev_t *dev, unsigned char cmd);
    int (*read_block)(i2c_dev_t *dev, unsigned char cmd, unsigned char *buffer, unsigned int len);
@@ -63,6 +64,8 @@ void i2c_dev_init(i2c_dev_t *dev, i2c_bus_t *bus, char *name, unsigned char addr
 void i2c_dev_set_list_terminator(i2c_dev_t *dev);
 
 int i2c_dev_list_end(i2c_dev_t *dev);
+
+int i2c_dev_write_simple(i2c_dev_t *dev, unsigned char val);
 
 int i2c_dev_write(i2c_dev_t *dev, unsigned char cmd, unsigned char val);
 

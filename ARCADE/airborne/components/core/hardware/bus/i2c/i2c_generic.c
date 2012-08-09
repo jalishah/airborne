@@ -90,6 +90,15 @@ int i2c_dev_list_end(i2c_dev_t *dev)
 }
 
 
+int i2c_dev_write_simple(i2c_dev_t *dev, unsigned char val)
+{
+   ASSERT_NOT_NULL(dev);
+   ASSERT_NOT_NULL(dev->bus);
+   ASSERT_NOT_NULL(dev->bus->interface);
+   ASSERT_NOT_NULL(dev->bus->interface->write_simple);
+}
+
+
 int i2c_dev_write(i2c_dev_t *dev, unsigned char cmd, unsigned char val)
 {
    ASSERT_NOT_NULL(dev);

@@ -13,18 +13,19 @@
 #include <assert.h>
 
 
-static platform_t **platforms = NULL;
+#define N_PLATFORMS 1
+static platform_t **_platforms = NULL;
+
 static platform_t *platform = NULL;
 
-#define N_PLATFORMS 1
 
 
 void platforms_init(unsigned int select)
 {
    assert(select < N_PLATFORMS);
-   platforms = malloc(N_PLATFORMS * sizeof(platform_t *));
-   platforms[0] = quadro_create();
-   platform = platforms[select];
+   _platforms = malloc(N_PLATFORMS * sizeof(platform_t *));
+   _platforms[0] = quadro_create();
+   platform = _platforms[select];
 }
 
 
@@ -58,4 +59,25 @@ void platform_stop_motors(void)
 {
 
 }
+
+void platform_ahrs_read(ahrs_data_t *data)
+{
+   
+}
+
+void platform_gps_read(gps_data_t *data)
+{
+   
+}
+
+float platform_ultra_read(void)
+{
+   return 0.0;   
+}
+
+float platform_baro_read(void)
+{
+   return 0.0;   
+}
+
 

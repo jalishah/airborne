@@ -22,7 +22,7 @@ powerman:
   depends: [opcd]
 
 core:
-  binary: 'core/src/core'
+  binary: 'core/core'
   depends: [opcd, gps_sensor]
 
 opcd:
