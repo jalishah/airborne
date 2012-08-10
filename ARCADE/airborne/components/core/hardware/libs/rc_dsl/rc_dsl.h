@@ -28,9 +28,7 @@ void rc_dsl_cmd_show_dsl(rc_dsl_t *dsl);
 
 int rc_dsl_get_channel(rc_dsl_t *dsl, uint8_t channel);
 
-int rc_dsl_signal_valid(rc_dsl_t *dsl);
-
-int rc_dsl_invalid(rc_dsl_t *dsl);
+int rc_dsl_get_rssi(rc_dsl_t *dsl);
 
 
 #endif /* __RC_DSL_H__ */

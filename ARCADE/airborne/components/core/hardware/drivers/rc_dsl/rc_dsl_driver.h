@@ -8,6 +8,8 @@
 
 int rc_dsl_driver_init(void);
 
+int rc_dsl_driver_calibrate(void);
+
 void rc_dsl_driver_read(rc_data_t *data);
 
 

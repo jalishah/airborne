@@ -19,11 +19,12 @@
  */
 typedef struct
 {
-   short pitch;
-   short roll;
-   short yaw;
-   short gas;
-   short extra[EXTRA_RC_CHANNELS];
+   float pitch;
+   float roll;
+   float yaw;
+   float gas;
+   float extra[EXTRA_RC_CHANNELS];
+   float rssi;
 }
 rc_data_t;
 

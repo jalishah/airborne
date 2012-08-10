@@ -92,6 +92,7 @@ void _main(int argc, char *argv[])
    }
 
    /* initialize hardware/drivers: */
+   LOG(LL_INFO, "initializing platform");
    platforms_init(0);
    
    LOG(LL_INFO, "initializing model/controller");

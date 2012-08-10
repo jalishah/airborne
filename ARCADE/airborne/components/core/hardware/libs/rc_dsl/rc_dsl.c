@@ -192,6 +192,10 @@ int rc_dsl_parse_dsl_data(rc_dsl_t *dsl, uint8_t b)
       if (b == dsl->check_sum)
       {
          status = rc_dsl_parse_incoming_dsl_paket(dsl);
+         if (status == 0)
+         {
+            status = 1;
+         }
       }
       else
       {
@@ -264,14 +268,8 @@ int rc_dsl_get_channel(rc_dsl_t *dsl, uint8_t channel)
 }
 
 
-int rc_dsl_signal_valid(rc_dsl_t *dsl)
+int rc_dsl_get_rssi(rc_dsl_t *dsl)
 {
-   return dsl->RSSI > RC_DSL_VALID_SIGNAL;
-}
-
-
-int rc_dsl_invalid(rc_dsl_t *dsl)
-{
-   return dsl->packet_invalid;
+   return dsl->RSSI;
 }
 
