@@ -21,7 +21,7 @@ class ACIReader(Thread):
       s = 0
       next_seq = 0
       while True:
-         sleep(0.05)
+         sleep(0.01)
          try:
             msg = self.aci.receive()
             if msg:

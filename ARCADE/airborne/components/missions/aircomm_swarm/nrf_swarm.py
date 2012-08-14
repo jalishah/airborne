@@ -14,7 +14,7 @@ from numpy.linalg import norm
 from pyproj import Proj, transform
 from random import random
 from aircomm.packet.dencode import Packet, BCAST
-from aircomm.packet.types import POS, pos_pack, pos_unpack
+from aircomm.packet.format import gpos
 from aircomm.interface import Interface
 
 
@@ -46,7 +46,7 @@ def sym_limit(x, limit):
 
 sep = 8
 p = 0.25
-cut = 1.0
+cut = 3.0
 
 
 def step(tv):
@@ -76,7 +76,7 @@ class GPS_Reader(Thread):
 
 
 
-sm = generate_map('nrf_swarm')
+sm = generate_map('aircomm_swarm')
 gps_reader = GPS_Reader(sm['gps'])
 gps_reader.start()
 
@@ -97,8 +97,8 @@ while True:
    sleep(0.1)
    msg = inf.receive()
    if msg:
-      if msg.type == POS:
-         gps_nrf = array(pos_unpack(msg.data))
+      if 1:#msg.type == POS:
+         gps_nrf = array(gpos.unpack(msg.data))
          gps_pos = array([gps_reader.data.lat, gps_reader.data.lon])
          print gps_pos, gps_nrf
          gps_target = array(gps_nrf)

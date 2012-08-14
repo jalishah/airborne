@@ -14,7 +14,7 @@
 #define THREAD_NAME       "maxsonar"
 #define THREAD_PRIORITY   0
 
-//#define USE_FILTER
+#define USE_FILTER
 
 
 static simple_thread_t thread;

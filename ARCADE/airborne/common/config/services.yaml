@@ -25,6 +25,13 @@ gps_sensor:
 imms_sensor:
   binary: 'sensors/imms_sensor/imms_sensor'
 
+wifi_sensor:
+  binary: 'sensors/wifi/wifi_sensor.py'
+
+wifi_logger:
+  binary: 'logging/wifi/wifi_logger.py'
+  depends: [core, wifi_sensor]
+
 powerman:
   binary: 'powerman/powerman.py'
   depends: [opcd]

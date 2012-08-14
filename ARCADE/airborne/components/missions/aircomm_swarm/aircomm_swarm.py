@@ -80,32 +80,33 @@ def request(item):
    except Exception, e:
       print e
 
+sm = generate_map('aircomm_swarm')
+in_socket = sm['aircomm_in']
+gps_reader = GPS_Reader(sm['gps'])
+gps_reader.start()
+_client = ICARUS_Client(sm['ctrl'])
+i = ICARUS_MissionFactory()
 
 def main(name):
-   sm = generate_map(name)
-   in_socket = sm['aircomm_in']
-   gps_reader = GPS_Reader(sm['gps'])
-   gps_reader.start()
-   _client = ICARUS_Client(sm['ctrl'])
-   i = ICARUS_MissionFactory()
    while True:
-      try:
-         msg = AirComm()
-         raw = in_socket.recv()
-         msg.ParseFromString(raw)
-         if msg:
-            if msg.type == gpos.id:
-               gps_nrf = array(gpos.unpack(msg.data)[0:2])
-               gps_pos = array([gps_reader.data.lat, gps_reader.data.lon])
-               print gps_pos, gps_nrf
-               gps_target = array(gps_nrf)
-               vec = gps_meters_offset(gps_pos, gps_target)
-               ctrl = step(vec)
-               print gps_pos, vec, norm(vec), ctrl
-               request(i.move_xy(ctrl[0], ctrl[1]))
-      except:
-         sleep(1)
+      msg = AirComm()
+      raw = in_socket.recv()
+      msg.ParseFromString(raw)
+      #if msg:
+      #   if msg.type == gpos.id:
+      #      gps_nrf = array(gpos.unpack(msg.data)[0:2])
+      #      gps_pos = array([gps_reader.data.lat, gps_reader.data.lon])
+      #      print gps_pos, gps_nrf
+      #      gps_target = array(gps_nrf)
+      #      vec = gps_meters_offset(gps_pos, gps_target)
+      #      ctrl = step(vec)
+      #      print gps_pos, vec, norm(vec), ctrl
+      #      request(i.move_xy(ctrl[0], ctrl[1]))
 
+      if msg:
+         ctrl = array(gpos.unpack(msg.data)[0:2])
+         request(i.move_xy(ctrl[0], ctrl[1]))
 
-daemonize('nrf_swarm', main)
+main('aircomm_swarm')
+#daemonize('aircomm_swarm', main)
 

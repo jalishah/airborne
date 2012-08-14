@@ -137,6 +137,7 @@ void model_step(model_state_t *out, model_input_t *in)
    out->baro_z.pos = baro_z_kalman_out.pos;
    out->baro_z.speed = baro_z_kalman_out.speed;
    out->baro_z.acc = world_acc_z;
+   EVERY_N_TIMES(10, printf("%f %f\n", out->baro_z.pos, out->baro_z.speed));
    
    out->yaw.angle = normalize_euler_0_2pi(in->ahrs_data.yaw);
    out->yaw.speed = in->ahrs_data.yaw_rate;

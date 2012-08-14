@@ -62,15 +62,14 @@ components:
      gates:
       - ctrl: req
  
-   - name: netscan
+   - name: wifi_sensor
      gates:
       - networks: pub
 
-   - name: localizer
+   - name: wifi_logger
      gates:
       - networks: sub
       - mon: sub
-      - state: sub
    
    - name: core
      gates:
@@ -120,7 +119,7 @@ components:
       - imms_data: sub
       - core_data: sub
 
-   - name: nrf_swarm
+   - name: aircomm_swarm
      gates:
       - ctrl: req
       - gps: sub
@@ -139,11 +138,11 @@ components:
 
 connections:
 
-   - [ aircomm.in,               nrf_swarm.aircomm_out]
-   - [ aircomm.out,              nrf_swarm.aircomm_in ]
-   - [ opcd.ctrl,                aircomm.opcd_ctrl    ]
-   - [ icarus.ctrl,              nrf_swarm.ctrl       ]
-   - [ gps_sensor.gps,           nrf_swarm.gps        ]
+   - [ aircomm.in,               aircomm_swarm.aircomm_out]
+   - [ aircomm.out,              aircomm_swarm.aircomm_in ]
+   - [ opcd.ctrl,                aircomm.opcd_ctrl         ]
+   - [ icarus.ctrl,              aircomm_swarm.ctrl       ]
+   - [ gps_sensor.gps,           aircomm_swarm.gps        ]
    - [ imms_sensor.data,         girlscamp.imms_data  ]
    - [ icarus.ctrl,              girlscamp.ctrl       ]
    - [ core.mon,                 girlscamp.core_data  ]
@@ -152,14 +151,14 @@ connections:
    - [ opcd.ctrl,                core.opcd_ctrl       ]
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
    - [ opcd.ctrl,                powerman.opcd_ctrl   ]
-   - [ localizer.mon,            core.mon             ]
+   - [ wifi_logger.mon,            core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
    - [ mavlink.power_mon,        powerman.mon         ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
    - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
    - [ mavlink.state,            icarus.state         ]
    - [ remote.ctrl,              core.ctrl            ]
-   - [ localizer.networks,       netscan.networks     ]
+   - [ wifi_logger.networks,       wifi_sensor.networks ]
    - [ core_logger.log,          core.log             ]
    - [ gps_sensor.gps,           core.gps             ]
    - [ gps_sensor.gps,           mavlink.gps          ]
@@ -169,7 +168,6 @@ connections:
    - [ ferry_ctrl.state,         icarus.state         ]
    - [ blackbox.state_machine,   icarus.state         ]
    - [ blackbox.core_log,        core.log             ]
-   - [ icarus.state,             localizer.state      ]
    - [ icarus.ctrl,              icarus_shell.ctrl    ]
    - [ core.ctrl,                icarus.core          ]
    - [ core.mon,                 icarus.mon           ]

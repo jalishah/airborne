@@ -20,8 +20,8 @@ int baro_altimeter_init(void)
 
 float baro_altimeter_read(void)
 {
-   return fc_read_alt();
-   //return bmp085_reader_get_alt();   
+   //return fc_read_alt();
+   return bmp085_reader_get_alt();   
 }
 
 

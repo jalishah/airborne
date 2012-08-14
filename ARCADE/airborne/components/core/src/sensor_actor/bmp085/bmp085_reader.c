@@ -74,7 +74,7 @@ int bmp085_reader_init(void)
       return status;   
    }
 
-   avg = sliding_avg_create(20, 0.0f);
+   avg = sliding_avg_create(100, 0.0f);
    simple_thread_start(&thread, thread_func,
                        THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
