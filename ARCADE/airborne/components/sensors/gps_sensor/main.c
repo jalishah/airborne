@@ -88,7 +88,12 @@ void _main(int argc, char *argv[])
    opcd_params_apply("", params);
    
    serialport_t port;
-   serial_open(&port, serial_path, tsint_get(&serial_speed), 0, 0, 0);
+   int status = serial_open(&port, serial_path, tsint_get(&serial_speed), 0, 0, 0);
+   if (status < 0)
+   {
+      syslog(LOG_CRIT, "could not open serial port");
+      exit(EXIT_FAILURE);
+   }
 
    nmeaPARSER parser;
    nmea_parser_init(&parser);
