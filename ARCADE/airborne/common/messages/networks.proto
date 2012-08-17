@@ -1,14 +1,7 @@
 
-message Network
+message Measurement
 {
-   required string essid = 1;
-   required string cell_id = 2;
-   required float rssi = 3;
-}
-
-
-message Networks
-{
-   repeated Network networks = 1;
+   required string mac = 1;
+   required float rssi = 2;
 }
 

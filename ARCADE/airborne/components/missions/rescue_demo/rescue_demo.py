@@ -1,115 +1,46 @@
 #!/usr/bin/env python
 
-import sys
-import zmq
-from imms_sensor_data_pb2 import SensorData
+
+from zmq import Context, REP, PUB
+from mission.manager import MissionManager
+from mission.localization import LocMission
+from mission.placement import PlaceMission
 from scl import generate_map
-from time import sleep, time
-from threading import Thread, Event
-from core_pb2 import MonData
-from icarus_interface import ICARUS_Client, ICARUS_MissionFactory
-import tnts
-import cenn
-import tam_ctrl
-import tobi
-import jan
+from mission_pb2 import MissionMessage
 
 
-class MonReader(Thread):
-
-   def __init__(self, socket):
-      Thread.__init__(self)
-      self.daemon = True
-      self.socket = socket
-      self.event = Event()
-
-   def run(self):
-      while True:
-         data = MonData()
-         data.ParseFromString(self.socket.recv())
-         self.data = data
-         self.event.set()
-
-
-class IMMS_Reader(Thread):
-
-   def __init__(self, socket):
-      Thread.__init__(self)
-      self.daemon = True
-      self.socket = socket
-      self.event = Event()
-
-   def run(self):
-      while True:
-         data = SensorData()
-         data.ParseFromString(self.socket.recv())
-         self.data = data
-         print data
-         self.event.set()
-
-
-
-sm = generate_map('girlscamp')
-print sm
-mon_reader = MonReader(sm['core_data'])
-imms_reader = IMMS_Reader(sm['imms_data'])
-mon_reader.start()
-imms_reader.start()
-_client = ICARUS_Client(sm['ctrl'])
-i = ICARUS_MissionFactory()
-
-
-def request(item):
-   try:
-      _client.execute(item)
-   except Exception, e:
-      print e
-
-
-class Ctrl:
-
-   def __init__(self):
-      self.pos = [(0,0), (10, 0), (10, 10), (0, 10), (0,0)]
-      self.i = -1
-
-   def decide(self, x, y, s, t):
-      self.i += 1
-      return (self.pos[self.i][0], self.pos[self.i][1], True)
-
-
-ctrl = tobi.Controller()
-
-#ctrl = Ctrl()
-ctrl = tnts.Controller(0, 0, 0)
-#ctrl = cenn.Controller()
-#ctrl = jan.Controller()
-#ctrl = tam_ctrl.Controller()
-#import new
-#ctrl = new.Controller()
-#ctrl = tobi.Controller()
-
-
-
-if 1:
-#try:
+def main(name):
+   map = generate_map(name)
+   context = Context()
+   pub_socket = context.socket(PUB)
+   pub_socket.bind('tcp://0.0.0.0:20000')
+   map['pub_server'] = pub_socket
+   rep_socket = context.socket(REP)
+   rep_socket.bind('tcp://0.0.0.0:20001')
+   map['rep_server'] = rep_socket
+   manager = MissionManager()
+   rep_socket = map['rep_server']
    while True:
-      # read inputs:
-      imms_reader.event.wait()
-      imms_reader.event.clear()
-      rssi = imms_reader.data.rssi
-      x = mon_reader.data.x
-      y = mon_reader.data.y
-      
-      # call decision function:
-      x_dest, y_dest, change = ctrl.decide(x, y, rssi, time())
-      
-      # log decision:
-      print x, y, rssi, x_dest, y_dest, change
-      #sleep(15)
-      
-      # update uav setpoint:
-      if change:
-         request(i.move_xy(x_dest, y_dest))
-#except:
-#   pass
+      req = MissionMessage()
+      req.ParseFromString(rep_socket.recv())
+      print 'got request:', req.type
+      if req.type == 6:
+         req.type = 7
+         try:
+            if req.missionType == MissionMessage.CONNECTION:
+               print 'connection'
+               manager.start_mission(PlaceMission(map, (0.0, 0.0), req))
+            elif req.missionType == MissionMessage.LOCALIZATION:
+               print 'coverage'
+               manager.start_mission(LocMission(map, req))
+            else:
+               print req.missionType
+               raise ValueError('unknown mission type')
+            req.status = MissionMessage.ACTIVE
+         except RuntimeError:
+            req.status = MissionMessage.REJECTED
+         rep_socket.send(req.SerializeToString())
+
+
+main('demo_mission')
 

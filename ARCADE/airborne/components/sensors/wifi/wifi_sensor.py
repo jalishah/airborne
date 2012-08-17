@@ -3,7 +3,7 @@
 # WiFi network scanner using wlan1
 
 
-from networks_pb2 import Network
+from networks_pb2 import Measurement
 from scl import generate_map
 import time
 from misc import daemonize
@@ -22,13 +22,13 @@ def main(name):
       line = p.stdout.readline()
       list = line.split(' ')
       if len(list) == 46:
-         net = Network()
-         net.rssi = int(list[6][0:-2])
-         net.cell_id = list[11][3:]
-         net.essid = ''
-         socket.send(net.SerializeToString())
+         measure = Measurement()
+         measure.mac = list[11][3:]
+         measure.rssi = int(list[6][0:-2])
+         print measure
+         socket.send(measure.SerializeToString())
 
 
-#main('wifi_sensor')
+main('wifi_sensor')
 daemonize('wifi_sensor', main)
 

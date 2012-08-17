@@ -3,7 +3,7 @@
 import sys
 import zmq
 from core_pb2 import MonData
-from networks_pb2 import Networks, Network
+from networks_pb2 import Measurement
 from scl import generate_map
 from time import sleep, time
 from threading import Thread, Event
@@ -44,7 +44,7 @@ class NetworksReader(Thread):
 
    def run(self):
       while True:
-         data = Network()
+         data = Measurement()
          raw_data = self.socket.recv()
          data.ParseFromString(raw_data)
          self.data = data
@@ -63,12 +63,12 @@ def main(name):
    while True:
       networks_reader.event.wait()
       networks_reader.event.clear()
-      net = networks_reader.data
+      measure = networks_reader.data
       tstamp = time()
-      netfile.write('%f; %f; %f; %f; %s; %s\n' % (tstamp, mon_reader.data.x, mon_reader.data.y, mon_reader.data.z, net.cell_id, net.rssi))
+      netfile.write('%f; %f; %f; %f; %s; %s\n' % (tstamp, mon_reader.data.x, mon_reader.data.y, mon_reader.data.z, measure.mac, measure.rssi))
       netfile.flush()
 
 
-#main('wifi_logger')
+main('wifi_logger')
 daemonize('wifi_logger', main)
 

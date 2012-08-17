@@ -18,6 +18,12 @@
 
 components:
 
+
+   - name: demo_mission
+     gates:
+      - gps: sub
+      - net: sub
+
    - name: gps_sensor
      gates:
       - opcd_ctrl: req
@@ -137,12 +143,13 @@ components:
 #
 
 connections:
-
+   - [ demo_mission.gps,         gps_sensor.gps]
+   - [ demo_mission.net,         wifi_sensor.networks]
    - [ aircomm.in,               aircomm_swarm.aircomm_out]
    - [ aircomm.out,              aircomm_swarm.aircomm_in ]
-   - [ opcd.ctrl,                aircomm.opcd_ctrl         ]
-   - [ icarus.ctrl,              aircomm_swarm.ctrl       ]
-   - [ gps_sensor.gps,           aircomm_swarm.gps        ]
+   - [ opcd.ctrl,                aircomm.opcd_ctrl    ]
+   - [ icarus.ctrl,              aircomm_swarm.ctrl   ]
+   - [ gps_sensor.gps,           aircomm_swarm.gps    ]
    - [ imms_sensor.data,         girlscamp.imms_data  ]
    - [ icarus.ctrl,              girlscamp.ctrl       ]
    - [ core.mon,                 girlscamp.core_data  ]
@@ -151,14 +158,14 @@ connections:
    - [ opcd.ctrl,                core.opcd_ctrl       ]
    - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
    - [ opcd.ctrl,                powerman.opcd_ctrl   ]
-   - [ wifi_logger.mon,            core.mon             ]
+   - [ wifi_logger.mon,          core.mon             ]
    - [ mavlink.core_mon,         core.mon             ]
    - [ mavlink.power_mon,        powerman.mon         ]
    - [ mavlink.ctrl,             opcd.ctrl            ]
    - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
    - [ mavlink.state,            icarus.state         ]
    - [ remote.ctrl,              core.ctrl            ]
-   - [ wifi_logger.networks,       wifi_sensor.networks ]
+   - [ wifi_logger.networks,     wifi_sensor.networks ]
    - [ core_logger.log,          core.log             ]
    - [ gps_sensor.gps,           core.gps             ]
    - [ gps_sensor.gps,           mavlink.gps          ]
