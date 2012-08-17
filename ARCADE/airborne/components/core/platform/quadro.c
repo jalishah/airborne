@@ -18,12 +18,14 @@
 /* interface includes: */
 #include "../hardware/interfaces/rc.h"
 #include "../hardware/interfaces/gps.h"
+#include "../hardware/interfaces/voltage.h"
 
 /* hardware includes: */
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc_driver.h"
 #include "../hardware/bus/i2c/omap_i2c_bus.h"
+#include "../hardware/drivers/scl_voltage/scl_voltage.h"
 
 /* arm length */
 #define CTRL_L (0.2025f)
@@ -92,6 +94,12 @@ platform_t *quadro_create(void)
    plat->rc = rc_interface_create(rc_dsl_driver_calibrate, rc_dsl_driver_read);
    LOG(LL_INFO, "hardware initialized");
 
+   if (scl_voltage_init() < 0)
+   {
+      LOG(LL_ERROR, "could not initialize voltage reader");
+      exit(1);
+   }
+   plat->voltage = voltage_interface_create(scl_voltage_read);
    return plat;
 }
 

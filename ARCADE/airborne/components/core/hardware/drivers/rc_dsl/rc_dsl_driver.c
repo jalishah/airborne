@@ -47,7 +47,6 @@ SIMPLE_THREAD_BEGIN(thread_func)
       int b = serial_read_char(&port);
       if (b < 0)
       {
-         printf("%d", b);
          msleep(10);
       }
       int status = rc_dsl_parse_dsl_data(rc_dsl, (uint8_t)b);
@@ -104,7 +103,6 @@ int rc_dsl_driver_init(void)
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 
 out:
-   printf("status: %d\n", status);
    return status;
 }
 
@@ -112,9 +110,9 @@ out:
 int rc_dsl_driver_calibrate(void)
 {
    int status = 0;
-   float _pitch_bias;
-   float _roll_bias;
-   float _yaw_bias;
+   float _pitch_bias = 0.0;
+   float _roll_bias = 0.0;
+   float _yaw_bias = 0.0;
    int max_count = 100;
    int valid_count = 0;
 

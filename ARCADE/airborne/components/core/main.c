@@ -104,10 +104,19 @@ void _main(int argc, char *argv[])
    cmd_init();
 
 
-   platform_start_motors();
-   while (1)
-      msleep(1);
-   
+   //platform_start_motors();
+   float forces[4] = {0, 0, 0, 0};
+   float voltage;
+while (1)
+{
+   if (platform_read_voltage(&voltage) < 0)
+   {
+      voltage = 15.0;   
+   }
+   printf("voltage: %f\n", voltage);
+   platform_write_motors(forces, voltage, NULL);
+   sleep(1);
+}
    /* prepare main loop: */
    for (int i = 0; i < NUM_AVG; i++)
    {

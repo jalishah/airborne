@@ -99,3 +99,11 @@ int platform_read_baro(float *data)
 }
 
 
+int platform_read_voltage(float *voltage)
+{
+   CHECK_DEV(platform->voltage);
+   *voltage = platform->voltage->read();
+   return 0;
+}
+
+

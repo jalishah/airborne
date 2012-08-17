@@ -12,6 +12,7 @@
 #include "../hardware/interfaces/ahrs.h"
 #include "../hardware/interfaces/rc.h"
 #include "../hardware/interfaces/motors.h"
+#include "../hardware/interfaces/voltage.h"
 
 
 typedef struct
@@ -41,16 +42,6 @@ typedef struct
 ahrs_t;
 
 
-
-typedef struct
-{
-   int (*init)(void);
-   float (*read)(void);
-   unsigned int cells;
-}
-batt_t;
-
-
 typedef struct
 {
    /* sensors: */
@@ -59,7 +50,7 @@ typedef struct
    baro_t *baro;
    ahrs_t *ahrs;
    rc_interface_t *rc;
-   batt_t *batt;
+   voltage_interface_t *voltage;
    /* actuators: */
    motors_interface_t *motors;
 }
@@ -86,6 +77,8 @@ int platform_read_gps(gps_data_t *data);
 int platform_read_ultra(float *data);
 
 int platform_read_baro(float *data);
+
+int platform_read_voltage(float *voltage);
 
 
 #endif /* __PLATFORM_H__ */

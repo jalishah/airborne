@@ -55,7 +55,6 @@ SIMPLE_THREAD_BEGIN(thread_func)
       if (voltage_raw < 17.0 && voltage_raw > 10.0)
       {
          filter_lp_run(&filter, &voltage_raw, &voltage);
-         LOG(LL_INFO, "VOLTAGE: %f", voltage);
       }
    }
    SIMPLE_THREAD_LOOP_END
@@ -65,7 +64,7 @@ SIMPLE_THREAD_END
 
 int scl_voltage_init(void)
 {
-   socket = scl_get_socket("gps");
+   socket = scl_get_socket("power");
    if (socket == NULL)
    {
       return -1;

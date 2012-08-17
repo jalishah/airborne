@@ -83,7 +83,7 @@ static void spin_down(void)
 again:
    msleep(100);
    pthread_mutex_lock(&mutex);
-   for (int i = 0; i < n_motors; i++)
+   for (unsigned int i = 0; i < n_motors; i++)
    {
       if (rpm[i] != 0)
       {
@@ -125,7 +125,7 @@ retry:
       
       /* reset valid_count, if motor rpm too low */
       pthread_mutex_lock(&mutex);
-      for (int i = 0; i < n_motors; i++)
+      for (unsigned int i = 0; i < n_motors; i++)
       {
          if (rpm[i] < 1000.0f || rpm[i] > 50000.0f)
          {

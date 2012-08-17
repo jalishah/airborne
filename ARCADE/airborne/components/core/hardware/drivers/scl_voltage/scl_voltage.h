@@ -1,16 +1,13 @@
 
 
-#ifndef __SCL_GPS_H__
-#define __SCL_GPS_H__
+#ifndef __SCL_VOLTAGE_H__
+#define __SCL_VOLTAGE_H__
 
 
-#include "../../interfaces/gps.h"
+int scl_voltage_init(void);
+
+float scl_voltage_read(void);
 
 
-int scl_gps_init(void);
-
-void scl_gps_read(gps_data_t *data);
-
-
-#endif /* __SCL_GPS_H__ */
+#endif /* __SCL_VOLTAGE_H__ */
 
