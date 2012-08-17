@@ -102,6 +102,11 @@ void _main(int argc, char *argv[])
    /* initialize command interface */
    LOG(LL_INFO, "initializing cmd interface");
    cmd_init();
+
+
+   platform_start_motors();
+   while (1)
+      msleep(1);
    
    /* prepare main loop: */
    for (int i = 0; i < NUM_AVG; i++)
@@ -127,10 +132,10 @@ void _main(int argc, char *argv[])
       /* read sensor values into model input structure: */
       model_input_t model_input;
       model_input.dt = dt;
-      platform_ahrs_read(&model_input.ahrs_data);
-      platform_gps_read(&model_input.gps_data);
-      model_input.ultra_z = platform_ultra_read();
-      model_input.baro_z = platform_baro_read();
+      platform_read_ahrs(&model_input.ahrs_data);
+      platform_read_gps(&model_input.gps_data);
+      platform_read_ultra(&model_input.ultra_z);
+      platform_read_baro(&model_input.baro_z);
 
       /* execute model step: */
       model_state_t model_state;

@@ -46,7 +46,7 @@
 #define IMTX3 (1.0f / (4.0f * F_D))
 
 
-static const float coupling_matrix[N_FORCES * N_MOTORS] =
+static float coupling_matrix[N_FORCES * N_MOTORS] =
 {          /* gas   pitch    roll     yaw */
    /* m0 */ IMTX1,  IMTX2,    0.0,  IMTX3,
    /* m1 */ IMTX1, -IMTX2,    0.0,  IMTX3,
@@ -54,15 +54,18 @@ static const float coupling_matrix[N_FORCES * N_MOTORS] =
    /* m3 */ IMTX1,    0.0,  IMTX2, -IMTX3
 };
 
-                                           /* m0    m1    m2    m3 */
-static const uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
+                                     /* m0    m1    m2    m3 */
+static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 
+
+#include <stddef.h>
+#include <unistd.h>
 
 platform_t *quadro_create(void)
 {
    /* create plain platform structure: */
    platform_t *plat = platform_create();
-#if 0
+
    /* initialize buses: */
    int status = omap_i2c_bus_init();
    if (status != 0)
@@ -70,32 +73,25 @@ platform_t *quadro_create(void)
       LOG(LL_ERROR, "could not open OMAP bus" );
       exit(1);
    }
-   /* initialize actuator subsystems: */
+ 
+   /* set-up motors driver: */
    coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
-   //holger_blmc_driver_init(omap_i2c_bus_get(), motor_addrs, coupling, N_MOTORS);
-   /*float forces[4] = {0.0, 0.0, 0.0, 0.4};
-   holger_blmc_driver_start_motors();
-   while (1)
+   holger_blmc_driver_init(omap_i2c_bus_get(), motor_addrs, coupling, N_MOTORS);
+   plat->motors = motors_interface_create(N_MOTORS, holger_blmc_driver_start_motors, holger_blmc_driver_stop_motors, holger_blmc_driver_write_forces);
+ 
+   /* set-up gps driver: */
+   scl_gps_init();
+   plat->gps = gps_interface_create(scl_gps_read);
+
+   /* set-up dsl driver: */
+   if (rc_dsl_driver_init() < 0)
    {
-      holger_blmc_driver_write_forces(forces, 16.0);
-      msleep(100);
-   }*/
-   /* initialize sensor subsystems: */
-   //plat->gps = gps_interface_create(scl_gps_init, scl_gps_read);
-#endif
-   rc_dsl_driver_init();
-   if (rc_dsl_driver_calibrate() != 0)
-   {
-      printf("could not calibrate dsl\n");   
+      LOG(LL_ERROR, "could not initialize dsl driver");
+      exit(1);
    }
-   while (1)
-   {
-      rc_data_t data;
-      rc_dsl_driver_read(&data);
-      //printf("%f %f %f %f %f\n", data.gas, data.pitch, data.roll, data.yaw, data.rssi);
-      sleep(1);
-   }
-   //plat->rc = rc_interface_create(rc_dsl_driver_init, rc_dsl_driver_read);
+   plat->rc = rc_interface_create(rc_dsl_driver_calibrate, rc_dsl_driver_read);
+   LOG(LL_INFO, "hardware initialized");
+
    return plat;
 }
 

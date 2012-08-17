@@ -29,84 +29,6 @@ static simple_thread_t thread;
 static float *rpm = NULL;
 
 
-static void spin_down(void)
-{
-   /* switch off motors command: */
-   platform_stop_motors();
-   
-   /* wait until all motors are stopped: */
-   int done = 0;
-   while (!done)
-   {
-      msleep(100);
-      platform_read_motors(rpm);
-      for (int i = 0; i < platform_motors(); i++)
-      {
-         if (rpm[i] > 10.0)
-         {
-            done = 1;
-            break;
-         }
-      }
-   }
-   LOG(LL_ERROR, "motors are stopped");
-}
-
-
-static void spin_up(CoreRep *reply)
-{
-   int retry_count = 0;
-retry:
-   LOG(LL_DEBUG, "starting motors");
-   ctrl_override(0.0f, 0.0f, 0.0f, 0.0f);
-   platform_start_motors();
-   sleep(1);
-   for (int i = 0; i < 6; i++)
-   {
-      ctrl_override(0.0f, 0.0f, 0.0f, (i & 1)? 0.3f : 0.1f);
-   }
-   int valid_count = 0;
-   int fail_timer = 1000;
-   
-   while (1)
-   {
-      msleep(10);
-      valid_count++;
-      
-      if (fail_timer-- == 0)
-      {
-          LOG(LL_ERROR, "starting failed, restarting");
-          spin_down();
-          if (++retry_count == 3)
-          {
-             reply->err_msg = "could not spin up motors";
-             LOG(LL_ERROR, reply->err_msg);
-             reply->status = STATUS__E_HARDWARE;
-             return;
-          }
-          goto retry;
-      }
-      
-      /* reset valid_count, if motor rpm too low */
-      platform_read_motors(rpm);
-      for (int i = 0; i < platform_motors(); i++)
-      {
-         if (rpm[i] < 1000.0f || rpm[i] > 50000.0f)
-         {
-            valid_count = 0;
-            break;
-         }
-      }
-      
-      if (valid_count > 200)
-      {
-         LOG(LL_ERROR, "motors are running");
-         ctrl_stop_override();
-         return;
-      }
-   }
-}
-
 
 int set_ctrl_param(CtrlParam param, float value)
 {
@@ -244,12 +166,16 @@ SIMPLE_THREAD_BEGIN(thread_func)
          {
             case REQUEST_TYPE__SPIN_UP:
                LOG(LL_DEBUG, "SPIN_UP");
-               spin_up(&reply);
+               if (platform_start_motors() < 0)
+               {
+                  reply.err_msg = "could not start motors";
+                  reply.status = STATUS__E_HARDWARE;
+               }
                break;
 
             case REQUEST_TYPE__SPIN_DOWN:
                LOG(LL_DEBUG, "SPIN_DOWN");
-               spin_down();
+               platform_stop_motors();
                break;
 
             case REQUEST_TYPE__RESET_CTRL:

@@ -31,5 +31,11 @@ void holger_blmc_init(i2c_bus_t *bus, const uint8_t *addrs, const unsigned int n
 void holger_blmc_write(uint8_t *setpoints);
 
 
+/*
+ * writes holger BLMC setpoints and reads rpm
+ */
+void holger_blmc_write_read(uint8_t *setpoints, uint8_t *rpm);
+
+
 #endif /* __HOLGER_BLMC_H__ */
 

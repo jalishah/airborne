@@ -26,13 +26,13 @@
 /*
  * creates a holger BLMC interface
  */
-void holger_blmc_driver_init(i2c_bus_t *bus, const uint8_t *addrs, const coupling_t *coupling, const unsigned int n_motors);
+void holger_blmc_driver_init(i2c_bus_t *bus, uint8_t *addrs, coupling_t *coupling, unsigned int n_motors);
 
 
 /*
  * spins up the motors
  */
-void holger_blmc_driver_start_motors(void);
+int holger_blmc_driver_start_motors(void);
 
 
 /*
@@ -41,11 +41,10 @@ void holger_blmc_driver_start_motors(void);
 void holger_blmc_driver_stop_motors(void);
 
 
-
 /*
  * writes holger BLMC setpoints
  */
-bool holger_blmc_driver_write_forces(const float forces[4], const float voltage);
+bool holger_blmc_driver_write_forces(float forces[4], float voltage, float *rpm);
 
 
 

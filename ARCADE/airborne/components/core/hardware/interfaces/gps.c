@@ -10,10 +10,9 @@
 double gps_start_coord[3];
 
 
-gps_interface_t *gps_interface_create(int (*init)(void), void (*read)(gps_data_t *data))
+gps_interface_t *gps_interface_create(void (*read)(gps_data_t *data))
 {
    gps_interface_t *interface = malloc(sizeof(gps_interface_t));
-   interface->init = init;
    interface->read = read;
    return interface;
 }
@@ -54,12 +53,4 @@ int gps_init(gps_interface_t *interface)
 out:
    return status;
 }
-
-
-void gps_read(gps_interface_t *interface, gps_data_t *data)
-{
-   interface->read(data);  
-}
-
-
 

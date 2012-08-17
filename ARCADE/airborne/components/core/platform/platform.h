@@ -11,7 +11,7 @@
 #include "../hardware/interfaces/gps.h"
 #include "../hardware/interfaces/ahrs.h"
 #include "../hardware/interfaces/rc.h"
-
+#include "../hardware/interfaces/motors.h"
 
 
 typedef struct
@@ -53,16 +53,6 @@ batt_t;
 
 typedef struct
 {
-   int (*init)(void);
-   void (*write)(float *forces);
-   void (*read)(float *rpm);
-   unsigned int count;
-}
-motors_t;
-
-
-typedef struct
-{
    /* sensors: */
    gps_interface_t *gps;
    ultra_t *ultra;
@@ -71,7 +61,7 @@ typedef struct
    rc_interface_t *rc;
    batt_t *batt;
    /* actuators: */
-   motors_t *motors;
+   motors_interface_t *motors;
 }
 platform_t;
 
@@ -81,38 +71,21 @@ void platforms_init(unsigned int select);
 
 platform_t *platform_create(void);
 
-
-/*
- * returns the number of motors
- */
 int platform_motors(void);
 
+int platform_start_motors(void);
 
-/*
- * start the motors
- */
-void platform_start_motors(void);
+int platform_stop_motors(void);
 
+int platform_write_motors(float forces[4], float voltage, float *rpm);
 
-/*
- * reads the current motor RPM
- */
-void platform_read_motors(float *rpm);
+int platform_read_ahrs(ahrs_data_t *data);
 
+int platform_read_gps(gps_data_t *data);
 
-/*
- * stops the motors
- */
-void platform_stop_motors(void);
+int platform_read_ultra(float *data);
 
-
-void platform_ahrs_read(ahrs_data_t *data);
-
-void platform_gps_read(gps_data_t *data);
-
-float platform_ultra_read(void);
-
-float platform_baro_read(void);
+int platform_read_baro(float *data);
 
 
 #endif /* __PLATFORM_H__ */

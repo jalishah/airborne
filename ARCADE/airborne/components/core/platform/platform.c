@@ -11,6 +11,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <assert.h>
+#include <errno.h>
 
 
 #define N_PLATFORMS 1
@@ -29,6 +30,14 @@ void platforms_init(unsigned int select)
 }
 
 
+
+#define CHECK_DEV(component)\
+   if (!component) \
+   { \
+      return -ENODEV; \
+   }
+
+
 platform_t *platform_create(void)
 {
    platform_t *plat = malloc(sizeof(platform_t));
@@ -39,45 +48,54 @@ platform_t *platform_create(void)
 
 int platform_motors(void)
 {
+   CHECK_DEV(platform->motors);
    return platform->motors->count;
 }
 
 
-void platform_start_motors(void)
+int platform_start_motors(void)
+{
+   CHECK_DEV(platform->motors);
+   return platform->motors->start();
+}
+
+
+int platform_stop_motors(void)
+{
+   CHECK_DEV(platform->motors);
+   platform->motors->stop();
+   return 0;
+}
+
+
+int platform_write_motors(float forces[4], float voltage, float *rpm)
+{
+   CHECK_DEV(platform->motors);
+   return platform->motors->write(forces, voltage, rpm);
+}
+
+
+int platform_read_ahrs(ahrs_data_t *data)
 {
    
 }
 
 
-void platform_read_motors(float *rpm)
-{
-
-}
-
-
-void platform_stop_motors(void)
-{
-
-}
-
-void platform_ahrs_read(ahrs_data_t *data)
+int platform_read_gps(gps_data_t *data)
 {
    
 }
 
-void platform_gps_read(gps_data_t *data)
+
+int platform_read_ultra(float *data)
 {
-   
+   return 0;   
 }
 
-float platform_ultra_read(void)
-{
-   return 0.0;   
-}
 
-float platform_baro_read(void)
+int platform_read_baro(float *data)
 {
-   return 0.0;   
+   return 0;   
 }
 
 

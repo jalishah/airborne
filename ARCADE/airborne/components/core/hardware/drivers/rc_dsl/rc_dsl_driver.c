@@ -47,6 +47,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       int b = serial_read_char(&port);
       if (b < 0)
       {
+         printf("%d", b);
          msleep(10);
       }
       int status = rc_dsl_parse_dsl_data(rc_dsl, (uint8_t)b);
@@ -96,12 +97,14 @@ int rc_dsl_driver_init(void)
    opcd_params_apply("sensors.rc_dsl.", params);
    if ((status = serial_open(&port, dev_path, 38400, 0, 0, 0)) != 0)
    {
+      LOG(LL_ERROR, "could not open dsl serial port");
       goto out;
    }
    rc_dsl = rc_dsl_create();
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 
 out:
+   printf("status: %d\n", status);
    return status;
 }
 

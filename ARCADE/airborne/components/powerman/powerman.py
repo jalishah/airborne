@@ -59,7 +59,6 @@ class PowerMan:
       self.adc_thread = start_daemon_thread(self.adc_reader)
       self.emitter_thread = start_daemon_thread(self.power_state_emitter)
       self.request_thread = start_daemon_thread(self.request_handler)
-      print 'running'
       log_info('powerman running')
 
 
@@ -92,7 +91,6 @@ class PowerMan:
             self.voltage = voltage_lambda(voltage_adc.read())  
             self.current = current_lambda(current_adc.read())
             self.current_integral += self.current / 3600
-            print self.voltage, self.low_battery_voltage
             if self.voltage < self.low_battery_voltage:
                self.critical = hysteresis.set()
             else:
