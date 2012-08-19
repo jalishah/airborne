@@ -20,10 +20,10 @@ icarus:
   depends: [core, powerman]
 
 gps_sensor:
-  binary: 'sensors/gps_sensor/gps_sensor'
+  binary: 'sensors/gps/gps_sensor'
 
 imms_sensor:
-  binary: 'sensors/imms_sensor/imms_sensor'
+  binary: 'sensors/imms/imms_sensor'
 
 wifi_sensor:
   binary: 'sensors/wifi/wifi_sensor.py'
