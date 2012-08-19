@@ -1,8 +1,7 @@
-
 PowerMan: UAV power management
 ==============================
 
-This functionality of this software includes:
+The functionality of this software includes:
 
 - parameter onfiguration via OPCD using SCL gate "opcd_ctrl"
 - acquisition of battery voltage and current
