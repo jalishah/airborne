@@ -153,6 +153,7 @@ connections:
    - [ imms_sensor.data,         girlscamp.imms_data  ]
    - [ icarus.ctrl,              girlscamp.ctrl       ]
    - [ core.mon,                 girlscamp.core_data  ]
+   - [ core.mon,                 aircomm.core_mon     ]
    - [ opcd.event,               core.opcd_event      ]
    - [ opcd.ctrl,                opcd_shell.ctrl      ]
    - [ opcd.ctrl,                core.opcd_ctrl       ]
