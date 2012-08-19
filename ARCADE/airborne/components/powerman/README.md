@@ -3,15 +3,13 @@ PowerMan: UAV power management
 
 The functionality of this software includes:
 
-- parameter onfiguration via OPCD using SCL gate "opcd_ctrl"
-- acquisition of battery voltage and current
-- estimation of remaining battery lifetime
-- warns the user using acoustic signals and console messages when the battery voltage is low
-- publishing monitoring data via SCL gate called "mon"
-- logging the same data to: "$HOME/.ARCADE/PowerMan.log"
-- providing a high current circruitry control SCL gate called "ctrl"
+- acquisition, estimation, logging and publishing of remaining battery capacity
+- acoustic and textual low battery warning user messages
+- control interface for enabling high current power circuitry
 
-PowerMan should be started at boot time using "svctrl --start powerman"
-as it monitors the battery voltage and warns the user in case of low battery voltage.
+PowerMan is typically started at boot time using "svctrl --start powerman",
+which also starts OPCD as a dependency.
+
+It monitors the battery voltage and warns the user in case of low battery voltage.
 This is useful not only when working in the field, but also in the lab
 to prevent harmful low voltage levels in the battery cells.
