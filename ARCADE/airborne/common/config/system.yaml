@@ -83,6 +83,7 @@ components:
       - gps: sub
       - ctrl: rep
       - mon: pub
+      - power: sub
       - opcd_ctrl: req
       - opcd_event: sub
 
@@ -150,6 +151,7 @@ connections:
    - [ opcd.ctrl,                aircomm.opcd_ctrl    ]
    - [ icarus.ctrl,              aircomm_swarm.ctrl   ]
    - [ gps_sensor.gps,           aircomm_swarm.gps    ]
+   - [ core.power,               powerman.mon         ]
    - [ imms_sensor.data,         girlscamp.imms_data  ]
    - [ icarus.ctrl,              girlscamp.ctrl       ]
    - [ core.mon,                 girlscamp.core_data  ]

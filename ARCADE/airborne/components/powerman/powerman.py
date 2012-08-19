@@ -30,17 +30,12 @@ from misc import daemonize, Hysteresis, user_data_dir
 from hardware import ADC, GPIO_Bank
 
 
-class ICARUS:
-
-   def __init__(self, sockets):
-      self.flight_time = 0
-
 class PowerMan:
 
    def __init__(self, name):
       # set-up logger:
       logfile = user_data_dir() + sep + 'PowerMan.log'
-      log_config(filename = logfile, level = DEBUG,
+      log_config(filename = logfile, filemode = 'w', level = DEBUG,
                  format = '%(asctime)s - %(levelname)s: %(message)s')
       # initialized and load config:
       log_info('powerman starting up')
@@ -56,7 +51,7 @@ class PowerMan:
       self.capacity = self.opcd.get('battery_capacity')
       self.low_battery_voltage = self.cells * self.low_cell_voltage
       self.critical = False
-      self.gpio_mosfet.write()
+      #self.gpio_mosfet.write()
       self.warning_started = False
 
       # start threads:
@@ -72,11 +67,15 @@ class PowerMan:
       msg = 'CRITICAL WARNING: SYSTEM BATTERY VOLTAGE IS LOW; IMMEDIATE SHUTDOWN REQUIRED OR SYSTEM WILL BE DAMAGED'
       log_warn(msg)
       system('echo "%s" | wall' % msg)
+      beeper_enabled = self.opcd.get('beeper_enabled')
       while True:
-         self.gpio_mosfet.set_gpio(5, False)
-         sleep(0.1)
-         self.gpio_mosfet.set_gpio(5, True)
-         sleep(0.1)
+         if beeper_enabled:
+            self.gpio_mosfet.set_gpio(5, False)
+            sleep(0.1)
+            self.gpio_mosfet.set_gpio(5, True)
+            sleep(0.1)
+         else:
+            sleep(1.0)
 
 
    def adc_reader(self):
@@ -92,7 +91,6 @@ class PowerMan:
             self.voltage = voltage_lambda(voltage_adc.read())  
             self.current = current_lambda(current_adc.read())
             self.current_integral += self.current / 3600
-            print self.voltage, self.low_battery_voltage
             if self.voltage < self.low_battery_voltage:
                self.critical = hysteresis.set()
             else:
@@ -107,7 +105,7 @@ class PowerMan:
    def power_state_emitter(self):
       while True:
          state = PowerState()
-         sleep(5)
+         sleep(1)
          try:
             state.voltage = self.voltage
             state.current = self.current
