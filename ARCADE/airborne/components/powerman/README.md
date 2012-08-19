@@ -14,4 +14,4 @@ The functionality of this software includes:
 PowerMan should be started at boot time using "svctrl --start powerman"
 as it monitors the battery voltage and warns the user in case of low battery voltage.
 This is useful not only when working in the field, but also in the lab
-when working with the system may drain the battery.
+to prevent harmful low voltage levels in the battery cells.
