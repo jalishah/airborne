@@ -147,7 +147,6 @@ void _main(int argc, char *argv[])
       model_state_t model_state;
       model_step(&model_state, &model_input);
 
-      EVERY_N_TIMES(100, printf("%f %f", model_state.x.pos, model_state.y.pos));
       /* execute controller step: */
       mixer_in_t mixer_in;
       ctrl_step(&mixer_in, dt, &model_state);

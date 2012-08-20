@@ -30,7 +30,6 @@ class StabMixIn:
    STAB_COUNT = 20
 
    def stabilize(self):
-      core = self.icarus.core
       mon_data = self.icarus.mon_data
       count = 0
       while True:
@@ -45,14 +44,12 @@ class StabMixIn:
          alt_err = mon_data.z_err
          yaw_err = mon_data.yaw_err
          # reset counter if one of the errors becomes too huge:
-         if abs(alt_err) > self.ALT_STAB_EPSILON:
-            print 'alt instable', alt_err, count
+         #if abs(alt_err) > self.ALT_STAB_EPSILON:
+         #   print 'alt instable', alt_err, count
+         #   count = 0
+         if hypot(x_err, y_err) > self.LAT_STAB_EPSILON:
             count = 0
-         elif hypot(x_err, y_err) > self.LAT_STAB_EPSILON:
-            print 'gps instable', x_err, y_err, count
-            count = 0
-         elif abs(yaw_err) > self.YAW_STAB_EPSILON:
-            print 'yaw instable', yaw_err, count
-            count = 0
-      print 'stabilized'
+         #if abs(yaw_err) > self.YAW_STAB_EPSILON:
+         #   print 'yaw instable', yaw_err, count
+         #   count = 0
 

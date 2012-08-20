@@ -350,6 +350,12 @@ class ICARUS_ClientError(Exception):
 
 class ICARUS_Client:
 
+   '''
+   icarus command interface client
+   sends commands to icarus but does not wait until completion
+   '''
+
+
    def __init__(self, socket):
       self._socket = socket
 
@@ -366,12 +372,12 @@ class ICARUS_Client:
 
 class StateEventMap(Thread):
 
-   """
+   '''
    reads state updates and
    publishes them using the "events" dictionary.
    clients can use emitter.event[name].clear/wait in order
    to wait for an event
-   """
+   '''
 
    def __init__(self, socket):
       Thread.__init__(self)
@@ -393,12 +399,16 @@ class StateEventMap(Thread):
          raw_data = self._socket.recv()
          su = StateUpdate()
          su.ParseFromString(raw_data)
-         print 'new state:', self.name_map[su.state]
          self.events[su.state].set()
 
 
 
 class ICARUS_SynClient:
+
+   '''
+   synchronous icarus command interface client
+   sends commands to icarus and waits until completion
+   '''
 
    def __init__(self, ctrl_socket, state_socket):
       self.interface = ICARUS_Client(ctrl_socket)
@@ -408,22 +418,18 @@ class ICARUS_SynClient:
    def execute(self, req):
       type = req.type
       if type == TAKEOFF:
-         print 'TAKEOFF'
          self.map.events[HOVERING].clear()
          self.interface.execute(req)
          self.map.events[HOVERING].wait()
       elif type == LAND:
-         print 'LAND'
          self.map.events[STANDING].clear()
          self.interface.execute(req)
          self.map.events[STANDING].wait()
       elif type == MOVE:
-         print 'MOVE'
          self.map.events[HOVERING].clear()
          self.interface.execute(req)
          self.map.events[HOVERING].wait()
       elif type == ROT:
-         print 'ROT'
          self.interface.execute(req)
       else:
          print 'unknown req type', type

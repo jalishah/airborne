@@ -123,7 +123,7 @@ class LocMission(Thread):
       self.gps_reader.start()
       self.measure_reader.start()
       self.combined_publisher.start()
-      for x, y in self._zigzag_gen(0.0, 0.0, 8.0, 20.0, 10):
+      for x, y in self._zigzag_gen(0.0, 0.0, 0.1, 0.1, 10):
          self.client.execute(self.factory.move_xy(x, y))
       self.combined_publisher.term()
       self.measure_reader.term()
