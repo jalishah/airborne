@@ -269,6 +269,5 @@ def main(name):
    await_signal()
 
 
-main('icarus')
-#daemonize('icarus', main)
+daemonize('icarus', main)
 

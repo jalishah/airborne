@@ -23,6 +23,8 @@ components:
      gates:
       - gps: sub
       - net: sub
+      - ctrl: req
+      - state: sub
 
    - name: gps_sensor
      gates:
@@ -143,6 +145,8 @@ components:
 #
 
 connections:
+   - [ demo_mission.state,       icarus.state]
+   - [ demo_mission.ctrl,        icarus.ctrl]
    - [ demo_mission.gps,         gps_sensor.gps]
    - [ demo_mission.net,         wifi_sensor.networks]
    - [ aircomm.in,               aircomm_swarm.aircomm_out]

@@ -7,6 +7,7 @@ from threading import Thread, Event
 from time import sleep
 from os import system
 from mission_pb2 import MissionMessage
+from icarus_interface import ICARUS_MissionFactory, ICARUS_SynClient
 
 
 class _GPS_Reader(Thread):
@@ -96,7 +97,6 @@ class _CombinedPublisher(Thread):
          cm.lon = gps.lon
          cm.mac = measure.mac
          cm.rssi = measure.rssi
-         print cm
          self.socket.send(cm.SerializeToString())
 
 
@@ -116,16 +116,15 @@ class LocMission(Thread):
       self.combined_publisher = _CombinedPublisher(map['pub_server'], self.gps_reader, self.measure_reader)
       self.map = map
       self.req = req
-      #self.factory = ICARUS_MissionFactory()
-      #self.ctrl = ICARUS_Client(map['ctrl'])
+      self.factory = ICARUS_MissionFactory()
+      self.client = ICARUS_SynClient(map['ctrl'], map['state'])
 
    def run(self):
       self.gps_reader.start()
       self.measure_reader.start()
       self.combined_publisher.start()
-      for x, y in self._zigzag_gen(0.0, 0.0, 10.0, 30.0, 10):
-         sleep(0.2)
-         #self.ctrl.send(self.factory.move_xy(x, y))
+      for x, y in self._zigzag_gen(0.0, 0.0, 8.0, 20.0, 10):
+         self.client.execute(self.factory.move_xy(x, y))
       self.combined_publisher.term()
       self.measure_reader.term()
       self.gps_reader.term()

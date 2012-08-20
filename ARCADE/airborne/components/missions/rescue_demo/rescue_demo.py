@@ -20,21 +20,19 @@ def main(name):
    map['rep_server'] = rep_socket
    manager = MissionManager()
    rep_socket = map['rep_server']
+   manager.start_mission(LocMission(map, None))
+   return
    while True:
       req = MissionMessage()
       req.ParseFromString(rep_socket.recv())
-      print 'got request:', req.type
       if req.type == 6:
          req.type = 7
          try:
             if req.missionType == MissionMessage.CONNECTION:
-               print 'connection'
                manager.start_mission(PlaceMission(map, (0.0, 0.0), req))
             elif req.missionType == MissionMessage.LOCALIZATION:
-               print 'coverage'
                manager.start_mission(LocMission(map, req))
             else:
-               print req.missionType
                raise ValueError('unknown mission type')
             req.status = MissionMessage.ACTIVE
          except RuntimeError:
