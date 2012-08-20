@@ -91,6 +91,8 @@ class PowerMan:
          try:
             self.voltage = voltage_lambda(voltage_adc.read())  
             self.current = current_lambda(current_adc.read())
+            if self.current < 4.0:
+               self.current = 0.5
             self.current_integral += self.current / 3600
             print self.voltage, self.low_battery_voltage
             if self.voltage < self.low_battery_voltage:
