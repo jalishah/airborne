@@ -29,7 +29,6 @@ class Config:
       self.LEAF_TYPES = [str, int, float, bool]
       self.base_path = os.getenv('MOBICOM_SUBPROJECT_PATH') + os.sep + 'common' + os.sep + 'config' + os.sep + 'sys_params_base.yaml'
       self.overlay_path = user_data_dir() + os.sep + 'sys_params_overlay.yaml'
-      print self.overlay_path
       # load base config and overlay of present:
       self.base = yaml.load(file(self.base_path))
       try:
