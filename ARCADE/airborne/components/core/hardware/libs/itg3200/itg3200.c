@@ -69,16 +69,13 @@
 
 
 
-static int read_gyro_raw(itg3200_dev_t *dev, int16_t *data)
+static THROW read_gyro_raw(itg3200_t *itg, int16_t *data)
 {
-   uint8_t raw[6];
+   THROW_START();
 
    /* read gyro registers */
-   int ret = i2c_read_block_reg(&dev->i2c_dev, ITG3200_GYRO_XOUT_H, raw, sizeof(raw));
-   if (ret < 0)
-   {
-      return ret;
-   }
+   uint8_t raw[6];
+   THROW_ON_ERR(i2c_read_block_reg(&itg->i2c_dev, ITG3200_GYRO_XOUT_H, raw, sizeof(raw)));
 
    int i;
    for(i = 0; i < 3; i++)
@@ -86,24 +83,20 @@ static int read_gyro_raw(itg3200_dev_t *dev, int16_t *data)
       data[i] = (int16_t)((raw[(i << 1)] << 8) | raw[(i << 1) + 1]);
    }
 
-   return 0;
+   THROW_END();
 }
 
 
-int itg3200_zero_gyros(itg3200_dev_t *dev)
+THROW itg3200_zero_gyros(itg3200_t *itg)
 {
+   THROW_START();
    int16_t val[3];
    float avg[3] = {0, 0, 0};
 
    int n;
    for (n = 0; n < ITG3200_GYRO_INIT_COUNT; n++) 
    {
-      int ret = read_gyro_raw(dev, val);
-      if (ret < 0)
-      {
-         return ret;
-      }
-
+      THROW_ON_ERR(read_gyro_raw(itg, val));
       int i;
       for (i = 0; i < 3; i++)
       {
@@ -118,106 +111,83 @@ int itg3200_zero_gyros(itg3200_dev_t *dev)
    int i;
    for (i = 0; i < 3; i++)
    {
-      dev->bias.vec[i] = -avg[i] / (float)ITG3200_GYRO_INIT_COUNT;
+      itg->bias.vec[i] = -avg[i] / (float)ITG3200_GYRO_INIT_COUNT;
    }
 
-   return 0;
+   THROW_END();
 }
 
 
-int itg3200_init(itg3200_dev_t *dev, i2c_bus_t *bus, itg3200_dlpf_t filter)
+THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
 {
+   THROW_START();
+
    /* copy values */
-   i2c_dev_init(&dev->i2c_dev, bus, ITG3200_ADDRESS);
-   dev->lp_filter = filter;
+   i2c_dev_init(&itg->i2c_dev, bus, ITG3200_ADDRESS);
 
    /* reset */
-   int ret = i2c_write_reg(&dev->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_H_RESET);
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_H_RESET));
 
    /* 70ms for gyro startup */
    msleep(70);
 
    /* read back it's address */
-   ret = i2c_read_reg(&dev->i2c_dev, ITG3200_WHO_AM_I);
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_reg(&itg->i2c_dev, ITG3200_WHO_AM_I));
 
    /* validate address: */
-   uint8_t addr = (uint8_t)(ret);
-   if (dev->i2c_dev.addr != addr)
-   {
-      ret = -ENODEV;
-      goto out;
-   }
+   THROW_IF((uint8_t)THROW_PREV != itg->i2c_dev.addr, -ENODEV);
 
 #ifdef ITG3200_DEBUG
    printf("ITG3200, i2c_addr: %.2X\n", addr);
 #endif
 
    /* set z-gyro as clock source */
-   ret = i2c_write_reg(&dev->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_CLK_SEL(0x3));
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_CLK_SEL(0x3)));
 
    /* set full scale mode and low-pass filter */
-   ret = i2c_write_reg(&dev->i2c_dev, ITG3200_DLPF_FS, ITG3200_DLPF_FS_FS_SEL(0x3) | ITG3200_DLPF_FS_DLPF_CFG(dev->lp_filter));
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_DLPF_FS, ITG3200_DLPF_FS_FS_SEL(0x3) | ITG3200_DLPF_FS_DLPF_CFG(filter)));
 
 #ifdef ITG3200_DEBUG
    printf("ITG3200, calibrating\n");
 #endif
-   
-   /* calibrate: */
-   ret = itg3200_zero_gyros(dev);
 
-out:
-   return ret;
+   /* calibrate: */
+   THROW_ON_ERR(itg3200_zero_gyros(itg));
+
+   THROW_END();
 }
 
 
-int itg3200_read_gyro(itg3200_dev_t *dev)
+THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
 {
-   int16_t val[3];
-   int ret = read_gyro_raw(dev, val);
-   if (ret < 0)
-   {
-      return ret;
-   }
+   THROW_START();
+   
+   /* read raw gyro data: */
+   int16_t raw[3];
+   THROW_ON_ERR(read_gyro_raw(itg, raw));
 
    /* construct, scale and bias-correct values: */
    int i;
    for (i = 0; i < 3; i++)
    {
-      dev->gyro.vec[i] = ((float)(val[i] + dev->bias.vec[i]) / 14.375) * M_PI / 180.0;
+      gyro[i] = ((float)(raw[i] + itg->bias.vec[i]) / 14.375) * M_PI / 180.0;
    }
-   return 0;
+
+   THROW_END();
 }
 
 
-int itg3200_read_temp(itg3200_dev_t *dev)
+THROW itg3200_read_temperature(float *temperature, itg3200_t *itg)
 {
-   uint8_t raw[2];
+   THROW_START();
 
    /* read temperature registers: */
-   int ret = i2c_read_block_reg(&dev->i2c_dev, ITG3200_TEMP_OUT_H, raw, sizeof(raw));
-   if (ret < 0)
-   {
-      return ret;
-   }
+   uint8_t raw[2];
+   THROW_ON_ERR(i2c_read_block_reg(&itg->i2c_dev, ITG3200_TEMP_OUT_H, raw, sizeof(raw)));
 
    /* construct and scale value: */
-   dev->temperature = (3500.0 + (float)((int16_t)(raw[0] << 8 | raw[1]) + 13200) / 2.80) / 100.0;
-   return 0;
+   *temperature = (3500.0 + (float)((int16_t)(raw[0] << 8 | raw[1]) + 13200) / 2.80) / 100.0;
+   
+   THROW_END();
 }
 

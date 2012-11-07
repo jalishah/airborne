@@ -25,22 +25,20 @@
 #include "i2c-dev.h"
 
 
-int i2c_bus_open(i2c_bus_t *bus, char *path)
+THROW i2c_bus_open(i2c_bus_t *bus, char *path)
 {
-   int handle = open(path, O_RDWR);
-   if (handle < 0)
-   {
-      return handle;   
-   }
-   bus->dev_addr = 0xFF;
-   bus->handle = handle;
-   return pthread_mutex_init(&bus->mutex, NULL);
+   THROW_START();
+   THROW_ON_ERR(open(path, O_RDWR));
+   bus->dev_addr = 0xFF; /* invalid i2c addess in 7 bit mode */
+   bus->handle = THROW_PREV;
+   THROW_ON_ERR(pthread_mutex_init(&bus->mutex, NULL));
+   THROW_END();
 }
 
 
-int i2c_bus_close(i2c_bus_t *bus)
+THROW i2c_bus_close(i2c_bus_t *bus)
 {
-   return close(bus->handle);
+   THROW_PROPAGATE(close(bus->handle));
 }
 
 
@@ -63,95 +61,65 @@ static void i2c_dev_unlock_bus(i2c_dev_t *dev)
 }
 
 
-static int set_slave_address_if_needed(i2c_dev_t *dev)
+static THROW set_slave_address_if_needed(i2c_dev_t *dev)
 {
-   int ret = 0;
-   if (1) //dev->bus->dev_addr != dev->addr)
+   THROW_START();
+   if (dev->bus->dev_addr != dev->addr)
    {
-      ret = ioctl(dev->bus->handle, I2C_SLAVE, dev->addr);
-      if (ret < 0)
-      {
-         return ret;
-      }
+      THROW_ON_ERR(ioctl(dev->bus->handle, I2C_SLAVE, dev->addr));
       dev->bus->dev_addr = dev->addr;
    }
-   //sleep_ms(1);
-   return ret;
+   THROW_END();
 }
 
 
-int i2c_write(i2c_dev_t *dev, uint8_t val)
+THROW i2c_write(i2c_dev_t *dev, uint8_t val)
 {
+   THROW_START();
    i2c_dev_lock_bus(dev);
-   int ret = set_slave_address_if_needed(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_smbus_write_byte(dev->bus->handle, val);
-out:
-   i2c_dev_unlock_bus(dev);
-   return ret;
+   THROW_ON_ERR(set_slave_address_if_needed(dev));
+   THROW_ON_ERR(i2c_smbus_write_byte(dev->bus->handle, val));
+   THROW_END_EXEC(i2c_dev_unlock_bus(dev));
 }
 
 
-int i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
+THROW i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
 {
+   THROW_START();
    i2c_dev_lock_bus(dev);
-   int ret = set_slave_address_if_needed(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_smbus_write_byte_data(dev->bus->handle, reg, val);
-out:
-   i2c_dev_unlock_bus(dev);
-   return ret;
+   THROW_ON_ERR(set_slave_address_if_needed(dev));
+   THROW_ON_ERR(i2c_smbus_write_byte_data(dev->bus->handle, reg, val));
+   THROW_END_EXEC(i2c_dev_unlock_bus(dev));
 }
 
 
-int i2c_read(i2c_dev_t *dev)
+THROW_DATA i2c_read(i2c_dev_t *dev)
 {
+   THROW_START();
    i2c_dev_lock_bus(dev);
-   int ret = set_slave_address_if_needed(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret =i2c_smbus_read_byte(dev->bus->handle);
-out:
-   i2c_dev_unlock_bus(dev);
-   return ret;
+   THROW_ON_ERR(set_slave_address_if_needed(dev));
+   THROW_ON_ERR(i2c_smbus_read_byte(dev->bus->handle));
+   THROW_END_EXEC(i2c_dev_unlock_bus(dev)); /* this also returns the data byte */
 }
 
 
-int i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
+THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
 {
+   THROW_START();
    i2c_dev_lock_bus(dev);
-   int ret = set_slave_address_if_needed(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_smbus_read_byte_data(dev->bus->handle, reg);
-out:
-   i2c_dev_unlock_bus(dev);
-   return ret;
+   THROW_ON_ERR(set_slave_address_if_needed(dev));
+   THROW_ON_ERR(i2c_smbus_read_byte_data(dev->bus->handle, reg));
+   THROW_END_EXEC(i2c_dev_unlock_bus(dev)); /* this also returns the data byte */
 }
 
 
-int i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len)
+THROW i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len)
 {
+   THROW_START();
    i2c_dev_lock_bus(dev);
-   int ret = set_slave_address_if_needed(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_smbus_read_i2c_block_data(dev->bus->handle, reg, len, buf) == len ? 0 : -EIO;
-out:
-   i2c_dev_unlock_bus(dev);
-   return ret;
+   THROW_ON_ERR(set_slave_address_if_needed(dev));
+   THROW_ON_ERR(i2c_smbus_read_i2c_block_data(dev->bus->handle, reg, len, buf) == (int)len ? 0 : -EIO)
+   THROW_END_EXEC(i2c_dev_unlock_bus(dev));
 }
 
 

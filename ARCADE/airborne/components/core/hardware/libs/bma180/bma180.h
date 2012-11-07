@@ -24,8 +24,10 @@
 
 #include <stdint.h>
 
+#include <util.h>
+
 #include "../../bus/i2c/i2c.h"
-#include "../../../geometry/math.h"
+#include "../../../geometry/orientation.h"
 
 
 /* accelerometer range: */
@@ -74,9 +76,6 @@ typedef struct
    uint8_t version;
 	
    bma180_range_t range;
-   bma180_bw_t bandwidth;
-
-   float temperature;
 	
    /* offset: */
    union
@@ -105,26 +104,16 @@ typedef struct
       int8_t data[4];
    } 
    gain;
-
-   /* raw reading: */
-   vec3_t raw;
-
-   /* calibration data: */
-   vec3_t avg;
-
-   /* processed output: */
-   vec3_t acc;
 }
-bma180_dev_t;
+bma180_t;
 
 
-int bma180_init(bma180_dev_t *dev, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth);
+THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth);
 
-int bma180_read_acc(bma180_dev_t *dev);
+THROW bma180_read_acc(float acc[3], bma180_t *bma);
 
-int bma180_read_temp(bma180_dev_t *dev);
+THROW bma180_read_temperature(float *temperature, bma180_t *bma);
 
-int bma180_avg_acc(bma180_dev_t *dev);
 
 #endif /* __BMA180_H__ */
 

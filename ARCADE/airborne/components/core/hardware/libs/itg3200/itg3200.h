@@ -21,9 +21,11 @@
 
 
 #include <stdint.h>
- 
+
+#include <util.h>
+
 #include "../../bus/i2c/i2c.h"
-#include "../../../geometry/math.h"
+#include "../../../geometry/orientation.h"
 
 
 /* low-pass filter options */
@@ -50,21 +52,17 @@ typedef struct
 
    /* calibration settings: */
    vec3_t bias;
-
-   /* measurements: */
-   float temperature;
-   vec3_t gyro; 
 }
-itg3200_dev_t;
+itg3200_t;
 
 
-int itg3200_init(itg3200_dev_t *dev, i2c_bus_t *bus, itg3200_dlpf_t filter);
+THROW itg3200_init(itg3200_t *dev, i2c_bus_t *bus, itg3200_dlpf_t filter);
 
-int itg3200_zero_gyros(itg3200_dev_t *dev);
+THROW itg3200_zero_gyros(itg3200_t *dev);
 
-int itg3200_read_gyro(itg3200_dev_t *dev);
+THROW itg3200_read_gyro(float gyro[3], itg3200_t *dev);
 
-int itg3200_read_temp(itg3200_dev_t *dev);
+THROW itg3200_read_temperature(float *temperature, itg3200_t *dev);
 
 
 #endif /* __ITG3200_H__ */

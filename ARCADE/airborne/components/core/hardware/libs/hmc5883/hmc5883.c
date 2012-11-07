@@ -16,6 +16,7 @@
 */
 
 
+#include <errno.h>
 #include <string.h>
 
 #include "hmc5883.h"
@@ -79,132 +80,28 @@ static float sens_conv_tab[8] =
 
 
 
-static int hmc5883_std_config(hmc5883_dev_t *dev)
+THROW hmc5883_init(hmc5883_t *hmc, i2c_bus_t *bus)
 {
-   int ret;
-   ret = i2c_write_reg(&dev->i2c_dev, HMC5883_CFG_A, HMC5883_A_ODR_50);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_write_reg(&dev->i2c_dev, HMC5883_CFG_B, HMC5883_B_GAIN_1);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_write_reg(&dev->i2c_dev, HMC5883_CFG_MR, HMC5883_MODE_CONTINUOUS);
-out:
-   return ret;
-}
-
-
-static int hmc5883_cal(hmc5883_dev_t *dev)
-{
-   int ret = hmc5883_std_config(dev);
-   
-   float raw_min[3];
-   float raw_max[3];
-   int i;
-   for (i = 0; i < 1000; i++)
-   {
-      ret = hmc5883_read(dev);
-      if (ret < 0)
-      {
-         return ret;
-      }
-      int j;
-      for (j = 0; j < 3; j++)
-      {
-         raw_min[j] = raw_min[j] < dev->raw.vec[j] ? raw_min[j] : dev->raw.vec[j];
-         raw_max[j] = raw_max[j] > dev->raw.vec[j] ? raw_max[j] : dev->raw.vec[j];
-         dev->scale.vec[j] = 2.0 / (raw_max[i] - raw_min[i]);
-         dev->shift.vec[j] = 1.0 - raw_max[i] * dev->scale.vec[i];
-      }
-   }
-   return 0;
-}
-
-
-int hmc5883_init(hmc5883_dev_t *dev, i2c_bus_t *bus)
-{
-   int ret = 0;
-   
-   int i;
-   for (i = 0; i < 3; i++)
-   {
-      dev->scale.vec[i] = 1.0;
-      dev->shift.vec[i] = 0.0;
-   }
-   
-   i2c_dev_init(&dev->i2c_dev, bus, HMC5883_ADDRESS);
-
+   THROW_START();
+   i2c_dev_init(&hmc->i2c_dev, bus, HMC5883_ADDRESS);
    uint8_t id[3];
-   ret = i2c_read_block_reg(&dev->i2c_dev, HMC5883_ID_A, id, sizeof(id));
-   if (ret < 0)
-   {
-      goto out;
-   }
-   if (strncmp("H43", (char *)id, 3) != 0)
-   {
-      ret = -1;
-      goto out;
-   }
-
-   ret = hmc5883_std_config(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   //ret = hmc5883_cal(dev);
-
-out:
-   return ret;
+   THROW_ON_ERR(i2c_read_block_reg(&hmc->i2c_dev, HMC5883_ID_A, id, sizeof(id)));
+   THROW_IF(strncmp("H43", (char *)id, 3) != 0, -ENODEV);
+   THROW_ON_ERR(i2c_write_reg(&hmc->i2c_dev, HMC5883_CFG_A, HMC5883_A_ODR_50));
+   THROW_ON_ERR(i2c_write_reg(&hmc->i2c_dev, HMC5883_CFG_B, HMC5883_B_GAIN_1));
+   THROW_ON_ERR(i2c_write_reg(&hmc->i2c_dev, HMC5883_CFG_MR, HMC5883_MODE_CONTINUOUS));
+   THROW_END();
 }
 
 
-int hmc5883_read(hmc5883_dev_t *dev)
+THROW hmc5883_read(float mag[3], hmc5883_t *hmc)
 {
+   THROW_START();
    uint8_t data[6];
-   int ret = i2c_read_block_reg(&dev->i2c_dev, HMC5883_MAGX_H, data, sizeof(data));
-   dev->raw.x = (int16_t)((data[0] << 8) | data[1]);
-   dev->raw.z = (int16_t)((data[2] << 8) | data[3]);
-   dev->raw.y = (int16_t)((data[4] << 8) | data[5]);
-
-   dev->shift.vec[0] = -61.5;
-   dev->shift.vec[1] = 66.0;
-   dev->shift.vec[2] = 381.5;
-
-   int i;
-   for (i = 0; i < 3; i++)
-   {
-      dev->mag.vec[i] = dev->scale.vec[i] * dev->raw.vec[i] + dev->shift.vec[i];
-   }
-}
-
-
-int hmc5883_avg_mag(hmc5883_dev_t *dev)
-{
-   int i, j, ret = 0;
-   memset(dev->avg.vec, 0, sizeof(dev->avg.vec));
-
-   for (i = 0; i < 200; i++)
-   {
-      ret = hmc5883_read(dev);
-      if(ret < 0)
-      {
-         goto out;
-      }
-      for (j = 0; j < 3; j++)
-      {
-         dev->avg.vec[j] += dev->raw.vec[j];
-      }
-   }
-   for (i = 0; i < 3; i++)
-   {
-      dev->avg.vec[i] /= 200.0;
-   }
-
-out:
-   return ret;
+   THROW_ON_ERR(i2c_read_block_reg(&hmc->i2c_dev, HMC5883_MAGX_H, data, sizeof(data)));
+   mag[0] = (int16_t)((data[0] << 8) | data[1]);
+   mag[2] = (int16_t)((data[2] << 8) | data[3]);
+   mag[1]= (int16_t)((data[4] << 8) | data[5]);
+   THROW_END();
 }
 

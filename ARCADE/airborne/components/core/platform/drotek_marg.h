@@ -1,6 +1,6 @@
 
 /*
-   HMC5883 I2C Linux Userspace Driver
+   DROTEK MARG Linux Userspace Driver
 
    Copyright (C) 2012 Tobias Simon
 
@@ -16,30 +16,40 @@
 */
 
 
-#ifndef __HMC5883_H__
-#define __HMC5883_H__
+#ifndef __DROTEK_MARG_H__
+#define __DROTEK_MARG_H__
 
-
-#include <stdint.h>
 
 #include <util.h>
 
-#include "../../bus/i2c/i2c.h"
-#include "../../../geometry/orientation.h"
+
+#include "../hardware/libs/itg3200/itg3200.h"
+#include "../hardware/libs/bma180/bma180.h"
+#include "../hardware/libs/hmc5883/hmc5883.h"
 
 
 typedef struct
 {
-   /* i2c device: */
-   i2c_dev_t i2c_dev;
+   vec3_t gyro;
+   vec3_t acc;
+   vec3_t mag;
 }
-hmc5883_t;
+marg_data_t;
 
 
-THROW hmc5883_init(hmc5883_t *dev, i2c_bus_t *bus);
+typedef struct
+{
+   itg3200_t itg;
+   bma180_t bma;
+   hmc5883_t hmc;
+}
+drotek_marg_t;
 
-THROW hmc5883_read(float mag[3], hmc5883_t *dev);
+
+THROW drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus);
+
+THROW drotek_marg_read(marg_data_t *data, drotek_marg_t *marg);
 
 
-#endif /* __HMC5883_H__ */
+#endif /* __DROTEK_MARG_H__ */
 

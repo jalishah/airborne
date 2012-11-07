@@ -20,8 +20,9 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <util.h>
+
 #include "ms5611.h"
-#include "util.h"
 
 
 #define MS5611_ADDRESS      0x77
@@ -46,54 +47,44 @@ static const int conv_time_ms[5] =
 /* reads prom register into val and returns 0
  * if the read failed, val remains untouched
  * and a negative error code is returned */
-static int ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
+static THROW ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
 {
+   THROW_START();
    uint8_t raw[2];
-   int ret = i2c_read_block_reg(&dev->i2c_dev, MS5611_PROM_READ(reg), raw, sizeof(raw));
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_block_reg(&dev->i2c_dev, MS5611_PROM_READ(reg), raw, sizeof(raw)));
    dev->prom[reg] = raw[1] | (raw[0] << 8);
-
-out:
-   return ret;
+   THROW_END();
 }
 
 
-static int ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
+static THROW ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
 {
+   THROW_START();
    uint8_t raw[3]; /* 24-bit adc data */
-   int ret = i2c_read_block_reg(&dev->i2c_dev, MS5611_ADC, raw, sizeof(raw));
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_block_reg(&dev->i2c_dev, MS5611_ADC, raw, sizeof(raw)));
    *val = raw[2] | (raw[1] << 8) | (raw[0] << 16);
-
-out:
-   return ret;
+   THROW_END();
 }
 
 
 /* starts temperature conversion using configurable oversampling rate */
-static int ms5611_start_temp_conv(ms5611_dev_t *dev)
+static THROW ms5611_start_temp_conv(ms5611_dev_t *dev)
 {
-   return i2c_write(&dev->i2c_dev, MS5611_CONV_D2(dev->t_osr));
+   THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_CONV_D2(dev->t_osr)));
 }
 
 
 /* starts pressure conversion using configurable oversampling rate */
-static int ms5611_start_pressure_conv(ms5611_dev_t *dev)
+static THROW ms5611_start_pressure_conv(ms5611_dev_t *dev)
 {
-   return i2c_write(&dev->i2c_dev, MS5611_CONV_D1(dev->p_osr));
+   THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_CONV_D1(dev->p_osr)));
 }
 
 
 /* resets the device */
-static int ms5611_reset(ms5611_dev_t *dev)
+static THROW ms5611_reset(ms5611_dev_t *dev)
 {
-   return i2c_write(&dev->i2c_dev, MS5611_RESET);
+   THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_RESET));
 }
 
 
@@ -133,8 +124,9 @@ static uint16_t ms5611_crc4(uint16_t *n_prom)
 }
 
 
-int ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr)
+THROW ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr)
 {
+   THROW_START();
    /* copy values */
    i2c_dev_init(&dev->i2c_dev, bus, MS5611_ADDRESS);
 
@@ -143,34 +135,21 @@ int ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_os
    dev->t_osr = t_osr;
 
    /* reset device: */
-   int ret = ms5611_reset(dev);
-   if (ret < 0)
-   {
-      goto out;   
-   }
+   THROW_ON_ERR(ms5611_reset(dev));
    msleep(3); /* at least 2.8ms */
    
    /* read prom including CRC */
    int i;
    for (i = 0; i < 8; i++)
    {
-      ret = ms5611_read_prom(dev, i);
-      if (ret < 0) 
-      {
-         goto out;     
-      }
+      THROW_ON_ERR(ms5611_read_prom(dev, i));
    }
    
    /* validate CRC: */
    uint16_t crc = ms5611_crc4(dev->prom);
    uint16_t crcProm = dev->prom[7] & 0x0F;
-   if (crc != crcProm)
-   {
-      ret = -ENODEV;   
-   }
-
-out:
-   return ret;
+   THROW_IF(crc != crcProm, -ENODEV);
+   THROW_END();
 }
 
 
@@ -221,37 +200,21 @@ static void ms5611_compensate(ms5611_dev_t *dev)
 }
 
 
-int ms5611_measure(ms5611_dev_t *dev)
+THROW ms5611_measure(ms5611_dev_t *dev)
 {
-   /* read pressure: */
-   int ret = ms5611_start_pressure_conv(dev);
-   if (ret < 0)
-   {
-      goto out;   
-   }
-   sleep_ms(conv_time_ms[dev->p_osr]);
-   ret = ms5611_read_adc(&dev->raw_p, dev);
-   if (ret < 0)
-   {
-      goto out;   
-   }
-
+   THROW_START();
    /* read temperature: */
-   ret = ms5611_start_temp_conv(dev);
-   if (ret < 0)
-   {
-      goto out;   
-   }
-   sleep_ms(conv_time_ms[dev->t_osr]);
-   ret = ms5611_read_adc(&dev->raw_t, dev);
-   if (ret < 0)
-   {
-      goto out;   
-   }
+   THROW_ON_ERR(ms5611_start_temp_conv(dev));
+   msleep(conv_time_ms[dev->t_osr]);
+   THROW_ON_ERR(ms5611_read_adc(&dev->raw_t, dev));
    ms5611_compensate(dev);
 
-out:
-   return ret;
+   /* read pressure: */
+   THROW_ON_ERR(ms5611_start_pressure_conv(dev));
+   msleep(conv_time_ms[dev->p_osr]);
+   THROW_ON_ERR(ms5611_read_adc(&dev->raw_p, dev));
+
+   THROW_END();
 }
 
 

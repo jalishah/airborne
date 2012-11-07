@@ -61,8 +61,11 @@ static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 static i2c_bus_t i2c_3;
 
 
+
+
 #include <stddef.h>
 #include <unistd.h>
+
 
 platform_t *quadro_create(void)
 {
@@ -76,7 +79,7 @@ platform_t *quadro_create(void)
       LOG(LL_ERROR, "could not open OMAP bus" );
       exit(1);
    }
- 
+
    /* set-up motors driver: */
    coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
    holger_blmc_driver_init(&i2c_3, motor_addrs, coupling, N_MOTORS);

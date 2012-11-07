@@ -1,8 +1,9 @@
 
 
 #include <string.h>
+#include <math.h>
 
-#include "math.h"
+#include "orientation.h"
 
 
 void quat_rot_vec(vec3_t *v_out, const vec3_t *v_in, const quat_t *quat)
@@ -45,4 +46,23 @@ void quat_inv(quat_t *q_out, const quat_t *q_in)
       q_out->vec[i] = q_in->vec[i] * table[i];
    }
 }
+
+
+void quat_to_euler(euler_t *euler, const quat_t *quat)
+{
+   float s = quat->q0;
+   float x = quat->q1;
+   float y = quat->q2;
+   float z = quat->q3;
+
+   float sqw = s * s;
+   float sqx = x * x;
+   float sqy = y * y;
+   float sqz = z * z;
+
+   euler->pitch = atan2f(2.f * (x * y + z * s), sqx - sqy - sqz + sqw);
+   euler->roll = asinf(-2.f * (x * z - y * s));
+   euler->yaw = atan2f(2.f * (y * z + x * s), -sqx - sqy + sqz + sqw);
+}
+
 

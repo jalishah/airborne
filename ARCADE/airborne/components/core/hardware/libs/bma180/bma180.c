@@ -16,11 +16,10 @@
 */
 
 
+     
 #include <stdio.h>
-#include <string.h>
 
 #include "bma180.h"
-#include "util.h"
 
 
 #undef BMA180_DEBUG
@@ -29,7 +28,9 @@
 #define BMA180_ADDRESS 0x40
 
 #define BMA180_CHIP_ID					0x00
+#define BMA180_CHIP_ID_VAL          0x03
 #define BMA180_VERSION					0x01
+#define BMA180_VERSION_VAL				0x14
 #define BMA180_ACC_X_LSB				0x02
 #define BMA180_ACC_X_MSB				0x03
 #define BMA180_ACC_Y_LSB				0x04
@@ -122,224 +123,114 @@ static const float ACC_RANGE_TABLE[] =
 };
 
 
-static int bma180_read_calibration(bma180_dev_t *dev)
+static THROW bma180_read_calibration(bma180_t *bma)
 {
-   int ret;
+   THROW_START();
    uint8_t off[6];
    uint8_t gain[4];
 
    /* read offset and gain values */
-   ret = i2c_read_block_reg(&dev->i2c_dev, BMA180_OFFSET_LSB1, off, sizeof(off));
-   if (ret < 0)
-   {
-      return ret;
-   }
-
-   ret = i2c_read_block_reg(&dev->i2c_dev, BMA180_GAIN_T, gain, sizeof(gain));
-   if (ret < 0)
-   {
-      return ret;
-   }
+   THROW_ON_ERR(i2c_read_block_reg(&bma->i2c_dev, BMA180_OFFSET_LSB1, off, sizeof(off)));
+   THROW_ON_ERR(i2c_read_block_reg(&bma->i2c_dev, BMA180_GAIN_T, gain, sizeof(gain)));
 
    /*
     * put offset values together:
     * offsets and gains are most negative at 0x0 and most positive 
     * at 2^data_bits, hence the subtraction.
     */
-   dev->offset.t = (int8_t)(off[2] >> 1) - (1 << 6);
-   dev->offset.x = (int16_t)((off[3] >> 4) | (off[0] >> 4)) - (1 << 11);
-   dev->offset.y = (int16_t)((off[4] >> 4) | (off[1] & 0x0F)) - (1 << 11);
-   dev->offset.z = (int16_t)((off[5] >> 4) | (off[1] >> 4)) - (1 << 11);
+   bma->offset.t = (int8_t)(off[2] >> 1) - (1 << 6);
+   bma->offset.x = (int16_t)((off[3] >> 4) | (off[0] >> 4)) - (1 << 11);
+   bma->offset.y = (int16_t)((off[4] >> 4) | (off[1] & 0x0F)) - (1 << 11);
+   bma->offset.z = (int16_t)((off[5] >> 4) | (off[1] >> 4)) - (1 << 11);
 
    /* put gain values together: */
-   dev->gain.t = (gain[0] >> 1) - (1 << 4);
+   bma->gain.t = (gain[0] >> 1) - (1 << 4);
    int i;
    for (i = 1; i < 4; i++)
    {
-      dev->gain.data[i] = (int8_t)(gain[i] >> 1) - (1 << 6);
+      bma->gain.data[i] = (int8_t)(gain[i] >> 1) - (1 << 6);
    }
 
-   return 0;
+   THROW_END();
 }
 
 
-int bma180_init(bma180_dev_t *dev, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth)
+THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth)
 {
-   int ret = 0;
-   i2c_dev_init(&dev->i2c_dev, bus, BMA180_ADDRESS);
+   THROW_START();
+   i2c_dev_init(&bma->i2c_dev, bus, BMA180_ADDRESS);
 
-   /* copy values */
-   dev->range = range;
-   dev->bandwidth = bandwidth;
+   /* copy value */
+   bma->range = range;
 
    /* reset unit */
-   ret = i2c_write_reg(&dev->i2c_dev, BMA180_RESET, BMA180_RESET_SOFT_RESET);
-   if (ret < 0)
-   {
-      goto out;
-   }
-
+   THROW_ON_ERR(i2c_write_reg(&bma->i2c_dev, BMA180_RESET, BMA180_RESET_SOFT_RESET));
    msleep(10);
 
    /* read chip id: */
-   ret = i2c_read_reg(&dev->i2c_dev, BMA180_CHIP_ID);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   if (ret != 0x03)
-   {
-      ret = -1;
-      goto out;
-   }
-   dev->chip_id = ret;
+   THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_CHIP_ID));
+   THROW_IF(THROW_PREV != BMA180_CHIP_ID_VAL, -ENODEV);
+   bma->chip_id = THROW_PREV;
 
    /* read version: */
-   ret = i2c_read_reg(&dev->i2c_dev, BMA180_VERSION);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   if (ret != 0x14)
-   {
-      ret = -1;
-      goto out;
-   }
-   dev->version = ret;
+   THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_VERSION));
+   THROW_IF(THROW_PREV != BMA180_VERSION_VAL, -ENODEV);
+   bma->version = THROW_PREV;
 
 #ifdef BMA180_DEBUG
    printf("BMA180, chip_id: 0x%.2x, version: 0x%.2x\n", dev->chip_id, dev->version);
 #endif
 
-   ret = bma180_read_calibration(dev);
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(bma180_read_calibration(bma));
 
    /* enable writing: */
-   ret = i2c_write_reg(&dev->i2c_dev, BMA180_CTRL_REG0, BMA180_CTRL_REG0_EE_W);
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_write_reg(&bma->i2c_dev, BMA180_CTRL_REG0, BMA180_CTRL_REG0_EE_W));
 
    /* set bandwidth: */
-   ret = i2c_read_reg(&dev->i2c_dev, BMA180_BW_TCS);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_write_reg(&dev->i2c_dev, BMA180_BW_TCS, 
-                       ((uint8_t)(ret) & 0x0F) | BMA180_BW_TCS_BW(dev->bandwidth));	
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_BW_TCS));
+   THROW_ON_ERR(i2c_write_reg(&bma->i2c_dev, BMA180_BW_TCS, ((uint8_t)(THROW_PREV) & 0x0F) | BMA180_BW_TCS_BW(bandwidth)));
 
    /* set acceleration range */
-   ret = i2c_read_reg(&dev->i2c_dev, BMA180_OFFSET_LSB1);
-   if (ret < 0)
-   {
-      goto out;
-   }
-   ret = i2c_write_reg(&dev->i2c_dev, BMA180_OFFSET_LSB1,
-                       ((uint8_t)(ret) & 0xF1) | BMA180_OFFSET_LSB1_RANGE(dev->range));
-   if (ret < 0)
-   {
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_OFFSET_LSB1));
+   THROW_ON_ERR(i2c_write_reg(&bma->i2c_dev, BMA180_OFFSET_LSB1, ((uint8_t)(THROW_PREV) & 0xF1) | BMA180_OFFSET_LSB1_RANGE(bma->range)));
 
    /* enable use of offsets */
    int i;
    for (i = 0; i < 3; i++)
    {
-      ret = i2c_write_reg(&dev->i2c_dev, BMA180_CTRL_REG1,
-                          BMA180_CTRL_REG1_EN_OFFSET_Z << i);
-      if (ret < 0)
-      {
-         goto out;
-      }
+      THROW_ON_ERR(i2c_write_reg(&bma->i2c_dev, BMA180_CTRL_REG1, BMA180_CTRL_REG1_EN_OFFSET_Z << i));
    }
-
-out:
-   return ret;
+   THROW_END();
 }
 
 
-int bma180_read_temp(bma180_dev_t *dev)
+THROW bma180_read_temp(float *temperature, bma180_t *bma)
 {
-   int ret = i2c_read_reg(&dev->i2c_dev, BMA180_TEMP);
-   if (ret < 0)
-   {
-      return ret;
-   }
-   dev->temperature = (float)((int8_t)(ret)) / 2.0 + 24.0;
-   return 0;
+   THROW_START();
+   THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_TEMP));
+   *temperature = (float)((int8_t)(THROW_PREV)) / 2.0 + 24.0;
+   THROW_END();
 }
 
 
-int bma180_read_acc(bma180_dev_t *dev)
+int bma180_read_acc(float acc[3], bma180_t *bma)
 {
-   float range = ACC_RANGE_TABLE[dev->range];
+   THROW_START();
    /* read acc values */
    uint8_t acc_data[6];
-   int ret = i2c_read_block_reg(&dev->i2c_dev, BMA180_ACC_X_LSB, acc_data, sizeof(acc_data));
-   if (ret < 0)
-   {
-      memset(&dev->raw.vec, 0, sizeof(dev->raw.vec));
-      goto out;
-   }
+   THROW_ON_ERR(i2c_read_block_reg(&bma->i2c_dev, BMA180_ACC_X_LSB, acc_data, sizeof(acc_data)));
 
    int i;
+   float range = ACC_RANGE_TABLE[bma->range];
    for (i = 0; i < 3; i++)
    {
       /* put them together */
       int16_t raw = (int16_t)((acc_data[(i << 1) + 1] << 8) | (acc_data[(i << 1)] & 0xFC)) / 4;
       /* and scale according to range setting */
-      float fraw = (float)(raw) * range / (float)(1 << 13);
-      if (fraw > range)
-      {
-         fraw = range;
-      }
-      else if (fraw < -range)
-      {
-         fraw = -range;
-      }
-      fraw *= 9.81;
-      dev->raw.vec[i] = fraw;
-      dev->acc.vec[i] = dev->raw.vec[i] - dev->avg.vec[i];
+      float g = (float)(raw) * range / (float)(1 << 13);
+      acc[i] = symmetric_limit(g, range) * 9.81;
    }
 
-out:
-   return ret;
-}
-
-
-int bma180_avg_acc(bma180_dev_t *dev)
-{
-   int i, j, ret = 0;
-
-   memset(&dev->avg, 0, sizeof(&dev->avg));
-
-   for (i = 0; i < 200; i++)
-   {
-      ret = bma180_read_acc(dev);
-      if(ret < 0)
-      {
-         goto out;
-      }
-      for (j = 0; j < 3; j++)
-      {
-         dev->avg.vec[j] += dev->raw.vec[j];
-      }
-   }
-   for (i = 0; i < 3; i++)
-   {
-      dev->avg.vec[i] /= 200.0;
-   }
-
-out:
-   return ret;
+   THROW_END();
 }
 

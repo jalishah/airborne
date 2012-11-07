@@ -54,7 +54,7 @@ void periodic_thread_init_period(periodic_thread_t *thread)
    ASSERT_NOT_NULL(thread);
    ASSERT_TRUE(thread->running);
 
-   (void)clock_gettime(CLOCK_REALTIME, &thread->periodic_data.next);
+   (void)clock_gettime(CLOCK_MONOTONIC, &thread->periodic_data.next);
 }
 
 
@@ -65,10 +65,10 @@ int periodic_thread_wait_for_next_period(periodic_thread_t *thread)
 
    int ret;
    struct timespec ts_result;
-   (void)clock_gettime(CLOCK_REALTIME, &thread->periodic_data.now);
+   (void)clock_gettime(CLOCK_MONOTONIC, &thread->periodic_data.now);
    TIMESPEC_ADD(ts_result, thread->periodic_data.next, thread->periodic_data.period);
    thread->periodic_data.next = ts_result;
-   (void)clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &thread->periodic_data.next, NULL);
+   (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &thread->periodic_data.next, NULL);
    if (timespec_cmp(&thread->periodic_data.now, &thread->periodic_data.next) < 0)
    {
       ret = 0;

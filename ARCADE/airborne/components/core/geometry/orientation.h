@@ -1,6 +1,6 @@
 
 /*
-   math utility interface
+   orientation interface
 
    Copyright (C) 2012 Tobias Simon
 
@@ -16,8 +16,8 @@
 */
 
 
-#ifndef __MATH_UTIL_H__
-#define __MATH_UTIL_H__
+#ifndef __ORIENTATION_H__
+#define __ORIENTATION_H__
 
 
 /* generic 3d vector */
@@ -76,5 +76,9 @@ void quat_copy(quat_t *q_out, const quat_t *q_in);
 void quat_inv(quat_t *q_out, const quat_t *q_in);
 
 
-#endif /* __MATH_UTIL_H__ */
+/* convert quaternion to euler angles: */
+void quat_to_euler(euler_t *euler, const quat_t *quat);
+
+
+#endif /* __ORIENTATION_H__ */
 
