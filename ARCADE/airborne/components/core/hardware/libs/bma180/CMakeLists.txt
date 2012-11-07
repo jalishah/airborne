@@ -1,0 +1,1 @@
+ADD_LIBRARY(bma180 STATIC bma180.c)

@@ -1,1 +1,0 @@
-ADD_LIBRARY(bmp085 STATIC bmp085.c)

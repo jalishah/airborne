@@ -107,16 +107,15 @@ void _main(int argc, char *argv[])
    //platform_start_motors();
    float forces[4] = {0, 0, 0, 0};
    float voltage;
-while (1)
-{
-   if (platform_read_voltage(&voltage) < 0)
+   while (1)
    {
-      voltage = 15.0;   
+      if (platform_read_voltage(&voltage) < 0)
+      {
+         voltage = -1.0;   
+      }
+      printf("voltage: %f\n", voltage);
+      sleep(1);
    }
-   printf("voltage: %f\n", voltage);
-   platform_write_motors(forces, voltage, NULL);
-   sleep(1);
-}
    /* prepare main loop: */
    for (int i = 0; i < NUM_AVG; i++)
    {
@@ -141,10 +140,10 @@ while (1)
       /* read sensor values into model input structure: */
       model_input_t model_input;
       model_input.dt = dt;
-      platform_read_ahrs(&model_input.ahrs_data);
-      platform_read_gps(&model_input.gps_data);
-      platform_read_ultra(&model_input.ultra_z);
-      platform_read_baro(&model_input.baro_z);
+      //platform_read_ahrs(&model_input.ahrs_data);
+      //platform_read_gps(&model_input.gps_data);
+      //platform_read_ultra(&model_input.ultra_z);
+      //platform_read_baro(&model_input.baro_z);
 
       /* execute model step: */
       model_state_t model_state;

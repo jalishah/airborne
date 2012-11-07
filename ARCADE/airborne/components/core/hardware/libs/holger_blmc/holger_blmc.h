@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-#include "../../bus/i2c/i2c_generic.h"
+#include "../../bus/i2c/i2c.h"
 
 
 #define HOLGER_I2C_MIN  20

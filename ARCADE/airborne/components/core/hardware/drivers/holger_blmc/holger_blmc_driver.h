@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 
-#include "../../bus/i2c/i2c_generic.h"
+#include "../../bus/i2c/i2c.h"
 #include "../../../platform/coupling.h"
 
 

@@ -14,7 +14,7 @@
 
 
 static i2c_dev_t *devices = NULL;
-static unsigned int n_motors = 0;
+static int n_motors = 0;
 
 
 void holger_blmc_init(i2c_bus_t *bus, const uint8_t *addrs, const unsigned int _n_motors)
@@ -26,7 +26,7 @@ void holger_blmc_init(i2c_bus_t *bus, const uint8_t *addrs, const unsigned int _
    /* initialize devices: */
    FOR_N(i, n_motors)
    {
-      i2c_dev_init(&devices[i], bus, "blmc", addrs[i]);
+      i2c_dev_init(&devices[i], bus, addrs[i]);
    }
 }
 
@@ -36,7 +36,7 @@ void holger_blmc_write(uint8_t *setpoints)
    ASSERT_NOT_NULL(devices);
    FOR_N(i, n_motors)
    {
-      i2c_dev_write(&devices[i], 0, setpoints[i]);
+      i2c_write(&devices[i], setpoints[i]);
    }
 }
 
@@ -46,8 +46,8 @@ void holger_blmc_write_read(uint8_t *setpoints, uint8_t *rpm)
    ASSERT_NOT_NULL(devices);
    FOR_N(i, n_motors)
    {
-      i2c_dev_write(&devices[i], 0, setpoints[i]);
-      rpm[i] = i2c_dev_read(&devices[i], 0);
+      i2c_write(&devices[i], setpoints[i]);
+      rpm[i] = i2c_read(&devices[i]);
    }
 }
 

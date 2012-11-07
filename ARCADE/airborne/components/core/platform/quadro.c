@@ -24,7 +24,7 @@
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc_driver.h"
-#include "../hardware/bus/i2c/omap_i2c_bus.h"
+#include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
 
 /* arm length */
@@ -58,6 +58,7 @@ static float coupling_matrix[N_FORCES * N_MOTORS] =
 
                                      /* m0    m1    m2    m3 */
 static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
+static i2c_bus_t i2c_3;
 
 
 #include <stddef.h>
@@ -69,8 +70,8 @@ platform_t *quadro_create(void)
    platform_t *plat = platform_create();
 
    /* initialize buses: */
-   int status = omap_i2c_bus_init();
-   if (status != 0)
+   int ret = i2c_bus_open(&i2c_3, "/dev/i2c-3");
+   if (ret < 0)
    {
       LOG(LL_ERROR, "could not open OMAP bus" );
       exit(1);
@@ -78,7 +79,7 @@ platform_t *quadro_create(void)
  
    /* set-up motors driver: */
    coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
-   holger_blmc_driver_init(omap_i2c_bus_get(), motor_addrs, coupling, N_MOTORS);
+   holger_blmc_driver_init(&i2c_3, motor_addrs, coupling, N_MOTORS);
    plat->motors = motors_interface_create(N_MOTORS, holger_blmc_driver_start_motors, holger_blmc_driver_stop_motors, holger_blmc_driver_write_forces);
  
    /* set-up gps driver: */

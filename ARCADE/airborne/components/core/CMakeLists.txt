@@ -20,7 +20,6 @@ control
 model
 platform
 sensor_actor_interfaces
-holger_fc
 holger_blmc_driver
 holger_blmc
 rc_dsl_driver
@@ -29,9 +28,10 @@ scl_gps
 scl_voltage
 maxsonar_driver
 maxsonar
-bmp085_driver
-bmp085
-chr_6dm
+bma180
+hmc5883
+itg3200
+ms5611
 geometry
 i2c serial logger opcd_params threads ltime lmath scl
 glib-2.0
