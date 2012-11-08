@@ -340,7 +340,7 @@ void _cleanup(void)
 }
 
 
-int _main(int argc, char *argv[])
+void _main(int argc, char *argv[])
 {
    (void)argc;
    (void)argv;

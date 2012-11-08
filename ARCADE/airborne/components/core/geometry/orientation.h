@@ -20,6 +20,9 @@
 #define __ORIENTATION_H__
 
 
+float normalize_euler_0_2pi(float euler_angle);
+
+
 /* generic 3d vector */
 typedef union
 {

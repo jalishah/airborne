@@ -6,6 +6,16 @@
 #include "orientation.h"
 
 
+float normalize_euler_0_2pi(float euler_angle)
+{
+   if (euler_angle < 0)
+   {
+      euler_angle += (float)(2 * M_PI);
+   }
+   return euler_angle;
+}
+
+
 void quat_rot_vec(vec3_t *v_out, const vec3_t *v_in, const quat_t *quat)
 {
    float r = quat->q0;

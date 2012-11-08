@@ -228,7 +228,7 @@ int bma180_read_acc(float acc[3], bma180_t *bma)
       int16_t raw = (int16_t)((acc_data[(i << 1) + 1] << 8) | (acc_data[(i << 1)] & 0xFC)) / 4;
       /* and scale according to range setting */
       float g = (float)(raw) * range / (float)(1 << 13);
-      acc[i] = symmetric_limit(g, range) * 9.81;
+      acc[i] = sym_limit(g, range) * 9.81;
    }
 
    THROW_END();

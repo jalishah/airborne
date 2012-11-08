@@ -23,10 +23,10 @@
 
 #include "model.h"
 #include "../geometry/body_to_world.h"
+#include "../geometry/orientation.h"
 #include "../filters/kalman.h"
 #include "../filters/sliding_avg.h"
 #include "../util/logger/logger.h"
-#include "../util/math/lmath.h"
 
 
 /* configuration parameters: */
