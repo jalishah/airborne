@@ -1,1 +1,1 @@
-ADD_LIBRARY(ltime STATIC ltime.c)
+ADD_LIBRARY(ltime STATIC interval.c ltime.c)

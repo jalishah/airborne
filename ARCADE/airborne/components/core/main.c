@@ -22,6 +22,7 @@
 #include <periodic_thread.h>
 #include <sclhelper.h>
 
+#include "util/time/interval.h"
 #include "util/logger/logger.h"
 #include "command/command.h"
 #include "util/time/ltime.h"
@@ -37,7 +38,7 @@
 
 
 #define REALTIME_FREQ (200)
-#define REALTIME_PERIOD (1.0 / REALTIME_FREQ)
+#define REALTIME_PERIOD (1.0f / (float)REALTIME_FREQ * 1000.0)
 #define CONTROL_RATIO (2)
 
 static periodic_thread_t realtime_thread;
@@ -219,25 +220,16 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_controller_init(&controller, REALTIME_PERIOD);
    controller.f_local[0] = 1.50f;
 #endif
-   long timer_counter = 0;
-
-   struct timespec ts_curr;
-   struct timespec ts_prev;
-   struct timespec ts_diff;
 
    madgwick_ahrs_t madgwick_ahrs;
    madgwick_ahrs_init(&madgwick_ahrs, 0.01);
-
-   clock_gettime(CLOCK_REALTIME, &ts_curr);
+   
+   interval_t interval;
+   interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
    {
-      /*
-       * calculate dt:
-       */
-      ts_prev = ts_curr;
-      clock_gettime(CLOCK_REALTIME, &ts_curr);
-      TIMESPEC_SUB(ts_diff, ts_curr, ts_prev);
-      float dt = (float)ts_diff.tv_sec + (float)ts_diff.tv_nsec / (float)NSEC_PER_SEC;
+      float dt = interval_measure(&interval);
+      printf("%f\n", dt);
 
       /*
        * read sensor values into model input structure:
