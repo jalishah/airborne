@@ -3,14 +3,12 @@
 #define __RC_DSL_DRIVER_H__
 
 
-#include "../../interfaces/rc.h"
+#include "../../libs/rc_dsl/rc_dsl.h"
 
 
 int rc_dsl_driver_init(void);
 
-int rc_dsl_driver_calibrate(void);
-
-void rc_dsl_driver_read(rc_data_t *data);
+int rc_dsl_driver_read(float channels_out[RC_DSL_CHANNELS]);
 
 
 #endif /* __RC_DSL_DRIVER_H__ */

@@ -46,32 +46,18 @@ platform_t *platform_create(void)
 }
 
 
-int platform_motors(void)
+int platform_write_motors(float forces[4], float voltage)
 {
    CHECK_DEV(platform->motors);
-   return platform->motors->count;
+   return platform->motors->write(forces, voltage);
 }
 
 
-int platform_start_motors(void)
+int platform_read_rc(float channels[MAX_CHANNELS])
 {
-   CHECK_DEV(platform->motors);
-   return platform->motors->start();
-}
-
-
-int platform_stop_motors(void)
-{
-   CHECK_DEV(platform->motors);
-   platform->motors->stop();
+   CHECK_DEV(platform->rc);
+   platform->rc->read(channels);
    return 0;
-}
-
-
-int platform_write_motors(float forces[4], float voltage, float *rpm)
-{
-   CHECK_DEV(platform->motors);
-   return platform->motors->write(forces, voltage, rpm);
 }
 
 

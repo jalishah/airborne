@@ -26,7 +26,6 @@
 
 static void *cmd_socket = NULL;
 static simple_thread_t thread;
-static float *rpm = NULL;
 
 
 
@@ -166,7 +165,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          {
             case REQUEST_TYPE__SPIN_UP:
                LOG(LL_DEBUG, "SPIN_UP");
-               if (platform_start_motors() < 0)
+               //if (platform_start_motors() < 0)
                {
                   reply.err_msg = "could not start motors";
                   reply.status = STATUS__E_HARDWARE;
@@ -175,7 +174,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 
             case REQUEST_TYPE__SPIN_DOWN:
                LOG(LL_DEBUG, "SPIN_DOWN");
-               platform_stop_motors();
+               //platform_stop_motors();
                break;
 
             case REQUEST_TYPE__RESET_CTRL:
@@ -214,7 +213,6 @@ int cmd_init(void)
    {
       return -1;
    }
-   rpm = malloc(sizeof(float) * platform_motors());
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
 }

@@ -20,7 +20,6 @@ control
 model
 platform
 sensor_actor_interfaces
-holger_blmc_driver
 holger_blmc
 rc_dsl_driver
 rc_dsl
@@ -38,6 +37,7 @@ glib-2.0
 util network_messages
 scl_messages
 filters
+hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)
 
 INSTALL_TARGETS(/bin core)

@@ -8,11 +8,14 @@
  */
 
 
+#include <stddef.h>
+#include <unistd.h>
 #include <malloc.h>
 
 #include <util.h>
 #include "coupling.h"
 #include "platform.h"
+#include "channel_map.h"
 #include "../util/logger/logger.h"
 
 /* interface includes: */
@@ -23,7 +26,8 @@
 /* hardware includes: */
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
-#include "../hardware/drivers/holger_blmc/holger_blmc_driver.h"
+#include "../hardware/libs/holger_blmc/holger_blmc.h"
+#include "../hardware/libs/holger_blmc/force2twi.h"
 #include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
 
@@ -59,12 +63,17 @@ static float coupling_matrix[N_FORCES * N_MOTORS] =
                                      /* m0    m1    m2    m3 */
 static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 static i2c_bus_t i2c_3;
+static uint8_t *motor_setpoints = NULL;
+static uint8_t channel_map[MAX_CHANNELS] = {0, 1, 2, 3, 4};
+static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0};
 
 
-
-
-#include <stddef.h>
-#include <unistd.h>
+static int motors_write(float forces[4], float voltage)
+{
+   int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
+   holger_blmc_write(motor_setpoints);
+   return int_enable;
+}
 
 
 platform_t *quadro_create(void)
@@ -82,8 +91,11 @@ platform_t *quadro_create(void)
 
    /* set-up motors driver: */
    coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
-   holger_blmc_driver_init(&i2c_3, motor_addrs, coupling, N_MOTORS);
-   plat->motors = motors_interface_create(N_MOTORS, holger_blmc_driver_start_motors, holger_blmc_driver_stop_motors, holger_blmc_driver_write_forces);
+   force2twi_init(coupling);
+   motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
+   memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
+   holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);
+   plat->motors = motors_interface_create(motors_write);
  
    /* set-up gps driver: */
    scl_gps_init();
@@ -95,7 +107,7 @@ platform_t *quadro_create(void)
       LOG(LL_ERROR, "could not initialize dsl driver");
       exit(1);
    }
-   plat->rc = rc_interface_create(rc_dsl_driver_calibrate, rc_dsl_driver_read);
+   plat->rc = rc_interface_create(rc_dsl_driver_read);
    LOG(LL_INFO, "hardware initialized");
 
    if (scl_voltage_init() < 0)

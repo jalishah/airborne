@@ -11,22 +11,19 @@
 #define __RC_H__
 
 
-#define EXTRA_RC_CHANNELS (2)
+#define MAX_CHANNELS 5
 
 
-/*
- * remote control data
- */
-typedef struct
+typedef enum
 {
-   float pitch;
-   float roll;
-   float yaw;
-   float gas;
-   float extra[EXTRA_RC_CHANNELS];
-   float rssi;
+   CH_PITCH,
+   CH_ROLL,
+   CH_YAW,
+   CH_GAS,
+   CH_KILL
 }
-rc_data_t;
+channel_t;
+
 
 
 /*
@@ -34,8 +31,7 @@ rc_data_t;
  */
 typedef struct
 {
-   int (*init)(void);
-   void (*read)(rc_data_t *data);
+   void (*read)(float channels[MAX_CHANNELS]);
 }
 rc_interface_t;
 
@@ -43,12 +39,11 @@ rc_interface_t;
 /*
  * creates an rc interface
  */
-rc_interface_t *rc_interface_create(int (*init)(void), void (*read)(rc_data_t *data));
+rc_interface_t *rc_interface_create(void (*read)(float channels[MAX_CHANNELS]));
 
 
-int rc_init(rc_interface_t *interface);
 
-void rc_read(rc_interface_t *interface, rc_data_t *data);
+void rc_read(rc_interface_t *interface, float channels[MAX_CHANNELS]);
 
 
 #endif /* __RC_H__ */

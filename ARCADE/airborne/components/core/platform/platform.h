@@ -62,13 +62,9 @@ void platforms_init(unsigned int select);
 
 platform_t *platform_create(void);
 
-int platform_motors(void);
+int platform_write_motors(float forces[4], float voltage);
 
-int platform_start_motors(void);
-
-int platform_stop_motors(void);
-
-int platform_write_motors(float forces[4], float voltage, float *rpm);
+int platform_read_rc(float channels[MAX_CHANNELS]);
 
 int platform_read_ahrs(ahrs_data_t *data);
 

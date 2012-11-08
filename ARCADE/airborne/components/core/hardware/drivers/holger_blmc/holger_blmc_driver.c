@@ -45,7 +45,6 @@ void holger_blmc_driver_init(i2c_bus_t *bus, uint8_t *addrs, coupling_t *couplin
 {
    ASSERT_ONCE();
    n_motors = _n_motors;
-   force2twi_init(coupling);
    holger_blmc_init(bus, addrs, n_motors);
    i2c_setp = malloc(n_motors);
    memset(i2c_setp, HOLGER_I2C_OFF, n_motors);

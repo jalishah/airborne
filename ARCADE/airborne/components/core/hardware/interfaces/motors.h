@@ -8,15 +8,12 @@
 
 typedef struct
 {
-   int (*start)(void);
-   void (*stop)(void);
-   bool (*write)(float forces[4], float voltage, float *rpm);
-   unsigned int count;
+   int (*write)(float forces[4], float voltage);
 }
 motors_interface_t;
 
 
-motors_interface_t *motors_interface_create(unsigned int count, int (*start)(void), void (*stop)(void), bool (*write)(float forces[4], float voltage, float *rpm));
+motors_interface_t *motors_interface_create(int (*write)(float forces[4], float voltage));
 
 
 #endif /* __MOTORS_INTERFACE_H__ */

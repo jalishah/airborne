@@ -1,5 +1,4 @@
 ADD_SUBDIRECTORY(maxsonar)
-ADD_SUBDIRECTORY(holger_blmc)
 ADD_SUBDIRECTORY(rc_dsl)
 ADD_SUBDIRECTORY(scl_voltage)
 ADD_SUBDIRECTORY(scl_gps)
