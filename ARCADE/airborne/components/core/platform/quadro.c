@@ -64,7 +64,8 @@ static float coupling_matrix[N_FORCES * N_MOTORS] =
 static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 static i2c_bus_t i2c_3;
 static uint8_t *motor_setpoints = NULL;
-static uint8_t channel_map[MAX_CHANNELS] = {0, 1, 2, 3, 4};
+static channel_map_t channel_map;
+static uint8_t channel_mapping[MAX_CHANNELS] = {0, 1, 2, 3, 4};
 static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0};
 
 
@@ -73,6 +74,19 @@ static int motors_write(float forces[4], float voltage)
    int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
    holger_blmc_write(motor_setpoints);
    return int_enable;
+}
+
+
+static int read_mapped_rc(float channels[MAX_CHANNELS])
+{
+   float dsl_channels[RC_DSL_CHANNELS];
+   int ret = rc_dsl_driver_read(dsl_channels);
+   int c;
+   for (c = 0; c < MAX_CHANNELS; c++)
+   {
+      channels[c] = channel_lookup(&channel_map, c);
+   }
+   return ret;
 }
 
 
@@ -107,7 +121,8 @@ platform_t *quadro_create(void)
       LOG(LL_ERROR, "could not initialize dsl driver");
       exit(1);
    }
-   plat->rc = rc_interface_create(rc_dsl_driver_read);
+   channel_map_init(&channel_map, channel_mapping, channel_use_bias);
+   plat->rc = rc_interface_create(read_mapped_rc);
    LOG(LL_INFO, "hardware initialized");
 
    if (scl_voltage_init() < 0)

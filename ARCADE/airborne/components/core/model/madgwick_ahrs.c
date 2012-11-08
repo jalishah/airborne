@@ -29,6 +29,12 @@ void madgwick_ahrs_init(madgwick_ahrs_t *ahrs, float beta)
 }
 
 
+static float inv_sqrt(float x)
+{
+   return 1.0f / sqrtf(x);   
+}
+
+
 static void madgwick_ahrs_update_imu(madgwick_ahrs_t *ahrs,
                            float gx, float gy, float gz,
                            float ax, float ay, float az,

@@ -94,7 +94,7 @@ THROW hmc5883_init(hmc5883_t *hmc, i2c_bus_t *bus)
 }
 
 
-THROW hmc5883_read(float mag[3], hmc5883_t *hmc)
+THROW hmc5883_read_mag(float mag[3], hmc5883_t *hmc)
 {
    THROW_START();
    uint8_t data[6];

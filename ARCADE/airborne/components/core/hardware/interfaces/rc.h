@@ -31,7 +31,7 @@ channel_t;
  */
 typedef struct
 {
-   void (*read)(float channels[MAX_CHANNELS]);
+   int (*read)(float channels[MAX_CHANNELS]);
 }
 rc_interface_t;
 
@@ -39,11 +39,10 @@ rc_interface_t;
 /*
  * creates an rc interface
  */
-rc_interface_t *rc_interface_create(void (*read)(float channels[MAX_CHANNELS]));
+rc_interface_t *rc_interface_create(int (*read)(float channels[MAX_CHANNELS]));
 
 
-
-void rc_read(rc_interface_t *interface, float channels[MAX_CHANNELS]);
+int rc_read(rc_interface_t *interface, float channels[MAX_CHANNELS]);
 
 
 #endif /* __RC_H__ */

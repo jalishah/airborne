@@ -15,7 +15,7 @@
 #define __MADGWICK_AHRS_H__
 
 
-#include "../util/math.h"
+#include "../geometry/orientation.h"
 
 
 typedef struct

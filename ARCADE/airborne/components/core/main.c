@@ -26,6 +26,7 @@
 #include "command/command.h"
 #include "util/time/ltime.h"
 #include "filters/sliding_avg.h"
+#include "model/madgwick_ahrs.h"
 #include "model/model.h"
 #include "control/control.h"
 #include "platform/platform.h"
@@ -163,7 +164,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    sleep(1); /* give scl some time to establish
                 a link between publisher and subscriber */
 
-
    LOG(LL_INFO, "+------------------+");
    LOG(LL_INFO, "|   core startup   |");
    LOG(LL_INFO, "+------------------+");
@@ -183,9 +183,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    model_init();
    ctrl_init();
    
-   LOG(LL_INFO, "initializing cmd/params interface");
+   LOG(LL_INFO, "initializing command interface");
    cmd_init();
-   params_thread_start();
    
    platforms_init(0);
    printf("Press 's' and return to continue\n");
@@ -195,59 +194,36 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       start_key = getchar();
    }
    
-   rc_data_t rc_data;
+   float channels[MAX_CHANNELS];
    calibration_t rc_cal;
-   calibration_init(&rc_cal, 3, 400);
+   calibration_init(&rc_cal, MAX_CHANNELS, 400);
    unsigned int timer = 0;
    for (timer = 0; timer < 400; timer++)
    {
-      platform_read_rc_raw(&rc_data);
+      platform_read_rc(channels);
       calibration_sample_bias(&rc_cal, channels);
       msleep(1);
    }
-   rc_bias[0] = rc_bias[0]/400;
-   rc_bias[1] = rc_bias[1]/400;
-   rc_bias[2] = rc_bias[2]/400;
    LOG(LL_INFO, "system up and running");
-
-   bma180_dev_t bma;
-   bma180_init(&bma, &bus, BMA180_RANGE_4G, BMA180_BW_40HZ);
-   bma180_avg_acc(&bma);
-
-   hmc5883_dev_t hmc;
-   hmc5883_init(&hmc, &bus);
 
    FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
    fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");
 
-   /*threadsafe_float_t speed_p;
-   threadsafe_float_t speed_i;
-   threadsafe_float_t speed_i_max;
-   
-   threadsafe_float_t pos_p;
-   threadsafe_float_t pos_i;
-   threadsafe_float_t pos_i_max;*/
-   //ControllerData controller;
-   //ControllerNew controller;
+#if 0
    PIIDController controller;
    Filter2 filter_out;
    filter2_lp_init(&filter_out,55.0f,0.95f,0.005f,4);
 
    cvxgen_init();
    piid_controller_init(&controller, REALTIME_PERIOD);
-   //new_controller_init(&controller,0.003f);
    controller.f_local[0] = 1.50f;
-
+#endif
    long timer_counter = 0;
 
    struct timespec ts_curr;
    struct timespec ts_prev;
    struct timespec ts_diff;
-   
-
-   bma180_read_acc(&bma);
-   hmc5883_read(&hmc);
 
    madgwick_ahrs_t madgwick_ahrs;
    madgwick_ahrs_init(&madgwick_ahrs, 0.01);
@@ -269,14 +245,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_input_t model_input;
       model_input.dt = dt;
 
+#if 0
       float gyro_vals[3];
-      itg3200_read_gyro(&itg);
-      bma180_read_acc(&bma);
-      hmc5883_read(&hmc);
-      //platform_read_ahrs(&model_input.ahrs_data);
-      //platform_read_gps(&model_input.gps_data);
-      //platform_read_ultra(&model_input.ultra_z);
-      //platform_read_baro(&model_input.baro_z);
+      //platform_read_marg(&model_input.marg_data);
+      platform_read_gps(&model_input.gps_data);
+      platform_read_ultra(&model_input.ultra_z);
+      platform_read_baro(&model_input.baro_z);
 
   
       madgwick_ahrs_update(&madgwick_ahrs, itg.gyro.x, itg.gyro.y, itg.gyro.z, bma.raw.x, bma.raw.y, bma.raw.z, hmc.raw.x, hmc.raw.y, hmc.raw.z, 11.0, dt);
@@ -354,9 +328,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
 
       EVERY_N_TIMES(2, motors_write_uint8(i2c_buffer));
+#endif
    }
    PERIODIC_THREAD_LOOP_END
-#endif
 }
 PERIODIC_THREAD_END
 

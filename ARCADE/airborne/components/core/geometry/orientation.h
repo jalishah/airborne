@@ -80,5 +80,8 @@ void quat_inv(quat_t *q_out, const quat_t *q_in);
 void quat_to_euler(euler_t *euler, const quat_t *quat);
 
 
+void quaternion_init(quat_t *quat, float ax, float ay, float az, float mx, float my, float mz);
+
+
 #endif /* __ORIENTATION_H__ */
 
