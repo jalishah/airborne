@@ -5,7 +5,8 @@
 
 #include <stdint.h>
 
-#include "../hardware/interfaces/rc.h"
+
+#include "platform.h"
 
 
 typedef struct

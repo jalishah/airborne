@@ -1,6 +1,6 @@
 
 /*
- * file: quadro.c
+ * file: arcade_quadro.c
  *
  * author: Alexander Barth
  *         Benjamin Jahn
@@ -17,11 +17,6 @@
 #include "platform.h"
 #include "channel_map.h"
 #include "../util/logger/logger.h"
-
-/* interface includes: */
-#include "../hardware/interfaces/rc.h"
-#include "../hardware/interfaces/gps.h"
-#include "../hardware/interfaces/voltage.h"
 
 /* hardware includes: */
 #include "../hardware/drivers/scl_gps/scl_gps.h"
@@ -69,7 +64,7 @@ static uint8_t channel_mapping[MAX_CHANNELS] = {0, 1, 2, 3, 4};
 static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0};
 
 
-static int motors_write(float forces[4], float voltage)
+static int write_motors(float forces[4], float voltage)
 {
    int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
    holger_blmc_write(motor_setpoints);
@@ -77,24 +72,23 @@ static int motors_write(float forces[4], float voltage)
 }
 
 
-static int read_mapped_rc(float channels[MAX_CHANNELS])
+static int read_rc(float channels[MAX_CHANNELS])
 {
    float dsl_channels[RC_DSL_CHANNELS];
    int ret = rc_dsl_driver_read(dsl_channels);
    int c;
    for (c = 0; c < MAX_CHANNELS; c++)
    {
-      channels[c] = channel_lookup(&channel_map, c);
+      int index = channel_lookup(&channel_map, c);
+      channels[c] = dsl_channels[index];
    }
    return ret;
 }
 
 
-platform_t *quadro_create(void)
+void arcade_quadro_init(platform_t *plat)
 {
-   /* create plain platform structure: */
-   platform_t *plat = platform_create();
-
+   ASSERT_ONCE();
    /* initialize buses: */
    int ret = i2c_bus_open(&i2c_3, "/dev/i2c-3");
    if (ret < 0)
@@ -109,11 +103,11 @@ platform_t *quadro_create(void)
    motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
    memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
    holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);
-   plat->motors = motors_interface_create(motors_write);
+   plat->write_motors = write_motors;
  
    /* set-up gps driver: */
    scl_gps_init();
-   plat->gps = gps_interface_create(scl_gps_read);
+   plat->read_gps = scl_gps_read;
 
    /* set-up dsl driver: */
    if (rc_dsl_driver_init() < 0)
@@ -122,7 +116,8 @@ platform_t *quadro_create(void)
       exit(1);
    }
    channel_map_init(&channel_map, channel_mapping, channel_use_bias);
-   plat->rc = rc_interface_create(read_mapped_rc);
+   plat->read_rc = read_rc;
+   
    LOG(LL_INFO, "hardware initialized");
 
    if (scl_voltage_init() < 0)
@@ -130,7 +125,6 @@ platform_t *quadro_create(void)
       LOG(LL_ERROR, "could not initialize voltage reader");
       exit(1);
    }
-   plat->voltage = voltage_interface_create(scl_voltage_read);
-   return plat;
+   plat->read_voltage = scl_voltage_read;
 }
 

@@ -1,80 +1,116 @@
 
 /*
- * generic platform interface
+ * platform singleton
  */
 
 
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 
-
 #include "../hardware/interfaces/gps.h"
-#include "../hardware/interfaces/ahrs.h"
-#include "../hardware/interfaces/rc.h"
-#include "../hardware/interfaces/motors.h"
-#include "../hardware/interfaces/voltage.h"
+#include "../geometry/orientation.h"
 
 
 typedef struct
 {
-   int (*init)(void);
-   float (*read)(void);
-   float covar;
+   vec3_t gyro;
+   vec3_t acc;
+   vec3_t mag;
 }
-ultra_t;
+marg_data_t;
 
-
+#if 0
 typedef struct
 {
-   int (*init)(void);
-   float (*read)(void);
-   float covar;
+   enum
+   {
+      FIX_NOT_SEEN, /* no mode available so far */
+      FIX_NONE,     /* all fields are invalid */
+      FIX_2D,       /* alt field is invalid */
+      FIX_3D        /* all fields are valid */
+   }
+   fix;
+
+   int satellites; /* number of satellites */
+
+   /* start position */
+   double start_lat;
+   double start_lon;
+   double start_alt;
+
+   /* current position */
+   double lat;
+   double lon;
+   double alt; /* above sea level, in m */
+
+   /* deltas in m */
+   double delta_x;
+   double delta_y;
+   double delta_z;
+
+   float yaw; /* in rad */
+   float ground_speed; /* in m/s */
+   float climb_speed; /* in m/s */
 }
-baro_t;
+gps_data_t;
 
 
-typedef struct
+#define GPS_DATA_INITIALIZER {FIX_NOT_SEEN, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#endif
+
+#define MAX_CHANNELS 5
+
+
+typedef enum
 {
-   int (*init)(void);
-   void (*read)(ahrs_data_t *data);
-   float acc_covar;
+   CH_PITCH,
+   CH_ROLL,
+   CH_YAW,
+   CH_GAS,
+   CH_KILL
 }
-ahrs_t;
+channel_t;
 
 
 typedef struct
 {
    /* sensors: */
-   gps_interface_t *gps;
-   ultra_t *ultra;
-   baro_t *baro;
-   ahrs_t *ahrs;
-   rc_interface_t *rc;
-   voltage_interface_t *voltage;
+   int (*read_marg)(marg_data_t *marg_data);
+   int (*read_rc)(float channels[MAX_CHANNELS]);
+   int (*read_gps)(gps_data_t *gps_data);
+   int (*read_ultra)(float *ultra);
+   int (*read_baro)(float *baro);
+   int (*read_voltage)(float *voltage);
+   
    /* actuators: */
-   motors_interface_t *motors;
+   int (*write_motors)(float forces[4], float voltage);
 }
 platform_t;
 
 
 
-void platforms_init(unsigned int select);
+int platform_init(int (*plat_init)(platform_t *platform));
 
-platform_t *platform_create(void);
 
-int platform_write_motors(float forces[4], float voltage);
+int platform_read_marg(marg_data_t *marg_data);
+
 
 int platform_read_rc(float channels[MAX_CHANNELS]);
 
-int platform_read_ahrs(ahrs_data_t *data);
 
-int platform_read_gps(gps_data_t *data);
+int platform_read_gps(gps_data_t *gps_data);
 
-int platform_read_ultra(float *data);
 
-int platform_read_baro(float *data);
+int platform_read_ultra(float *ultra);
+
+
+int platform_read_baro(float *baro);
+
 
 int platform_read_voltage(float *voltage);
+
+
+int platform_write_motors(float forces[4], float voltage);
 
 
 #endif /* __PLATFORM_H__ */

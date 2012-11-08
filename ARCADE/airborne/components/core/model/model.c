@@ -26,7 +26,6 @@
 #include "../filters/kalman.h"
 #include "../filters/sliding_avg.h"
 #include "../util/logger/logger.h"
-#include "../util/math/lmath.h"
 
 
 /* configuration parameters: */
@@ -40,10 +39,10 @@ static tsfloat_t y_acc_avg_conf;
 static tsfloat_t z_acc_avg_conf;
 
 /* kalman filters: */
-static kalman_t *ultra_z_kalman;
-static kalman_t *baro_z_kalman;
-static kalman_t *y_kalman;
-static kalman_t *x_kalman;
+static kalman_t ultra_z_kalman;
+static kalman_t baro_z_kalman;
+static kalman_t y_kalman;
+static kalman_t x_kalman;
 
 /* averages: */
 static sliding_avg_t *y_acc_avg;
@@ -58,28 +57,11 @@ void model_step(model_state_t *out, model_input_t *in)
    ASSERT_NOT_NULL(out);
    ASSERT_NOT_NULL(in);
 
-   /*
-    * transform acceleration vector from body to world coordinate system:
-    * the world accelerations are later fused with GPS/Altimeter data
-    * for improved system state determination
-    */
-
-   euler_angles_t euler_angles =
-   {
-      in->ahrs_data.pitch,
-      in->ahrs_data.roll,
-      in->ahrs_data.yaw
-   };
-
-   body_vector_t body_vector =
-   {
-      in->ahrs_data.acc_pitch,
-      in->ahrs_data.acc_roll,
-      in->ahrs_data.acc_yaw
-   };
-
    world_vector_t world_vector;
-   body_to_world_transform(btw, &euler_angles, &body_vector, &world_vector);
+
+   world_vector.x_dir = in->acc_n;
+   world_vector.y_dir = in->acc_e;
+   world_vector.z_dir = in->acc_d;
 
    sliding_avg_calc(x_acc_avg, world_vector.x_dir);
    sliding_avg_calc(y_acc_avg, world_vector.y_dir);
@@ -93,14 +75,14 @@ void model_step(model_state_t *out, model_input_t *in)
    const kalman_in_t x_in =
    {
       in->dt,
-      in->gps_data.delta_x,
+      in->dx,
       world_acc_x
    };
 
    const kalman_in_t y_in =
    {
       in->dt,
-      in->gps_data.delta_y,
+      in->dy,
       world_acc_y
    };
 
@@ -124,37 +106,23 @@ void model_step(model_state_t *out, model_input_t *in)
    kalman_out_t ultra_z_kalman_out;
    kalman_out_t baro_z_kalman_out;
 
-   kalman_run(&y_kalman_out, y_kalman, &y_in);
-   kalman_run(&x_kalman_out, x_kalman, &x_in);
-   kalman_run(&ultra_z_kalman_out, ultra_z_kalman, &ultra_z_in);
-   kalman_run(&baro_z_kalman_out, baro_z_kalman, &baro_z_in);
+   kalman_run(&y_kalman_out, &y_kalman, &y_in);
+   kalman_run(&x_kalman_out, &x_kalman, &x_in);
+   kalman_run(&ultra_z_kalman_out, &ultra_z_kalman, &ultra_z_in);
+   kalman_run(&baro_z_kalman_out, &baro_z_kalman, &baro_z_in);
 
    /* update model state: */
    out->ultra_z.pos = ultra_z_kalman_out.pos;
    out->ultra_z.speed = ultra_z_kalman_out.speed;
-   out->ultra_z.acc = world_acc_z;
    
    out->baro_z.pos = baro_z_kalman_out.pos;
    out->baro_z.speed = baro_z_kalman_out.speed;
-   out->baro_z.acc = world_acc_z;
-   EVERY_N_TIMES(10, printf("%f %f\n", out->baro_z.pos, out->baro_z.speed));
-   
-   out->yaw.angle = normalize_euler_0_2pi(in->ahrs_data.yaw);
-   out->yaw.speed = in->ahrs_data.yaw_rate;
-
-   out->pitch.angle = in->ahrs_data.pitch;
-   out->pitch.speed = in->ahrs_data.pitch_rate;
-
-   out->roll.angle = in->ahrs_data.roll;
-   out->roll.speed = in->ahrs_data.roll_rate;
 
    out->x.pos = x_kalman_out.pos;
    out->x.speed = x_kalman_out.speed;
-   out->x.acc = world_acc_x;
 
    out->y.pos = y_kalman_out.pos;
    out->y.speed = y_kalman_out.speed;
-   out->y.acc = world_acc_y;
 }
 
 
@@ -183,31 +151,10 @@ void model_init(void)
        tsfloat_get(&gps_noise));
 
    /* set-up kalman filters: */
-   kalman_out_t kalman_state = {0.0, 0.0};
-   
-   kalman_config_t alt_kalman_config = 
-   {
-      tsfloat_get(&process_noise),
-      tsfloat_get(&ultra_noise)
-   };
-
-   kalman_config_t baro_kalman_config = 
-   {
-      tsfloat_get(&process_noise), 
-      tsfloat_get(&baro_noise)
-   };
-
-   kalman_config_t lateral_kalman_config = 
-   {
-      tsfloat_get(&process_noise),
-      tsfloat_get(&gps_noise)
-   };
-
-   /* create kalman filters: */
-   y_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
-   x_kalman = kalman_create(&lateral_kalman_config, &kalman_state);
-   ultra_z_kalman = kalman_create(&alt_kalman_config, &kalman_state);
-   baro_z_kalman = kalman_create(&baro_kalman_config, &kalman_state);
+   kalman_init(&x_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
+   kalman_init(&y_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
+   kalman_init(&ultra_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&ultra_noise), 0, 0);
+   kalman_init(&baro_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&baro_noise), 0, 0);
    
    /* set-up body to world coordinate transformation: */
    btw = body_to_world_create();

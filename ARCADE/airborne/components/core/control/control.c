@@ -73,16 +73,14 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    float pos_y = model_state->y.pos;
    float speed_x = model_state->x.speed;
    float speed_y = model_state->y.speed;
-   float acc_x = model_state->x.acc;
-   float acc_y = model_state->y.acc;
-   float yaw = model_state->yaw.angle;
+   float yaw = model_state->yaw;
 
    /* run yaw controller: */
    float yaw_err;
    float yaw_ctrl_val = yaw_ctrl_step
    (
-      &yaw_err, model_state->yaw.angle,
-      model_state->yaw.speed, dt
+      &yaw_err, model_state->yaw,
+      0, dt
    );
 
    /* run z controller: */
@@ -99,24 +97,21 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    navi_input_t navi_input = 
    {
       {pos_x, pos_y}, {speed_x, speed_y},
-      {acc_x, acc_y}, dt, yaw
+      dt, yaw
    };
    navi_run(navi_output, &navi_input);
    
    
    float att_ctrl[2];
-   float att_pos[2] = {model_state->pitch.angle, model_state->roll.angle};
+   float att_pos[2] = {model_state->pitch, model_state->roll};
    att_ctrl_step(att_ctrl, dt, att_pos, navi_output);
 
    /* set monitoring data: */
    if (pthread_mutex_trylock(&mon_data_mutex) == 0)
    {
-      mon_data.pitch = model_state->pitch.angle;
-      mon_data.roll = model_state->roll.angle;
-      mon_data.yaw = model_state->yaw.angle;
-      mon_data.pitch_speed = model_state->pitch.speed;
-      mon_data.roll_speed = model_state->roll.speed;
-      mon_data.yaw_speed = model_state->yaw.speed;
+      mon_data.pitch = model_state->pitch;
+      mon_data.roll = model_state->roll;
+      mon_data.yaw = model_state->yaw;
       mon_data.x = model_state->x.pos;
       mon_data.y = model_state->y.pos;
       mon_data.z = model_state->baro_z.pos;
@@ -124,9 +119,6 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
       mon_data.x_speed = model_state->x.speed;
       mon_data.y_speed = model_state->y.speed;
       mon_data.z_speed = model_state->baro_z.speed;
-      mon_data.x_acc = model_state->x.acc;
-      mon_data.y_acc = model_state->y.acc;
-      mon_data.z_acc = model_state->baro_z.acc;
       mon_data.x_err = pos_x - navi_get_dest_x();
       mon_data.y_err = pos_y - navi_get_dest_y();
       mon_data.z_err = z_err;

@@ -17,6 +17,35 @@
 #define __KALMAN_H__
 
 
+#include <meschach/matrix.h>
+
+
+typedef struct
+{
+   /* configuration and constant matrices: */
+   MAT *Q; /* process noise */
+   MAT *R; /* measurement noise */
+   MAT *I; /* identity matrix */
+
+   /* state and transition vectors/matrices: */
+   VEC *x; /* state (location and velocity) */
+   VEC *z; /* measurement (location) */
+   MAT *A; /* system matrix */
+   MAT *B; /* control matrix */
+   MAT *P; /* error covariance */
+   VEC *u; /* control (acceleration) */
+   MAT *H; /* observer matrix */
+   MAT *K; /* kalman gain */
+
+   /*  vectors and matrices for calculations: */
+   VEC *t0;
+   VEC *t1;
+   MAT *T0;
+   MAT *T1;
+}
+kalman_t;
+
+
 typedef struct
 {
    float pos;
@@ -29,7 +58,6 @@ typedef struct
 {
    float dt; /* time elapsed since last kalman step */
    float pos; /* position in m */
-   //float speed; /* speed in m/s */
    float acc; /* acceleration min m/s^2 */
 }
 kalman_in_t;
@@ -43,10 +71,6 @@ typedef struct
 kalman_config_t;
 
 
-struct kalman;
-typedef struct kalman kalman_t;
-
-
 /*
  * executes kalman predict and correct step
  */
@@ -54,15 +78,9 @@ void kalman_run(kalman_out_t *out, kalman_t *kalman, const kalman_in_t *in);
 
 
 /*
- * allocates and initializes a kalman filter
+ * initializes a kalman filter
  */
-kalman_t *kalman_create(const kalman_config_t *config, const kalman_out_t *init_state);
-
-
-/*
- * deletes the kalman filter
- */
-void kalman_free(kalman_t *kalman);
+void kalman_init(kalman_t *kf, float q, float r, float pos, float speed);
 
 
 #endif /* __KALMAN_H__ */

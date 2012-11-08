@@ -61,13 +61,11 @@ int scl_gps_init(void)
 }
 
 
-void scl_gps_read(gps_data_t *data_out)
+int scl_gps_read(gps_data_t *data_out)
 {
-   if (data_out)
-   {
-      pthread_mutex_lock(&mutex);
-      *data_out = gps_input_data;
-      pthread_mutex_unlock(&mutex);
-   }
+   pthread_mutex_lock(&mutex);
+   *data_out = gps_input_data;
+   pthread_mutex_unlock(&mutex);
+   return 0; /* TODO: something more sophisticated required here */
 }
 

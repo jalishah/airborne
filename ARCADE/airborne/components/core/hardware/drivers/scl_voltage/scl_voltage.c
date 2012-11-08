@@ -13,6 +13,7 @@
 
 
 static simple_thread_t thread;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *socket;
 static float voltage = 16.0;
 
@@ -54,7 +55,9 @@ SIMPLE_THREAD_BEGIN(thread_func)
       float voltage_raw = scl_read_voltage();
       if (voltage_raw < 17.0 && voltage_raw > 10.0)
       {
+         pthread_mutex_lock(&mutex);
          filter_lp_run(&filter, &voltage_raw, &voltage);
+         pthread_mutex_unlock(&mutex);
       }
    }
    SIMPLE_THREAD_LOOP_END
@@ -74,8 +77,10 @@ int scl_voltage_init(void)
 }
 
 
-float scl_voltage_read(void)
+int scl_voltage_read(float *voltage_out)
 {
-   return voltage;
+   pthread_mutex_lock(&mutex);
+   *voltage_out = voltage;
+   pthread_mutex_unlock(&mutex);
 }
 

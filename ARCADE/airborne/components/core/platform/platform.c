@@ -1,12 +1,11 @@
 
 
 /*
- * generic platform interface
+ * platform singleton
  */
 
 
 #include "platform.h"
-#include "quadro.h"
 
 #include <string.h>
 #include <malloc.h>
@@ -14,82 +13,66 @@
 #include <errno.h>
 
 
-#define N_PLATFORMS 1
-static platform_t **_platforms = NULL;
-
-static platform_t *platform = NULL;
+static platform_t platform;
 
 
-
-void platforms_init(unsigned int select)
+int platform_init(int (*plat_init)(platform_t *platform))
 {
-   assert(select < N_PLATFORMS);
-   _platforms = malloc(N_PLATFORMS * sizeof(platform_t *));
-   _platforms[0] = quadro_create();
-   platform = _platforms[select];
+   memset(&platform, 0, sizeof(platform));
+   return plat_init(&platform);
 }
 
 
-
-#define CHECK_DEV(component)\
-   if (!component) \
-   { \
-      return -ENODEV; \
-   }
+#define CHECK_DEV(x) \
+   if (!x) \
+      return -ENODEV
 
 
-platform_t *platform_create(void)
+int platform_read_marg(marg_data_t *marg_data)
 {
-   platform_t *plat = malloc(sizeof(platform_t));
-   memset(plat, 0, sizeof(platform_t));
-   return plat;
-}
-
-
-int platform_write_motors(float forces[4], float voltage)
-{
-   CHECK_DEV(platform->motors);
-   return platform->motors->write(forces, voltage);
+   CHECK_DEV(platform.read_marg);
+   return platform.read_marg(marg_data);
 }
 
 
 int platform_read_rc(float channels[MAX_CHANNELS])
 {
-   CHECK_DEV(platform->rc);
-   platform->rc->read(channels);
-   return 0;
+   CHECK_DEV(platform.read_rc);
+   return platform.read_rc(channels);
 }
 
 
-int platform_read_ahrs(ahrs_data_t *data)
+int platform_read_gps(gps_data_t *gps_data)
 {
-   
+   CHECK_DEV(platform.read_gps);
+   return platform.read_gps(gps_data);
 }
 
 
-int platform_read_gps(gps_data_t *data)
+int platform_read_ultra(float *ultra)
 {
-   
+   CHECK_DEV(platform.read_ultra);
+   return platform.read_ultra(ultra);
 }
 
 
-int platform_read_ultra(float *data)
+int platform_read_baro(float *baro)
 {
-   return 0;   
-}
-
-
-int platform_read_baro(float *data)
-{
-   return 0;   
+   CHECK_DEV(platform.read_baro);
+   return platform.read_baro(baro);
 }
 
 
 int platform_read_voltage(float *voltage)
 {
-   CHECK_DEV(platform->voltage);
-   *voltage = platform->voltage->read();
-   return 0;
+   CHECK_DEV(platform.read_voltage);
+   return platform.read_voltage(voltage);
 }
 
+
+int platform_write_motors(float forces[4], float voltage)
+{
+   CHECK_DEV(platform.write_motors);
+   return platform.write_motors(forces, voltage);
+}
 

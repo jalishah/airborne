@@ -96,3 +96,13 @@ void quaternion_init(quat_t *quat, float ax, float ay, float az, float mx, float
    quat->q3 = cos_roll * cos_pitch * sinHeading - sin_roll * sin_pitch * cosHeading;
 }
 
+
+float normalize_euler_0_2pi(float euler_angle)
+{
+   if (euler_angle < 0)
+   {
+      euler_angle += (float)(2 * M_PI);
+   }
+   return euler_angle;
+}
+

@@ -21,7 +21,6 @@
 typedef struct
 {
    float beta; /* 2 * beta (Kp) */
-   int initialized;
    quat_t quat; /* quaternion of sensor frame relative to auxiliary frame */
 }
 madgwick_ahrs_t;

@@ -31,6 +31,7 @@
 #include "model/model.h"
 #include "control/control.h"
 #include "platform/platform.h"
+#include "platform/arcade_quadro.h"
 #include "hardware/util/calibration.h"
 
 
@@ -41,101 +42,8 @@
 #define REALTIME_PERIOD (1.0f / (float)REALTIME_FREQ * 1000.0)
 #define CONTROL_RATIO (2)
 
+
 static periodic_thread_t realtime_thread;
-
-
-#if 0
-void _main(int argc, char *argv[])
-{
-   LOG(LL_INFO, "+------------------+");
-   LOG(LL_INFO, "|   core startup   |");
-   LOG(LL_INFO, "+------------------+");
-
-   LOG(LL_INFO, "initializing system");
-
-   /* set-up real-time scheduling: */
-   struct sched_param sp;
-   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
-   sched_setscheduler(getpid(), SCHED_FIFO, &sp);
-   if (mlockall(MCL_CURRENT | MCL_FUTURE))
-   {
-      LOG(LL_ERROR, "mlockall() failed");
-      exit(EXIT_FAILURE);
-   }
-
-   /* initialize hardware/drivers: */
-   LOG(LL_INFO, "initializing platform");
-   platforms_init(0);
-   
-   LOG(LL_INFO, "initializing model/controller");
-   model_init();
-   ctrl_init();
-   
-   /* initialize command interface */
-   LOG(LL_INFO, "initializing cmd interface");
-   cmd_init();
-
-
-   //platform_start_motors();
-   float forces[4] = {0, 0, 0, 0};
-   float voltage;
-   while (1)
-   {
-      if (platform_read_voltage(&voltage) < 0)
-      {
-         voltage = -1.0;   
-      }
-      printf("voltage: %f\n", voltage);
-      sleep(1);
-   }
-
-   LOG(LL_INFO, "system up and running");
-   struct timespec ts_curr;
-   struct timespec ts_prev;
-   struct timespec ts_diff;
-   clock_gettime(CLOCK_REALTIME, &ts_curr);
-   
-   static float rc_bias[3];
-   unsigned char i2c_buffer[4] = {0, 0, 0, 0};
-
-   /* run model and controller: */
-   while (1)
-   {
-      /* calculate dt: */
-      ts_prev = ts_curr;
-      clock_gettime(CLOCK_REALTIME, &ts_curr);
-      TIMESPEC_SUB(ts_diff, ts_curr, ts_prev);
-      float dt = (float)ts_diff.tv_sec + (float)ts_diff.tv_nsec / (float)NSEC_PER_SEC;
-
-      /* read sensor values into model input structure: */
-      model_input_t model_input;
-      model_input.dt = dt;
-      //platform_read_ahrs(&model_input.ahrs_data);
-      //platform_read_gps(&model_input.gps_data);
-      //platform_read_ultra(&model_input.ultra_z);
-      //platform_read_baro(&model_input.baro_z);
-
-      /* execute model step: */
-      model_state_t model_state;
-      model_step(&model_state, &model_input);
-
-      EVERY_N_TIMES(100, printf("%f %f", model_state.x.pos, model_state.y.pos));
-      /* execute controller step: */
-      ctrl_out_t out;
-      ctrl_step(&out, dt, &model_state);
- 
-
-      /* write data to motor mixer: */
-      //EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&out));
-   }
-   while (1)
-   {
-      sleep(1);
-   }
-}
-#endif
-
-
 
 
 PERIODIC_THREAD_BEGIN(realtime_thread_func)
@@ -183,11 +91,13 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    LOG(LL_INFO, "initializing model/controller");
    model_init();
    ctrl_init();
-   
+
+   LOG(LL_INFO, "initializing platform");
+   platform_init(arcade_quadro_init);
+
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
-   
-   platforms_init(0);
+
    printf("Press 's' and return to continue\n");
    char start_key = 0;
    while (start_key != 's')
@@ -207,9 +117,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    }
    LOG(LL_INFO, "system up and running");
 
-   FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
+   /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
-   fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");
+   fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
 #if 0
    PIIDController controller;
@@ -229,7 +139,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    PERIODIC_THREAD_LOOP_BEGIN
    {
       float dt = interval_measure(&interval);
-      printf("%f\n", dt);
 
       /*
        * read sensor values into model input structure:
@@ -237,25 +146,25 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_input_t model_input;
       model_input.dt = dt;
 
-#if 0
-      float gyro_vals[3];
-      //platform_read_marg(&model_input.marg_data);
-      platform_read_gps(&model_input.gps_data);
+      marg_data_t marg_data;
+      gps_data_t gps_data;
+      platform_read_marg(&marg_data);
+      platform_read_gps(&gps_data);
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
-
   
-      madgwick_ahrs_update(&madgwick_ahrs, itg.gyro.x, itg.gyro.y, itg.gyro.z, bma.raw.x, bma.raw.y, bma.raw.z, hmc.raw.x, hmc.raw.y, hmc.raw.z, 11.0, dt);
-      euler_angles(madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3);
-      unroll_states();
-      // EVERY_N_TIMES(20, printf("%f %f %f\n", euler.x / M_PI * 180, euler.y / M_PI * 180, euler.z / M_PI * 180); fflush(stdout));
-      //EVERY_N_TIMES(20, printf("%f %f %f %f\n", madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3); fflush(stdout));
+      madgwick_ahrs_update(&madgwick_ahrs, marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z,
+                            marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
+                            marg_data.mag.x, marg_data.mag.y, marg_data.mag.z, 11.0, dt);
+      //euler_angles(madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3);
 
-      gyro_vals[0] = itg.gyro.x;
-      gyro_vals[1] = -itg.gyro.y;
-      gyro_vals[2] = -itg.gyro.z;
+      float gyro_vals[3];
+      gyro_vals[0] = marg_data.gyro.x;
+      gyro_vals[1] = -marg_data.gyro.y;
+      gyro_vals[2] = -marg_data.gyro.z;
 
     
+#if 0
       //ahrs_read(&model_input.ahrs_data);
       //gps_read(&model_input.gps_data);
       //model_input.ultra_z = ultra_altimeter_read();
@@ -340,7 +249,7 @@ void _cleanup(void)
 }
 
 
-int _main(int argc, char *argv[])
+void _main(int argc, char *argv[])
 {
    (void)argc;
    (void)argv;

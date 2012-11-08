@@ -19,7 +19,6 @@ command
 control
 model
 platform
-sensor_actor_interfaces
 holger_blmc
 rc_dsl_driver
 rc_dsl
@@ -32,7 +31,7 @@ hmc5883
 itg3200
 ms5611
 geometry
-i2c serial logger opcd_params threads ltime lmath scl
+i2c serial logger opcd_params threads ltime scl
 glib-2.0
 util network_messages
 scl_messages
