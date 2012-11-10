@@ -161,9 +161,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       //platform_read_voltage(&voltage);
       
       /* compute estimate of orientation quaternion: */
-      madgwick_ahrs_update(&madgwick_ahrs, marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z,
-                            marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
-                            marg_data.mag.x, marg_data.mag.y, marg_data.mag.z, 11.0, dt);
+      madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 11.0, dt);
  
       if (madgwick_p > madgwick_p_end)
       {

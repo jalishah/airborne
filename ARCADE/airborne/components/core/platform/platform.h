@@ -9,15 +9,7 @@
 
 #include "../hardware/interfaces/gps.h"
 #include "../geometry/orientation.h"
-
-
-typedef struct
-{
-   vec3_t gyro;
-   vec3_t acc;
-   vec3_t mag;
-}
-marg_data_t;
+#include "../model/marg_data.h"
 
 #if 0
 typedef struct

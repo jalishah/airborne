@@ -18,7 +18,6 @@
 #include "util.h"
 #include "madgwick_ahrs.h"
 
-
 void madgwick_ahrs_init(madgwick_ahrs_t *ahrs, float beta)
 {
    ahrs->quat.q0 = 1;
@@ -40,7 +39,8 @@ static void madgwick_ahrs_update_imu(madgwick_ahrs_t *ahrs,
                            float ax, float ay, float az,
                            float accelCutoff, float dt)
 {
-	float accelSquareSum, recipNorm;
+  
+   float accelSquareSum, recipNorm;
 	float s0, s1, s2, s3;
 	float qDot0, qDot1, qDot2, qDot3;
 	float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
@@ -113,13 +113,17 @@ static void madgwick_ahrs_update_imu(madgwick_ahrs_t *ahrs,
 
 
 
-void madgwick_ahrs_update(madgwick_ahrs_t *ahrs, float gx, float gy, float gz,
-                        float ax, float ay, float az,
-                        float mx, float my, float mz,
-                        float accelCutoff, float dt)
+void madgwick_ahrs_update(madgwick_ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float dt)
 {
-
-
+   float gx = marg_data->gyro.x;
+   float gy = marg_data->gyro.y;
+   float gz = marg_data->gyro.z;
+   float ax = marg_data->acc.x;
+   float ay = marg_data->acc.y;
+   float az = marg_data->acc.z;
+   float mx = marg_data->mag.x;
+   float my = marg_data->mag.y;
+   float mz = marg_data->mag.z;
 
 	float accelSquareSum, recipNorm;
 	float s0, s1, s2, s3;
