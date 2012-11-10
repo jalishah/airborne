@@ -33,13 +33,12 @@
 #include "platform/platform.h"
 #include "platform/arcade_quadro.h"
 #include "hardware/util/calibration.h"
+#include "control/basic/piid.h"
+#include "control/position/att_ctrl.h"
+#include "filters/sliding_avg.h"
 
 
-#define MOTORS_ENABLED 0 /* set to 0 for disabling actuators */
-
-
-#define REALTIME_FREQ (200)
-#define REALTIME_PERIOD (1.0f / (float)REALTIME_FREQ * 1000.0)
+#define REALTIME_PERIOD (0.005)
 #define CONTROL_RATIO (2)
 
 
@@ -90,7 +89,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    LOG(LL_INFO, "initializing model/controller");
    model_init();
-   ctrl_init();
+   //ctrl_init();
 
    LOG(LL_INFO, "initializing platform");
    platform_init(arcade_quadro_init);
@@ -121,25 +120,31 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (fp == NULL) printf("ERROR: could not open File");
    fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
-#if 0
-   PIIDController controller;
    Filter2 filter_out;
-   filter2_lp_init(&filter_out,55.0f,0.95f,0.005f,4);
+   filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
 
-   cvxgen_init();
-   piid_controller_init(&controller, REALTIME_PERIOD);
-   controller.f_local[0] = 1.50f;
-#endif
+   piid_t piid;
+   piid_init(&piid, REALTIME_PERIOD);
+   piid.f_local[0] = 1.00f;
 
    madgwick_ahrs_t madgwick_ahrs;
-   madgwick_ahrs_init(&madgwick_ahrs, 0.01);
+   float madgwick_p = 10.0f;
+   float madgwick_p_end = 0.01f;
+   float madgwick_p_step = 10.0f * REALTIME_PERIOD;
+   madgwick_ahrs_init(&madgwick_ahrs, madgwick_p);
    
+   sliding_avg_t *avg[3];
+   avg[0] = sliding_avg_create(1000, 0.0);
+   avg[1] = sliding_avg_create(1000, 0.0);
+   avg[2] = sliding_avg_create(1000, -9.81);
+
+   att_ctrl_init();
+
    interval_t interval;
    interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
    {
       float dt = interval_measure(&interval);
-
       /*
        * read sensor values into model input structure:
        */
@@ -152,11 +157,51 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_gps(&gps_data);
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
-  
+      float voltage = 16.0f;
+      //platform_read_voltage(&voltage);
+      
+      /* compute estimate of orientation quaternion: */
       madgwick_ahrs_update(&madgwick_ahrs, marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z,
                             marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
                             marg_data.mag.x, marg_data.mag.y, marg_data.mag.z, 11.0, dt);
-      //euler_angles(madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3);
+ 
+      if (madgwick_p > madgwick_p_end)
+      {
+         madgwick_p -= madgwick_p_step;
+         if (madgwick_p < madgwick_p_end)
+         {
+            madgwick_p = madgwick_p_end;
+            //quat_to_euler(&euler, &madgwick_ahrs.quat);
+            /* TODO: initialize pitch/roll/yaw controllers here */
+         }
+         madgwick_ahrs.beta = madgwick_p;
+         continue;
+      }
+
+      
+      /* compute NED accelerations using quaternion: */
+      vec3_t global_acc;
+      quat_rot_vec(&global_acc, &marg_data.acc, &madgwick_ahrs.quat);
+      for (int i = 0; i < 3; i++)
+      {
+         global_acc.vec[i] -= sliding_avg_calc(avg[i], global_acc.vec[i]);
+      }
+      model_input.acc_n = global_acc.x;
+      model_input.acc_e = global_acc.y;
+      model_input.acc_d = global_acc.z;
+      
+      /* execute model step: */
+      model_state_t model_state;
+      model_step(&model_state, &model_input);
+     
+      /* compute euler angles from quaternion: */
+      euler_t euler;
+      quat_to_euler(&euler, &madgwick_ahrs.quat);
+      float att_dest[2] = {0, 0};
+      float att_ctrl[2];
+      float att_pos[2] = {euler.pitch, euler.roll};
+      att_ctrl_step(att_ctrl, dt, att_pos, att_dest);
+      //EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
 
       float gyro_vals[3];
       gyro_vals[0] = marg_data.gyro.x;
@@ -165,23 +210,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
     
 #if 0
-      //ahrs_read(&model_input.ahrs_data);
-      //gps_read(&model_input.gps_data);
-      //model_input.ultra_z = ultra_altimeter_read();
-      //model_input.baro_z = baro_altimeter_read();
-      
-      mixer_in_t mixer_in;
-#if 0
-      /*
-       * execute model step:
-       */
-      model_state_t model_state;
-      model_step(&model_state, &model_input);
-
-      float dir = model_input.gps_data.course; //atan2(model_state.y.speed, model_state.x.speed);
-      char buf[100];
-      sprintf(buf, "%f,%f;%f,%f", model_state.x.speed, model_state.y.speed, cos(dir) * model_input.gps_data.speed, sin(dir) * model_input.gps_data.speed);
-      EVERY_N_TIMES(100, udp_socket_send(udp_socket, buf, strlen(buf)));
 
       /*
        * execute controller step:
@@ -191,45 +219,30 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       
       /* determine attitude */
       float u_ctrl[3];
-      float rc_input[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-      
-      /* get (and scale) values from remote interface */
-      float rc_pitch = (float)rc_dsl_reader_get_channel(0) / 2000.0f - rc_bias[0];
-      if (fabs(rc_pitch)<0.005f) rc_pitch = 0.0f;
-      float rc_roll = (float)rc_dsl_reader_get_channel(1) / 2000.0f - rc_bias[1];
-      if (fabs(rc_roll)<0.005f) rc_roll = 0.0f;
-      float rc_yaw = -(float)rc_dsl_reader_get_channel(3) / 2000.0f - rc_bias[2];
-      if (fabs(rc_yaw)<0.005f) rc_yaw = 0.0f;
-      float rc_gas = (float)rc_dsl_reader_get_channel(2) / 4000.0f + 0.5f;
-      float rc_ch5 = (float)rc_dsl_reader_get_channel(4) / 2000.0f;
+      float rc_input[3];
 
       /* set-up input for basic controller: */
-      rc_input[0] = -2.0f * rc_roll + 0.0 * mixer_in.roll; // 0.1
-      rc_input[1] = 2.0f * rc_pitch - 0.0 * mixer_in.pitch; // 0.1
-      rc_input[2] = -3.0f * rc_yaw + 0.0 * mixer_in.yaw;
-      controller.f_local[0] = 30.0f * rc_gas;
+      rc_input[0] = att_ctrl[1]; // -2.0f * rc_roll + 0.0 * mixer_in.roll; // 0.1
+      rc_input[1] = -att_ctrl[0]; // 2.0f * rc_pitch - 0.0 * mixer_in.pitch; // 0.1
+      rc_input[2] = 0; // -3.0f * rc_yaw + 0.0 * mixer_in.yaw;
+      piid.f_local[0] = 0.0; //30.0f * rc_gas;
       
-      piid_controller_run(&controller,gyro_vals,rc_input,u_ctrl);
-      filter2_run(&filter_out,controller.f_local,controller.f_local); // TODO: WAR VORHER DRIN!!
-      controller.int_enable = force2twi(controller.f_local, &voltage,i2c_buffer);
+      piid_run(&piid, gyro_vals, rc_input, u_ctrl);
+      filter2_run(&filter_out, piid.f_local, piid.f_local);
+      piid.f_local[1] /= 30.0;
+      piid.f_local[2] /= 30.0;
+      piid.f_local[3] = 0.0;
+      
+      /* here we need to decide if the motors should run: */
+      if (0) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
+      {
+      }
+      int motors_enabled = 1;
+
+      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, piid.f_local, voltage));
+      //EVERY_N_TIMES(10, printf("%f %f %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
       //mixer_in_t mixer_in;
-      if (1) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
-      {
-         //flag = 0;
-         /*mixer_in.pitch = -pitch_ctrl_val;
-         mixer_in.roll = -roll_ctrl_val;
-         mixer_in.yaw = -yaw_ctrl_val;
-         mixer_in.gas = gas_sp;*/
-         controller.int_enable = 0;
-         i2c_buffer[0] = 0;
-         i2c_buffer[1] = 0;
-         i2c_buffer[2] = 0;
-         i2c_buffer[3] = 0;
-      }
-
-      EVERY_N_TIMES(2, motors_write_uint8(i2c_buffer));
-#endif
    }
    PERIODIC_THREAD_LOOP_END
 }
@@ -253,7 +266,7 @@ void _main(int argc, char *argv[])
 {
    (void)argc;
    (void)argv;
-   const struct timespec realtime_period = {0, REALTIME_PERIOD * NSEC_PER_MSEC};
+   const struct timespec realtime_period = {0, REALTIME_PERIOD * 1000 * NSEC_PER_MSEC};
    periodic_thread_start(&realtime_thread, realtime_thread_func, "realtime_thread", 99, realtime_period, NULL);
    while (1)
    {

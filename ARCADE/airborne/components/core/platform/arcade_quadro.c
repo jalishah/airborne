@@ -16,6 +16,7 @@
 #include "coupling.h"
 #include "platform.h"
 #include "channel_map.h"
+#include "drotek_marg.h"
 #include "../util/logger/logger.h"
 
 /* hardware includes: */
@@ -25,6 +26,13 @@
 #include "../hardware/libs/holger_blmc/force2twi.h"
 #include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
+
+#include "../control/util/cvxgen/solver.h"
+
+#define RPM_MIN 1340.99f
+#define RPM_MAX 7107.6f
+#define RPM_SQUARE_MIN (RPM_MIN * RPM_MIN)
+#define RPM_SQUARE_MAX (RPM_MAX  *RPM_MAX)
 
 /* arm length */
 #define CTRL_L (0.2025f)
@@ -38,21 +46,17 @@
 /* number of motors we can control: */
 #define N_MOTORS (4)
 
-/* number of forces/moments we can control */
-#define N_FORCES (4)
-
-
 #define IMTX1 (1.0f / (4.0f * F_C))
 #define IMTX2 (1.0f / (2.0f * F_C * CTRL_L))
 #define IMTX3 (1.0f / (4.0f * F_D))
 
 
-static float coupling_matrix[N_FORCES * N_MOTORS] =
-{          /* gas   pitch    roll     yaw */
-   /* m0 */ IMTX1,  IMTX2,    0.0,  IMTX3,
-   /* m1 */ IMTX1, -IMTX2,    0.0,  IMTX3,
-   /* m2 */ IMTX1,    0.0, -IMTX2, -IMTX3,
-   /* m3 */ IMTX1,    0.0,  IMTX2, -IMTX3
+static float coupling_matrix[4 * N_MOTORS] =
+{         /* gas    pitch    roll   yaw */
+   /* m0 */ IMTX1,   0.0f, -IMTX2,  IMTX3,
+   /* m1 */ IMTX1,   0.0f,  IMTX2,  IMTX3,
+   /* m2 */ IMTX1, -IMTX2,   0.0f, -IMTX3,
+   /* m3 */ IMTX1,  IMTX2,   0.0f, -IMTX3
 };
 
                                      /* m0    m1    m2    m3 */
@@ -60,13 +64,24 @@ static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 static i2c_bus_t i2c_3;
 static uint8_t *motor_setpoints = NULL;
 static channel_map_t channel_map;
-static uint8_t channel_mapping[MAX_CHANNELS] = {0, 1, 2, 3, 4};
-static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0};
+static uint8_t channel_mapping[MAX_CHANNELS] =  {0, 1, 3, 2, 4}; /* pitch: 0, roll: 1, yaw: 3, gas: 2, switch: 4 */
+static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0}; /* compute bias only for the three moments */
+static drotek_marg_t marg;
+static coupling_t coupling; 
+
+static void convex_opt_init(void);
+static void convex_opt_run(float forces[4]);
 
 
-static int write_motors(float forces[4], float voltage)
+static int write_motors(int enabled, float forces[3], float voltage)
 {
+   //convex_opt_run(forces);
    int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
+   if (!enabled)
+   {
+      memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
+      int_enable = 0;
+   }
    holger_blmc_write(motor_setpoints);
    return int_enable;
 }
@@ -86,9 +101,17 @@ static int read_rc(float channels[MAX_CHANNELS])
 }
 
 
+static int read_marg(marg_data_t *marg_data)
+{
+   return drotek_marg_read(marg_data, &marg);   
+}
+
+
 void arcade_quadro_init(platform_t *plat)
 {
    ASSERT_ONCE();
+   convex_opt_init();
+
    /* initialize buses: */
    int ret = i2c_bus_open(&i2c_3, "/dev/i2c-3");
    if (ret < 0)
@@ -97,14 +120,20 @@ void arcade_quadro_init(platform_t *plat)
       exit(1);
    }
 
+   /* set-up MARG sensor cluster: */
+   drotek_marg_init(&marg, &i2c_3);
+   plat->read_marg = read_marg;
+
+
    /* set-up motors driver: */
-   coupling_t *coupling = coupling_create(N_MOTORS, coupling_matrix);
-   force2twi_init(coupling);
+   coupling_init(&coupling, N_MOTORS, coupling_matrix);
+   force2twi_init(&coupling);
    motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
    memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
    holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);
    plat->write_motors = write_motors;
  
+#if 0
    /* set-up gps driver: */
    scl_gps_init();
    plat->read_gps = scl_gps_read;
@@ -118,7 +147,7 @@ void arcade_quadro_init(platform_t *plat)
    channel_map_init(&channel_map, channel_mapping, channel_use_bias);
    plat->read_rc = read_rc;
    
-   LOG(LL_INFO, "hardware initialized");
+#endif
 
    if (scl_voltage_init() < 0)
    {
@@ -126,5 +155,116 @@ void arcade_quadro_init(platform_t *plat)
       exit(1);
    }
    plat->read_voltage = scl_voltage_read;
+   
+   LOG(LL_INFO, "arcad_quadro platform initialized");
+}
+
+
+
+/* convex optimization stuff: */
+
+Vars vars;
+Params params;
+Workspace work;
+Settings settings;
+
+
+static void convex_opt_init(void)
+{
+  set_defaults();
+  setup_indexing();
+  
+  /* G-Matrix */
+  params.G[0] = 1e-4;
+  params.G[4] = 0;
+  params.G[8] = 0;
+  params.G[12] = 0;
+
+  params.G[1] = 0;
+  params.G[5] = 1.0;
+  params.G[9] = 0;
+  params.G[13] = 0;
+
+  params.G[2] = 0;
+  params.G[6] = 0;
+  params.G[10] = 1.0;
+  params.G[14] = 0;
+
+  params.G[3] = 0;
+  params.G[7] = 0;
+  params.G[11] = 0;
+  params.G[15] = 2.0;
+
+  /* A-Matrix */
+  params.A[0] = (float)((double)IMTX1)/((double)((double)RPM_SQUARE_MAX));
+  params.A[8] = 0.0;
+  params.A[16] = -(float)((double)IMTX2)/((double)RPM_SQUARE_MAX);
+  params.A[24] = (float)((double)IMTX3)/((double)RPM_SQUARE_MAX);
+
+  params.A[1] = (float)((double)IMTX1)/((double)RPM_SQUARE_MAX);
+  params.A[9] = 0.0;
+  params.A[17] = (float)((double)IMTX2)/((double)RPM_SQUARE_MAX);
+  params.A[25] = (float)((double)IMTX3)/((double)RPM_SQUARE_MAX);
+
+  params.A[2] = (float)((double)IMTX1)/((double)RPM_SQUARE_MAX);
+  params.A[10] = -(float)((double)IMTX2)/((double)RPM_SQUARE_MAX);
+  params.A[18] = 0.0;;
+  params.A[26] = -((float)(double)IMTX3)/((double)RPM_SQUARE_MAX);
+
+  params.A[3] = (float)((double)IMTX1)/((double)RPM_SQUARE_MAX);
+  params.A[11] = (float)((double)IMTX2)/((double)RPM_SQUARE_MAX);
+  params.A[19] = 0.0;
+  params.A[27] = -(float)((double)IMTX3)/((double)RPM_SQUARE_MAX);
+
+  params.A[4]  = -params.A[0];
+  params.A[12] = -params.A[8];
+  params.A[20] = -params.A[16];
+  params.A[28] = -params.A[24];
+
+  params.A[5]  = -params.A[1];
+  params.A[13] = -params.A[9];
+  params.A[21] = -params.A[17];
+  params.A[29] = -params.A[25];
+
+  params.A[6]  = -params.A[2];
+  params.A[14] = -params.A[10];
+  params.A[22] = -params.A[18];
+  params.A[30] = -params.A[26];
+
+  params.A[7]  = -params.A[3];
+  params.A[15] = -params.A[11];
+  params.A[23] = -params.A[19];
+  params.A[31] = -params.A[27];
+
+  params.b[0] = 1.0;
+  params.b[1] = 1.0;
+  params.b[2] = 1.0;
+  params.b[3] = 1.0;
+  params.b[4] = -(float)((double)RPM_SQUARE_MIN)/((double)RPM_SQUARE_MAX);
+  params.b[5] = -(float)((double)RPM_SQUARE_MIN)/((double)RPM_SQUARE_MAX);
+  params.b[6] = -(float)((double)RPM_SQUARE_MIN)/((double)RPM_SQUARE_MAX);
+  params.b[7] = -(float)((double)RPM_SQUARE_MIN)/((double)RPM_SQUARE_MAX);
+
+  settings.verbose = 0;  // disable output of solver progress.
+  settings.max_iters = 10;  // reduce the maximum iteration count, from 25.
+  settings.eps = 1e-6;;  // reduce the required objective tolerance, from 1e-6.
+  settings.resid_tol = 1e-6;  // reduce the required residual tolerances, from 1e-4.
+  settings.better_start = 1;
+}
+
+
+static void convex_opt_run(float forces[4])
+{
+  params.xd[0] = forces[0];
+  params.xd[1] = forces[1];
+  params.xd[2] = forces[2];
+  params.xd[3] = forces[3];
+
+  solve();
+
+  forces[0] = vars.x[0];
+  forces[1] = vars.x[1];
+  forces[2] = vars.x[2];
+  forces[3] = vars.x[3];
 }
 

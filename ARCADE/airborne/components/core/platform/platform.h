@@ -83,7 +83,7 @@ typedef struct
    int (*read_voltage)(float *voltage);
    
    /* actuators: */
-   int (*write_motors)(float forces[4], float voltage);
+   int (*write_motors)(int enabled, float forces[3], float voltage);
 }
 platform_t;
 
@@ -110,7 +110,7 @@ int platform_read_baro(float *baro);
 int platform_read_voltage(float *voltage);
 
 
-int platform_write_motors(float forces[4], float voltage);
+int platform_write_motors(int enabled, float forces[4], float voltage);
 
 
 #endif /* __PLATFORM_H__ */

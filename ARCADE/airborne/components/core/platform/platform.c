@@ -70,9 +70,9 @@ int platform_read_voltage(float *voltage)
 }
 
 
-int platform_write_motors(float forces[4], float voltage)
+int platform_write_motors(int enabled, float forces[4], float voltage)
 {
    CHECK_DEV(platform.write_motors);
-   return platform.write_motors(forces, voltage);
+   return platform.write_motors(enabled, forces, voltage);
 }
 

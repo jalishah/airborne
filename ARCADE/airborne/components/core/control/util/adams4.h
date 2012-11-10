@@ -3,7 +3,6 @@
 #define __ADAMS4_H__
 
 
-#include <stdbool.h>
 #include <stddef.h>
 
 
@@ -18,9 +17,9 @@ typedef struct
 adams4_t;
 
 
-void adams4_init(adams4_t *a, const unsigned int dim);
+int adams4_init(adams4_t *a, const size_t dim);
 
-void adams4_run(adams4_t *a, float *x, float ts, bool enabled);
+void adams4_run(adams4_t *a, float *x, float ts, int enabled);
 
 void adams4_term(adams4_t *a);
 

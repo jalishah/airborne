@@ -1,1 +1,0 @@
-ADD_LIBRARY(holger_blmc_driver STATIC holger_blmc_driver.c)

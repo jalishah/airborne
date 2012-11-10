@@ -32,6 +32,10 @@ THROW drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus)
          LOG(LL_ERROR, "could not inizialize ITG3200, retrying");
          msleep(1000);
       }
+      else
+      {
+         break;
+      }
    }
    THROW_ON_ERR(bma180_init(&marg->bma, bus, BMA180_RANGE_4G, BMA180_BW_40HZ));
    THROW_ON_ERR(hmc5883_init(&marg->hmc, bus));

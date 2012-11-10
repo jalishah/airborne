@@ -25,11 +25,11 @@
 #include "itg3200.h"
 #include "util.h"
 
-#undef ITG3200_DEBUG
+#define ITG3200_DEBUG
 
 #define ITG3200_ADDRESS 0x69
 
-#define ITG3200_GYRO_INIT_COUNT 300
+#define ITG3200_GYRO_INIT_COUNT 1000
 #define ITG3200_WHO_AM_I       0x00
 #define ITG3200_SMPLRT_DIV     0x15
 
@@ -138,7 +138,7 @@ THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
    THROW_IF((uint8_t)THROW_PREV != itg->i2c_dev.addr, -ENODEV);
 
 #ifdef ITG3200_DEBUG
-   printf("ITG3200, i2c_addr: %.2X\n", addr);
+   printf("ITG3200, i2c_addr: %.2X\n", itg->i2c_dev.addr);
 #endif
 
    /* set z-gyro as clock source */

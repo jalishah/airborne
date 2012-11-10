@@ -10,10 +10,17 @@
 
 
 #include <stddef.h>
+#include <meschach/matrix.h>
 
 
-struct coupling;
-typedef struct coupling coupling_t;
+typedef struct coupling
+{
+   size_t n_motors;
+   MAT *matrix;
+   VEC *in;
+   VEC *out;
+}
+coupling_t;
 
 
 /*
@@ -25,7 +32,7 @@ typedef struct coupling coupling_t;
  *
  * g = gas, p = pitch, r = roll, y = yaw, n = #motors
  */
-coupling_t *coupling_create(const unsigned int motors, const float *init);
+void coupling_init(coupling_t *coupling, const size_t motors, const float *init);
 
 
 /*
@@ -36,12 +43,6 @@ coupling_t *coupling_create(const unsigned int motors, const float *init);
  * n = #motors
  */
 void coupling_calc(const coupling_t *coupling, float *out, const float *in);
-
-
-/*
- * returns number of motors in coupling
- */
-unsigned int coupling_motors(const coupling_t *coupling);
 
 
 #endif /* __COUPLING__ */
