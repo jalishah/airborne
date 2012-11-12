@@ -8,9 +8,9 @@
 #include "../../../geometry/earth.h"
 
 
-static gps_data_t gps_input_data = GPS_DATA_INITIALIZER;
+static gps_data_t gps_data = {FIX_NOT_SEEN, 0, 0, 0, 0};
 static simple_thread_t thread;
-static void *socket;
+static void *scl_socket;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -18,30 +18,18 @@ SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
-      GpsData *gps_data;
-      SCL_RECV_AND_UNPACK_DYNAMIC(gps_data, socket, gps_data);
-      if (gps_data != NULL)
+      GpsData *_gps_data;
+      SCL_RECV_AND_UNPACK_DYNAMIC(_gps_data, scl_socket, gps_data);
+      if (_gps_data != NULL)
       {
          pthread_mutex_lock(&mutex);
-         gps_input_data.fix = gps_data->fix;
-         gps_input_data.satellites = gps_data->sats;
-         gps_input_data.lat = gps_data->lat;
-         gps_input_data.lon = gps_data->lon;
-         gps_input_data.alt = gps_data->alt;
-
-         meter_offset(&gps_input_data.delta_x,
-            &gps_input_data.delta_y,
-            gps_input_data.lat,
-            gps_input_data.lon,
-            gps_input_data.start_lat,
-            gps_input_data.start_lon);
-
-         gps_input_data.delta_z = gps_input_data.alt - gps_input_data.start_alt;
-         gps_input_data.ground_speed = gps_data->speed;
-         gps_input_data.climb_speed = 0.0;
+         gps_data.fix = _gps_data->fix;
+         gps_data.sats = _gps_data->sats;
+         gps_data.lat = _gps_data->lat;
+         gps_data.lon = _gps_data->lon;
+         gps_data.alt = _gps_data->alt;
          pthread_mutex_unlock(&mutex);
-
-         SCL_FREE(gps_data, gps_data);
+         SCL_FREE(gps_data, _gps_data);
       }
    }
    SIMPLE_THREAD_LOOP_END
@@ -51,8 +39,8 @@ SIMPLE_THREAD_END
 
 int scl_gps_init(void)
 {
-   socket = scl_get_socket("gps");
-   if (socket == NULL)
+   scl_socket = scl_get_socket("gps");
+   if (scl_socket == NULL)
    {
       return -1;
    }
@@ -64,7 +52,7 @@ int scl_gps_init(void)
 int scl_gps_read(gps_data_t *data_out)
 {
    pthread_mutex_lock(&mutex);
-   *data_out = gps_input_data;
+   *data_out = gps_data;
    pthread_mutex_unlock(&mutex);
    return 0; /* TODO: something more sophisticated required here */
 }

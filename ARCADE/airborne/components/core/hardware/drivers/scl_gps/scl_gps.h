@@ -4,7 +4,7 @@
 #define __SCL_GPS_H__
 
 
-#include "../../interfaces/gps.h"
+#include "../../util/gps_data.h"
 
 
 int scl_gps_init(void);

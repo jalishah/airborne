@@ -1,4 +1,23 @@
 
+/*
+   feed forward system and stabilizing PIID controller - interface
+
+   Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
+   Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ */
+
+
 #ifndef __PIID_H__
 #define __PIID_H__
 
@@ -29,7 +48,7 @@ typedef struct
    Filter2 *filter_feedforw_y;
    Filter2 *filter_feedforw_z;
 
-   float ringbuf[3*CTRL_NUM_TSTEP];
+   float ringbuf[3 * CTRL_NUM_TSTEP];
    int ringbuf_idx;
 
    float test_out[3];

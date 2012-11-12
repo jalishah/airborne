@@ -21,14 +21,21 @@
 typedef struct
 {
    float beta; /* 2 * beta (Kp) */
+   float beta_step;
+   float beta_end;
    quat_t quat; /* quaternion of sensor frame relative to auxiliary frame */
 }
 madgwick_ahrs_t;
 
 
-void madgwick_ahrs_init(madgwick_ahrs_t *ahrs, float beta);
+void madgwick_ahrs_init(madgwick_ahrs_t *ahrs, float beta_start, float beta_step, float beta_end);
 
-void madgwick_ahrs_update(madgwick_ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float dt);
+/*
+ * returns -1 if the ahrs is not ready
+ *          1 if the ahrs became ready
+ *          0 on normal operation
+ */
+int madgwick_ahrs_update(madgwick_ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float dt);
 
 
 #endif /* __MADGWICK_AHRS_H__ */

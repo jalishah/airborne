@@ -1,7 +1,26 @@
+
+/*
+   filter library - interface
+
+   Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ */
+
+
 #ifndef __FILTER_H__
 #define __FILTER_H__
 
-/* type definitions */
+
 typedef struct 
 {
     float Ts;
@@ -10,7 +29,9 @@ typedef struct
     float a1;
     float b0;
     float b1;
-}Filter1;
+}
+Filter1;
+
 
 typedef struct 
 {
@@ -23,25 +44,27 @@ typedef struct
     float b0;
     float b1;
     float b2;
-}Filter2;
+}
+Filter2;
+
 
 /* init functions */
 void filter1_lp_init(Filter1 *filter, float fg, float Ts, int dim);
+
 void filter1_hp_init(Filter1 *filter, float fg, float Ts, int dim);
+
 void filter1_init(Filter1 *filter, float *a, float *b, float Ts, int dim);
 
 void filter2_lp_init(Filter2 *filter, float fg, float damping, float Ts, int dim);
-void filter2_hp_init(Filter2 *filter, float fg, float damping, float Ts, int dim);
-void filter2_init(Filter2 *filter, float *a, float *b, float Ts, int dim);
 
+void filter2_hp_init(Filter2 *filter, float fg, float damping, float Ts, int dim);
+
+void filter2_init(Filter2 *filter, float *a, float *b, float Ts, int dim);
 
 /* execution functions */
 void filter1_run(Filter1 *filter, float *u, float *y);
 
 void filter2_run(Filter2 *filter, float *u, float *y);
 
-
-/* termination functions */
-void filter2_term(Filter2 *filter);
 
 #endif /* __FILTER_H__ */

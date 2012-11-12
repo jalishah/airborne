@@ -1,6 +1,6 @@
 
 /*
-   DROTEK MARG Linux Userspace Driver
+   DROTEK MARG platform driver - implementation
 
    Copyright (C) 2012 Tobias Simon
 

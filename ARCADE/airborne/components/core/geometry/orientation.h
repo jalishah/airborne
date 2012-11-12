@@ -1,8 +1,9 @@
 
 /*
-   orientation interface
+   orientation library - interface
 
    Copyright (C) 2012 Tobias Simon
+   most of the code was stolen from the Internet
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

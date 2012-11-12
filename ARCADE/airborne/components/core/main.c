@@ -1,9 +1,18 @@
 
 /*
- * main.c
- *
- *  Created on: 11.06.2010
- *      Author: tobi
+   ARCADE airborne main program - implementation
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
@@ -32,10 +41,11 @@
 #include "control/control.h"
 #include "platform/platform.h"
 #include "platform/arcade_quadro.h"
-#include "hardware/util/calibration.h"
 #include "control/basic/piid.h"
 #include "control/position/att_ctrl.h"
 #include "filters/sliding_avg.h"
+#include "hardware/util/calibration.h"
+#include "hardware/util/gps_util.h"
 
 
 #define REALTIME_PERIOD (0.005)
@@ -120,18 +130,19 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_init(&piid, REALTIME_PERIOD);
 
    madgwick_ahrs_t madgwick_ahrs;
-   float madgwick_p = 10.0f;
-   float madgwick_p_end = 0.01f;
-   float madgwick_p_step = 10.0f * REALTIME_PERIOD;
-   madgwick_ahrs_init(&madgwick_ahrs, madgwick_p);
+   madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 10.0f * REALTIME_PERIOD, 0.01f);
    
+   float avg_init[3] = {0.0f, 0.0f, -9.81f};
    sliding_avg_t *avg[3];
-   avg[0] = sliding_avg_create(1000, 0.0);
-   avg[1] = sliding_avg_create(1000, 0.0);
-   avg[2] = sliding_avg_create(1000, -9.81);
+   FOR_N(i, 3)
+      avg[i] = sliding_avg_create(1000, avg_init[i]);
 
    att_ctrl_init();
-
+   
+   gps_util_t gps_util;
+   gps_util_init(&gps_util);
+   gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
+   
    interval_t interval;
    interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
@@ -144,40 +155,27 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_input.dt = dt;
 
       marg_data_t marg_data;
-      gps_data_t gps_data;
       platform_read_marg(&marg_data);
+      gps_data_t gps_data;
       platform_read_gps(&gps_data);
+      gps_util_update(&gps_rel_data, &gps_util, &gps_data);
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
-      
 
-      float voltage = 16.0f;
-      //platform_read_voltage(&voltage);
-      
+      float voltage;
+      platform_read_voltage(&voltage);
+
       /* compute estimate of orientation quaternion: */
-      madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
- 
-      if (madgwick_p > madgwick_p_end)
-      {
-         madgwick_p -= madgwick_p_step;
-         if (madgwick_p < madgwick_p_end)
-         {
-            madgwick_p = madgwick_p_end;
-            //quat_to_euler(&euler, &madgwick_ahrs.quat);
-            /* TODO: initialize pitch/roll/yaw controllers here */
-         }
-         madgwick_ahrs.beta = madgwick_p;
+      int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
+      if (ahrs_state < 0)
          continue;
-      }
       
       /* compute NED accelerations using quaternion: */
       vec3_t global_acc;
       quat_rot_vec(&global_acc, &marg_data.acc, &madgwick_ahrs.quat);
-      for (int i = 0; i < 3; i++)
-      {
+      FOR_N(i, 3)
          global_acc.vec[i] -= sliding_avg_calc(avg[i], global_acc.vec[i]);
-      }
       model_input.acc_n = global_acc.x;
       model_input.acc_e = global_acc.y;
       model_input.acc_d = global_acc.z;

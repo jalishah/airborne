@@ -1,55 +1,28 @@
 
 /*
- * platform singleton
+   multirotor platform - interface
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 
-#include "../hardware/interfaces/gps.h"
+#include "../hardware/util/gps_data.h"
 #include "../hardware/util/rc_channels.h"
 #include "../geometry/orientation.h"
 #include "../model/marg_data.h"
-
-#if 0
-typedef struct
-{
-   enum
-   {
-      FIX_NOT_SEEN, /* no mode available so far */
-      FIX_NONE,     /* all fields are invalid */
-      FIX_2D,       /* alt field is invalid */
-      FIX_3D        /* all fields are valid */
-   }
-   fix;
-
-   int satellites; /* number of satellites */
-
-   /* start position */
-   double start_lat;
-   double start_lon;
-   double start_alt;
-
-   /* current position */
-   double lat;
-   double lon;
-   double alt; /* above sea level, in m */
-
-   /* deltas in m */
-   double delta_x;
-   double delta_y;
-   double delta_z;
-
-   float yaw; /* in rad */
-   float ground_speed; /* in m/s */
-   float climb_speed; /* in m/s */
-}
-gps_data_t;
-
-
-#define GPS_DATA_INITIALIZER {FIX_NOT_SEEN, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-#endif
 
 
 typedef struct
