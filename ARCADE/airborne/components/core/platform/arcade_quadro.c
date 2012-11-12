@@ -15,17 +15,17 @@
 #include <util.h>
 #include "coupling.h"
 #include "platform.h"
-#include "channel_map.h"
 #include "../util/logger/logger.h"
 
 /* hardware includes: */
-#include "drotek_marg.h"
+#include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/rc_dsl_reader/rc_dsl_reader.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc.h"
 #include "../hardware/drivers/holger_blmc/force2twi.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
-#include "../hardware/bus/i2c/i2c.h"
+#include "../hardware/util/rc_channels.h"
+#include "drotek_marg.h"
 
 /* optimizer includes: */
 #include "../control/util/cvxgen/solver.h"
@@ -65,9 +65,10 @@ static float coupling_matrix[4 * N_MOTORS] =
 static uint8_t motor_addrs[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c};
 static i2c_bus_t i2c_3;
 static uint8_t *motor_setpoints = NULL;
-static channel_map_t channel_map;
+static deadzone_t deadzone;
+static rc_channels_t rc_channels;
 static uint8_t channel_mapping[MAX_CHANNELS] =  {0, 1, 3, 2, 4}; /* pitch: 0, roll: 1, yaw: 3, gas: 2, switch: 4 */
-static uint8_t channel_use_bias[MAX_CHANNELS] = {1, 1, 1, 0, 0}; /* compute bias only for the three moments */
+static float channel_scale[MAX_CHANNELS] =  {1.0f, -1.0f, -1.0f, 1.0f, 1.0f};
 static drotek_marg_t marg;
 static coupling_t coupling; 
 
@@ -96,8 +97,7 @@ static int read_rc(float channels[MAX_CHANNELS])
    int c;
    for (c = 0; c < MAX_CHANNELS; c++)
    {
-      int index = channel_lookup(&channel_map, c);
-      channels[c] = dsl_channels[index];
+      channels[c] = rc_channels_get(&rc_channels, dsl_channels, c);
    }
    return ret;
 }
@@ -109,23 +109,18 @@ static int read_marg(marg_data_t *marg_data)
 }
 
 
-void arcade_quadro_init(platform_t *plat)
+THROW arcade_quadro_init(platform_t *plat)
 {
    ASSERT_ONCE();
+   THROW_START();
    convex_opt_init();
 
    /* initialize buses: */
-   int ret = i2c_bus_open(&i2c_3, "/dev/i2c-3");
-   if (ret < 0)
-   {
-      LOG(LL_ERROR, "could not open OMAP bus" );
-      exit(1);
-   }
+   THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));
 
    /* set-up MARG sensor cluster: */
-   drotek_marg_init(&marg, &i2c_3);
+   THROW_ON_ERR(drotek_marg_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
-
 
    /* set-up motors driver: */
    coupling_init(&coupling, N_MOTORS, coupling_matrix);
@@ -139,6 +134,7 @@ void arcade_quadro_init(platform_t *plat)
    /* set-up gps driver: */
    scl_gps_init();
    plat->read_gps = scl_gps_read;
+#endif
 
    /* set-up dsl reader: */
    if (rc_dsl_reader_init() < 0)
@@ -146,10 +142,10 @@ void arcade_quadro_init(platform_t *plat)
       LOG(LL_ERROR, "could not initialize dsl reader");
       exit(1);
    }
-   channel_map_init(&channel_map, channel_mapping, channel_use_bias);
+   deadzone_init(&deadzone, 0.05, 1.0, 1.0);
+   rc_channels_init(&rc_channels, channel_mapping, channel_scale, &deadzone);
    plat->read_rc = read_rc;
    
-#endif
 
    if (scl_voltage_init() < 0)
    {
@@ -159,6 +155,7 @@ void arcade_quadro_init(platform_t *plat)
    plat->read_voltage = scl_voltage_read;
  
    LOG(LL_INFO, "arcad_quadro platform initialized");
+   THROW_END();
 }
 
 

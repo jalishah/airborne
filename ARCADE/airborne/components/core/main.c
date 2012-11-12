@@ -97,13 +97,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   printf("Press 's' and return to continue\n");
-   char start_key = 0;
-   while (start_key != 's')
-   {
-      start_key = getchar();
-   }
-   
    float channels[MAX_CHANNELS];
    calibration_t rc_cal;
    calibration_init(&rc_cal, MAX_CHANNELS, 400);
@@ -156,6 +149,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_gps(&gps_data);
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
+      int rc_sig_valid = (platform_read_rc(channels) == 0);
+      
+
       float voltage = 16.0f;
       //platform_read_voltage(&voltage);
       
@@ -174,7 +170,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          madgwick_ahrs.beta = madgwick_p;
          continue;
       }
-
       
       /* compute NED accelerations using quaternion: */
       vec3_t global_acc;
@@ -187,10 +182,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_input.acc_e = global_acc.y;
       model_input.acc_d = global_acc.z;
       
-      /* execute model step: */
+      /* execute kalman filters for position estimate: */
       model_state_t model_state;
       model_step(&model_state, &model_input);
-     
+ 
       /* compute euler angles from quaternion: */
       euler_t euler;
       quat_to_euler(&euler, &madgwick_ahrs.quat);
@@ -198,40 +193,37 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       float att_ctrl[2];
       float att_pos[2] = {euler.pitch, euler.roll};
       att_ctrl_step(att_ctrl, dt, att_pos, att_dest);
-      //EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
 
+      /* set-up input for basic controller: */
+      float rc_input[3];
+      rc_input[0] = att_ctrl[1] + 2.0f * channels[CH_ROLL];
+      rc_input[1] = -att_ctrl[0] + 2.0f * channels[CH_PITCH];
+      rc_input[2] = 3.0f * channels[CH_YAW];
+      piid.f_local[0] = 30.0f * channels[CH_GAS];
+ 
+      /* run feed-forward and piid controller: */
+      float u_ctrl[3];
       float gyro_vals[3];
       gyro_vals[0] = marg_data.gyro.x;
       gyro_vals[1] = -marg_data.gyro.y;
       gyro_vals[2] = -marg_data.gyro.z;
-
-    
-#if 0
-
-      /*
-       * execute controller step:
-       */
-      ctrl_step(&mixer_in, dt, &model_state);
-#endif
-      
-      /* determine attitude */
-      float u_ctrl[3];
-      float rc_input[3];
-
-      /* set-up input for basic controller: */
-      rc_input[0] = att_ctrl[1]; // -2.0f * rc_roll + 0.0 * mixer_in.roll; // 0.1
-      rc_input[1] = -att_ctrl[0]; // 2.0f * rc_pitch - 0.0 * mixer_in.pitch; // 0.1
-      rc_input[2] = 0; // -3.0f * rc_yaw + 0.0 * mixer_in.yaw;
-      piid.f_local[0] = 6.0; //30.0f * rc_gas;
-      
       piid_run(&piid, gyro_vals, rc_input, u_ctrl);
       filter2_run(&filter_out, piid.f_local, piid.f_local);
-      
-      /* here we need to decide if the motors should run: */
-      if (0) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
+
+      /* here we need to decide whether the motors should run: */
+      int motors_enabled;
+      if (channels[CH_SWITCH] < 0.5 && rc_sig_valid)
       {
+         motors_enabled = 1;
       }
-      int motors_enabled = 0;
+      else
+      {
+         piid.f_local[0] = 1.0f; /* 1 newton overall thrust */
+         piid.f_local[1] = 0.0f; /*    no .. */
+         piid.f_local[2] = 0.0f; /* .. additional .. */
+         piid.f_local[3] = 0.0f; /* .. torques */
+         motors_enabled = 1;
+      }
 
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, piid.f_local, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));

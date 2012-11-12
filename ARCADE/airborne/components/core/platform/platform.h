@@ -8,6 +8,7 @@
 #define __PLATFORM_H__
 
 #include "../hardware/interfaces/gps.h"
+#include "../hardware/util/rc_channels.h"
 #include "../geometry/orientation.h"
 #include "../model/marg_data.h"
 
@@ -49,19 +50,6 @@ gps_data_t;
 
 #define GPS_DATA_INITIALIZER {FIX_NOT_SEEN, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #endif
-
-#define MAX_CHANNELS 5
-
-
-typedef enum
-{
-   CH_PITCH,
-   CH_ROLL,
-   CH_YAW,
-   CH_GAS,
-   CH_KILL
-}
-channel_t;
 
 
 typedef struct

@@ -25,7 +25,7 @@
 #include "itg3200.h"
 #include "util.h"
 
-#define ITG3200_DEBUG
+#undef ITG3200_DEBUG
 
 #define ITG3200_ADDRESS 0x69
 
