@@ -11,11 +11,11 @@
 #include <opcd_params.h>
 
 
-#include "rc_dsl_driver.h"
+#include "rc_dsl_reader.h"
 #include "../../../util/logger/logger.h"
 
 
-#define THREAD_NAME       "rc_dsl"
+#define THREAD_NAME       "rc_dsl_reader"
 #define THREAD_PRIORITY   0
 
 
@@ -66,7 +66,7 @@ SIMPLE_THREAD_END
 
 
 
-int rc_dsl_driver_init(void)
+int rc_dsl_reader_init(void)
 {
    ASSERT_ONCE();
    memset(channels, 0, sizeof(channels));
@@ -90,7 +90,7 @@ out:
 }
 
 
-int rc_dsl_driver_read(float channels_out[RC_DSL_CHANNELS])
+int rc_dsl_reader_get(float channels_out[RC_DSL_CHANNELS])
 {
    pthread_mutex_lock(&mutex);
    memcpy(channels_out, channels, sizeof(channels));

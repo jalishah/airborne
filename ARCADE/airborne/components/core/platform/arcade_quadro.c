@@ -16,18 +16,20 @@
 #include "coupling.h"
 #include "platform.h"
 #include "channel_map.h"
-#include "drotek_marg.h"
 #include "../util/logger/logger.h"
 
 /* hardware includes: */
+#include "drotek_marg.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
-#include "../hardware/drivers/rc_dsl/rc_dsl_driver.h"
-#include "../hardware/libs/holger_blmc/holger_blmc.h"
-#include "../hardware/libs/holger_blmc/force2twi.h"
-#include "../hardware/bus/i2c/i2c.h"
+#include "../hardware/drivers/rc_dsl_reader/rc_dsl_reader.h"
+#include "../hardware/drivers/holger_blmc/holger_blmc.h"
+#include "../hardware/drivers/holger_blmc/force2twi.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
+#include "../hardware/bus/i2c/i2c.h"
 
+/* optimizer includes: */
 #include "../control/util/cvxgen/solver.h"
+
 
 #define RPM_MIN 1340.99f
 #define RPM_MAX 7107.6f
@@ -75,7 +77,7 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
-   //convex_opt_run(forces);
+   convex_opt_run(forces);
    int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
    if (!enabled)
    {
@@ -90,7 +92,7 @@ static int write_motors(int enabled, float forces[4], float voltage)
 static int read_rc(float channels[MAX_CHANNELS])
 {
    float dsl_channels[RC_DSL_CHANNELS];
-   int ret = rc_dsl_driver_read(dsl_channels);
+   int ret = rc_dsl_reader_get(dsl_channels);
    int c;
    for (c = 0; c < MAX_CHANNELS; c++)
    {
@@ -138,10 +140,10 @@ void arcade_quadro_init(platform_t *plat)
    scl_gps_init();
    plat->read_gps = scl_gps_read;
 
-   /* set-up dsl driver: */
-   if (rc_dsl_driver_init() < 0)
+   /* set-up dsl reader: */
+   if (rc_dsl_reader_init() < 0)
    {
-      LOG(LL_ERROR, "could not initialize dsl driver");
+      LOG(LL_ERROR, "could not initialize dsl reader");
       exit(1);
    }
    channel_map_init(&channel_map, channel_mapping, channel_use_bias);

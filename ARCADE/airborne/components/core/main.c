@@ -231,7 +231,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       if (0) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
       {
       }
-      int motors_enabled = 1;
+      int motors_enabled = 0;
 
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, piid.f_local, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));

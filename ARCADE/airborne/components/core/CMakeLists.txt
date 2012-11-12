@@ -20,11 +20,11 @@ control
 model
 platform
 holger_blmc
-rc_dsl_driver
+rc_dsl_reader
 rc_dsl
 scl_gps
 scl_voltage
-maxsonar_driver
+maxsonar_reader
 maxsonar
 bma180
 hmc5883
