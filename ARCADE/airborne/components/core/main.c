@@ -125,7 +125,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    piid_t piid;
    piid_init(&piid, REALTIME_PERIOD);
-   piid.f_local[0] = 1.00f;
 
    madgwick_ahrs_t madgwick_ahrs;
    float madgwick_p = 10.0f;
@@ -161,7 +160,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       //platform_read_voltage(&voltage);
       
       /* compute estimate of orientation quaternion: */
-      madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 11.0, dt);
+      madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
  
       if (madgwick_p > madgwick_p_end)
       {
@@ -223,13 +222,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       rc_input[0] = att_ctrl[1]; // -2.0f * rc_roll + 0.0 * mixer_in.roll; // 0.1
       rc_input[1] = -att_ctrl[0]; // 2.0f * rc_pitch - 0.0 * mixer_in.pitch; // 0.1
       rc_input[2] = 0; // -3.0f * rc_yaw + 0.0 * mixer_in.yaw;
-      piid.f_local[0] = 0.0; //30.0f * rc_gas;
+      piid.f_local[0] = 6.0; //30.0f * rc_gas;
       
       piid_run(&piid, gyro_vals, rc_input, u_ctrl);
       filter2_run(&filter_out, piid.f_local, piid.f_local);
-      piid.f_local[1] /= 30.0;
-      piid.f_local[2] /= 30.0;
-      piid.f_local[3] = 0.0;
       
       /* here we need to decide if the motors should run: */
       if (0) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
@@ -238,7 +234,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       int motors_enabled = 1;
 
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, piid.f_local, voltage));
-      //EVERY_N_TIMES(10, printf("%f %f %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
+      //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
       //mixer_in_t mixer_in;
    }

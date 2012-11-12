@@ -73,7 +73,7 @@ static void convex_opt_init(void);
 static void convex_opt_run(float forces[4]);
 
 
-static int write_motors(int enabled, float forces[3], float voltage)
+static int write_motors(int enabled, float forces[4], float voltage)
 {
    //convex_opt_run(forces);
    int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
@@ -155,7 +155,7 @@ void arcade_quadro_init(platform_t *plat)
       exit(1);
    }
    plat->read_voltage = scl_voltage_read;
-   
+ 
    LOG(LL_INFO, "arcad_quadro platform initialized");
 }
 

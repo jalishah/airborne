@@ -21,28 +21,32 @@ void force2twi_init(const coupling_t *coup)
 
 int force2twi_calc(const float *force, const float voltage, uint8_t *i2c)
 {
-   int int_enable = 0;
+   int int_enable = 1;
 
    /* computation of rpm ^ 2 out of the desired forces */
    coupling_calc(coupling, rpm_square, force);
             
    /* computation i2c values out of rpm_square by the inverse of: rpm ^ 2 = a * voltage ^ 1.5 * i2c ^ b */
    for (size_t i = 0; i < coupling->n_motors; i++)
-   {     
-      int temp = round(powf((rpm_square[i] / CTRL_F_A * powf(voltage, -1.5f)), 1.0f / CTRL_F_B));
-      if (temp < HOLGER_I2C_MIN)
-      {
-         temp = HOLGER_I2C_MIN;
-      }
-      else if (temp > HOLGER_I2C_MAX)
-      {
-         temp = HOLGER_I2C_MAX;
+   {
+      float temp = powf((rpm_square[i] / CTRL_F_A * powf(voltage, -1.5f)), 1.0f / CTRL_F_B);
+      if (temp > (float)HOLGER_I2C_MIN)
+      {   
+         if (temp > (float)HOLGER_I2C_MAX)
+         {   
+            i2c[i] = (uint8_t)HOLGER_I2C_MAX;
+            int_enable = 0;
+         }
+         else
+         {   
+            i2c[i] = (uint8_t)temp;
+         }
       }
       else
-      {
-         int_enable = 1;
+      {   
+         i2c[i] = (uint8_t)HOLGER_I2C_MIN;
+         int_enable = 0;
       }
-      i2c[i] = temp;
    }
    return int_enable;
 }

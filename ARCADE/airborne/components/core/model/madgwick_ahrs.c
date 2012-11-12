@@ -18,6 +18,7 @@
 #include "util.h"
 #include "madgwick_ahrs.h"
 
+
 void madgwick_ahrs_init(madgwick_ahrs_t *ahrs, float beta)
 {
    ahrs->quat.q0 = 1;

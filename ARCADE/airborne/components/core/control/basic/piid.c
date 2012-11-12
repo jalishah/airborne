@@ -11,16 +11,16 @@
 
 static void ctrl_feed_forward(piid_t *controller, float rc[3])
 {
-   float temp_ff[1];
+   float temp_ff;
 
-   filter2_run(controller->filter_feedforw_x, rc , temp_ff);
-   controller->f_local[1] = temp_ff[0];
+   filter2_run(controller->filter_feedforw_x, &rc[0], &temp_ff);
+   controller->f_local[1] = temp_ff;
 
-   filter2_run(controller->filter_feedforw_y, rc + 1, temp_ff);
-   controller->f_local[2] = temp_ff[0];
+   filter2_run(controller->filter_feedforw_y, &rc[1], &temp_ff);
+   controller->f_local[2] = temp_ff;
 
-   filter2_run(controller->filter_feedforw_z, rc + 2, temp_ff);
-   controller->f_local[3] = temp_ff[0];
+   filter2_run(controller->filter_feedforw_z, &rc[2], &temp_ff);
+   controller->f_local[3] = temp_ff;
 }
 
 
@@ -180,6 +180,4 @@ void piid_controller_term(piid_t *controller)
    free(controller->xi_err);
    free(controller->f_local);
 }
-
-
 
