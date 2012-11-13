@@ -225,10 +225,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
  
       /* run feed-forward and piid controller: */
       float u_ctrl[3];
+      float gyro_signs[3] = {1.0f, -1.0f, -1.0f};
       float gyro_vals[3];
-      gyro_vals[0] = marg_data.gyro.x;
-      gyro_vals[1] = -marg_data.gyro.y;
-      gyro_vals[2] = -marg_data.gyro.z;
+      FOR_N(i, 3)
+      {
+         gyro_vals[i] = gyro_signs[i] * marg_data.gyro.vec[i];
+      }
       feed_forward_run(&feed_forward, u_ctrl, rc_input);
       piid_run(&piid, u_ctrl, gyro_vals, rc_input);
 
