@@ -1,6 +1,6 @@
 
 /*
-   ARCADE airborne main program - implementation
+   ARCADE Airborne Main Program
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 

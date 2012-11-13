@@ -1,6 +1,6 @@
 
 /*
-   filter library - implementation
+   Filter Library
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
