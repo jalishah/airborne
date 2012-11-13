@@ -1,6 +1,6 @@
 
 /*
-   motor coupling matrix - implementation
+   inverse motor coupling matrix - implementation
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 
@@ -18,40 +18,36 @@
 
 #include <errno.h>
 
-#include "coupling.h"
+#include <util.h>
+
+#include "inv_coupling.h"
 
 
-void coupling_init(coupling_t *coupling, const size_t n_motors, const float *init)
+void inv_coupling_init(inv_coupling_t *inv_coupling, const size_t n_motors, const float *init)
 {
-   coupling->matrix = m_get(n_motors, 4);
-   for (int i = 0; i < n_motors; i++)
-   {
-      for (int j = 0; j < 4; j++)
-      {
-         coupling->matrix->me[i][j] = init[i * 4 + j];
-      }
-   }
-   coupling->in = v_get(4);
-   coupling->out = v_get(n_motors);
-   coupling->n_motors = n_motors;
+   inv_coupling->matrix = m_get(n_motors, 4);
+   FOR_N(i, n_motors)
+      FOR_N(j, 4)
+         inv_coupling->matrix->me[i][j] = init[i * 4 + j];
+   inv_coupling->in = v_get(4);
+   inv_coupling->out = v_get(n_motors);
+   inv_coupling->n_motors = n_motors;
 }
 
 
-void coupling_calc(const coupling_t *coupling, float *out, const float *in)
+void inv_coupling_calc(const inv_coupling_t *inv_coupling, float *out, const float *in)
 {
    /* copy data into input vector: */
-   for (int i = 0; i < 4; i++)
-   {
-      coupling->in->ve[i] = in[i];
-   }
+   FOR_N(i, 4)
+      inv_coupling->in->ve[i] = in[i];
 
    /* matrix-vector multiplication: */
-   mv_mlt(coupling->matrix, coupling->in, coupling->out);
+   mv_mlt(inv_coupling->matrix, inv_coupling->in, inv_coupling->out);
 
    /* copy result of computation into output vector: */
-   for (size_t i = 0; i < coupling->n_motors; i++)
+   FOR_N(i, inv_coupling->n_motors)
    {
-      out[i] = coupling->out->ve[i];
+      out[i] = inv_coupling->out->ve[i];
    }
 }
 

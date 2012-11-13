@@ -1,6 +1,6 @@
 
 /*
-   stabilizing PIID controller - interface
+   feed forward system - interface
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __PIID_H__
-#define __PIID_H__
+#ifndef __FEED_FORWARD_H__
+#define __FEED_FORWARD_H__
 
 
 #include "control_param.h"
@@ -29,35 +29,15 @@
 
 typedef struct 
 {
-   float Ts;
-
-   /* integrators: */
-   adams4_t int_err1;
-   adams4_t int_err2;
-
-   /* filters: */
-   Filter1 filter_lp_err;
-   Filter1 filter_hp_err;
-   Filter2 filter_ref;
-
-   /* working memory: */
-   float *xi_err;
-   float *xii_err;
-
-   /* ring buffer: */
-   float ringbuf[3 * CTRL_NUM_TSTEP];
-   int ringbuf_idx;
-
-   /* integrator enable: */
-   int int_enable;
+   Filter2 filters[3];
 }
-piid_t;
+feed_forward_t;
 
 
-void piid_init(piid_t *ctrl, float sample_time);
+void feed_forward_run(feed_forward_t *ff, float u_ctrl[3], float torques[3]);
 
-void piid_run(piid_t *ctrl, float u_ctrl[3], float gyro[3], float rc[3]);
+void feed_forward_init(feed_forward_t *ff, float sample_time);
 
 
-#endif /* __PIID_H__ */
+#endif /* __FEED_FORWARD_H__ */
 

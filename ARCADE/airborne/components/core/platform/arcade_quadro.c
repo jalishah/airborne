@@ -23,7 +23,7 @@
 #include <malloc.h>
 
 #include <util.h>
-#include "coupling.h"
+#include "inv_coupling.h"
 #include "platform.h"
 #include "../util/logger/logger.h"
 
@@ -63,7 +63,7 @@
 #define IMTX3 (1.0f / (4.0f * F_D))
 
 
-static float coupling_matrix[4 * N_MOTORS] =
+static float inv_coupling_matrix[4 * N_MOTORS] =
 {         /* gas    pitch    roll   yaw */
    /* m0 */ IMTX1,   0.0f, -IMTX2,  IMTX3,
    /* m1 */ IMTX1,   0.0f,  IMTX2,  IMTX3,
@@ -80,7 +80,9 @@ static rc_channels_t rc_channels;
 static uint8_t channel_mapping[MAX_CHANNELS] =  {0, 1, 3, 2, 4}; /* pitch: 0, roll: 1, yaw: 3, gas: 2, switch: 4 */
 static float channel_scale[MAX_CHANNELS] =  {1.0f, -1.0f, -1.0f, 1.0f, 1.0f};
 static drotek_marg_t marg;
-static coupling_t coupling; 
+static inv_coupling_t inv_coupling; 
+static float *rpm_square;
+
 
 static void convex_opt_init(void);
 static void convex_opt_run(float forces[4]);
@@ -89,7 +91,9 @@ static void convex_opt_run(float forces[4]);
 static int write_motors(int enabled, float forces[4], float voltage)
 {
    convex_opt_run(forces);
-   int int_enable = force2twi_calc(forces, voltage, motor_setpoints);
+   /* computation of rpm ^ 2 out of the desired forces */
+   inv_coupling_calc(&inv_coupling, rpm_square, forces);
+   int int_enable = force2twi_calc(motor_setpoints, voltage, rpm_square, N_MOTORS);
    if (!enabled)
    {
       memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
@@ -132,9 +136,11 @@ THROW arcade_quadro_init(platform_t *plat)
    THROW_ON_ERR(drotek_marg_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
+   /* initialize inverse coupling matrix: */
+   inv_coupling_init(&inv_coupling, N_MOTORS, inv_coupling_matrix);
+
    /* set-up motors driver: */
-   coupling_init(&coupling, N_MOTORS, coupling_matrix);
-   force2twi_init(&coupling);
+   rpm_square = malloc(N_MOTORS * sizeof(float));
    motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
    memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
    holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);

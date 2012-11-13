@@ -23,9 +23,7 @@
 #include <time.h>
 
 #include "itg3200.h"
-#include "util.h"
 
-#undef ITG3200_DEBUG
 
 #define ITG3200_ADDRESS 0x69
 
@@ -93,23 +91,17 @@ THROW itg3200_zero_gyros(itg3200_t *itg)
    int16_t val[3];
    float avg[3] = {0, 0, 0};
 
-   int n;
-   for (n = 0; n < ITG3200_GYRO_INIT_COUNT; n++) 
+   FOR_N(n, ITG3200_GYRO_INIT_COUNT) 
    {
       THROW_ON_ERR(read_gyro_raw(itg, val));
-      int i;
-      for (i = 0; i < 3; i++)
+      FOR_N(i, 3)
       {
-         if (fabs((float)val[i]) > 200)
-         {
-            return -EAGAIN;
-         }
+         THROW_IF(fabs((float)val[i]) > 200, -EAGAIN);
          avg[i] += (float)(val[i]);
       }
    }
 
-   int i;
-   for (i = 0; i < 3; i++)
+   FOR_N(i, 3)
    {
       itg->bias.vec[i] = -avg[i] / (float)ITG3200_GYRO_INIT_COUNT;
    }
@@ -125,31 +117,23 @@ THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
    /* copy values */
    i2c_dev_init(&itg->i2c_dev, bus, ITG3200_ADDRESS);
 
-   /* reset */
-   THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_H_RESET));
-
-   /* 70ms for gyro startup */
-   msleep(70);
-
-   /* read back it's address */
+   /* check chip identificatio:n */
    THROW_ON_ERR(i2c_read_reg(&itg->i2c_dev, ITG3200_WHO_AM_I));
 
    /* validate address: */
    THROW_IF((uint8_t)THROW_PREV != itg->i2c_dev.addr, -ENODEV);
 
-#ifdef ITG3200_DEBUG
-   printf("ITG3200, i2c_addr: %.2X\n", itg->i2c_dev.addr);
-#endif
+   /* reset device: */
+   THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_H_RESET));
 
-   /* set z-gyro as clock source */
+   /* wait 70 ms for gyro startup: */
+   msleep(70);
+
+   /* set z-gyro as clock source: */
    THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_PWR_MGM, ITG3200_PWR_MGM_CLK_SEL(0x3)));
 
-   /* set full scale mode and low-pass filter */
+   /* set full scale mode and low-pass filter: */
    THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_DLPF_FS, ITG3200_DLPF_FS_FS_SEL(0x3) | ITG3200_DLPF_FS_DLPF_CFG(filter)));
-
-#ifdef ITG3200_DEBUG
-   printf("ITG3200, calibrating\n");
-#endif
 
    /* calibrate: */
    THROW_ON_ERR(itg3200_zero_gyros(itg));
@@ -167,8 +151,7 @@ THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
    THROW_ON_ERR(read_gyro_raw(itg, raw));
 
    /* construct, scale and bias-correct values: */
-   int i;
-   for (i = 0; i < 3; i++)
+   FOR_N(i, 3)
    {
       gyro[i] = ((float)(raw[i] + itg->bias.vec[i]) / 14.375) * M_PI / 180.0;
    }

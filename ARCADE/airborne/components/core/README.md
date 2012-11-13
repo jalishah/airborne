@@ -2,14 +2,18 @@
 ## Purpose
 This component is a real-time low-level flight controller using flight-relevant sensors and actuators.
 
+
+command  control  filters  geometry  hardware  main.c  model  platform  README.md  util
+
 ## Directory Structure:
 ```
-├── controllers: yaw/pitch/roll/navigation controllers
-├── interfaces: interfaces for controlling the core
-├── model: state estimation code
-├── platform: platform-specific code (quadro/hexa-rotors)
-├── sensor_actor: sensor and actuator code
-└── util: utility modules
+├── command: command interface
+├── control: various controllers
+├── filters:
+├── geometry
+├── hardware: sensor and actuator code
+├── model: state estimation models
+└── platform: platform code connecting hardware components
 ```
 
 ## Sensors:

@@ -1,6 +1,6 @@
 
 /*
-   motor coupling matrix - interface
+   inverse motor coupling matrix - interface
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 
@@ -16,11 +16,10 @@
  */
 
 
-#ifndef __COUPLING_H__
-#define __COUPLING_H__
+#ifndef __INV_COUPLING_H__
+#define __INV_COUPLING_H__
 
 
-#include <stddef.h>
 #include <meschach/matrix.h>
 
 
@@ -31,7 +30,7 @@ typedef struct coupling
    VEC *in;
    VEC *out;
 }
-coupling_t;
+inv_coupling_t;
 
 
 /*
@@ -43,7 +42,7 @@ coupling_t;
  *
  * g = gas, p = pitch, r = roll, y = yaw, n = #motors
  */
-void coupling_init(coupling_t *coupling, const size_t motors, const float *init);
+void inv_coupling_init(inv_coupling_t *inv_coupling, const size_t motors, const float *init);
 
 
 /*
@@ -53,8 +52,8 @@ void coupling_init(coupling_t *coupling, const size_t motors, const float *init)
  * v_x = motor setpoint [0..1]
  * n = #motors
  */
-void coupling_calc(const coupling_t *coupling, float *out, const float *in);
+void inv_coupling_calc(const inv_coupling_t *inv_coupling, float *out, const float *in);
 
 
-#endif /* __COUPLING__ */
+#endif /* __INV_COUPLING__ */
 
