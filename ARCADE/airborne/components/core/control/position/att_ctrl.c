@@ -63,7 +63,7 @@ void att_ctrl_reset(void)
 void att_ctrl_step(float out[2], const float dt, const float pos[2], const float setp[2])
 {
    float _angle_max = tsfloat_get(&angle_max);
-   FOR_EACH(i, out)
+   FOR_EACH(i, controllers)
    {
       /* limit setpoint: */
       float lim_sp = sym_limit(setp[i], _angle_max);

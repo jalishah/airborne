@@ -12,39 +12,12 @@
  */
 
 
-#include <meschach/matrix.h>
 #include <meschach/matrix2.h>
-
 
 #include "kalman.h"
 
 
-struct kalman
-{
-   /* configuration and constant matrices: */
-   MAT *Q; /* process noise */
-   MAT *R; /* measurement noise */
-   MAT *I; /* identity matrix */
-
-   /* state and transition vectors/matrices: */
-   VEC *x; /* state (location and velocity) */
-   VEC *z; /* measurement (location) */
-   MAT *A; /* system matrix */
-   MAT *B; /* control matrix */
-   MAT *P; /* error covariance */
-   VEC *u; /* control (acceleration) */
-   MAT *H; /* observer matrix */
-   MAT *K; /* kalman gain */
-
-   /*  vectors and matrices for calculations: */
-   VEC *t0;
-   VEC *t1;
-   MAT *T0;
-   MAT *T1;
-};
-
-
-static void kalman_init(kalman_t *kf, float q, float r, float pos, float speed)
+void kalman_init(kalman_t *kf, float q, float r, float pos, float speed)
 {
    kf->t0 = v_get(2);
    kf->t1 = v_get(2);
@@ -75,7 +48,6 @@ static void kalman_init(kalman_t *kf, float q, float r, float pos, float speed)
    kf->K = m_get(2, 1);
    kf->H = m_get(2, 2);
    m_set_val(kf->H, 0, 0, 1.0);
-   //m_ident(kf->H);
     
    /* A = | 1.0   dt  |
           | 0.0   1.0 |
@@ -155,13 +127,3 @@ void kalman_run(kalman_out_t *out, kalman_t *kalman, const kalman_in_t *in)
    out->speed = v_entry(kalman->x, 1);
 }
 
-
-/*
- * allocates and initializes a kalman filter
- */
-kalman_t *kalman_create(const kalman_config_t *config, const kalman_out_t *init_state)
-{
-   kalman_t *kalman = (kalman_t *)malloc(sizeof(kalman_t));
-   kalman_init(kalman, config->process_var, config->measurement_var, init_state->pos, init_state->speed);
-   return kalman;
-}

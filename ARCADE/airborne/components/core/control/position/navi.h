@@ -7,7 +7,6 @@ typedef struct
 {
    float pos[2];
    float speed[2];
-   float acc[2];
    float dt; /* control loop iteration time delta, in seconds */
    float yaw; /* angle between magnetic north and device front, in rad */
 }

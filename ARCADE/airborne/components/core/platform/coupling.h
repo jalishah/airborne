@@ -1,7 +1,18 @@
 
 /*
- * file: coupling.h
- * author: Tobias Simon (Ilmenau University of Technology)
+   motor coupling matrix - interface
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
@@ -10,10 +21,17 @@
 
 
 #include <stddef.h>
+#include <meschach/matrix.h>
 
 
-struct coupling;
-typedef struct coupling coupling_t;
+typedef struct coupling
+{
+   size_t n_motors;
+   MAT *matrix;
+   VEC *in;
+   VEC *out;
+}
+coupling_t;
 
 
 /*
@@ -25,7 +43,7 @@ typedef struct coupling coupling_t;
  *
  * g = gas, p = pitch, r = roll, y = yaw, n = #motors
  */
-coupling_t *coupling_create(const unsigned int motors, const float *init);
+void coupling_init(coupling_t *coupling, const size_t motors, const float *init);
 
 
 /*
@@ -36,12 +54,6 @@ coupling_t *coupling_create(const unsigned int motors, const float *init);
  * n = #motors
  */
 void coupling_calc(const coupling_t *coupling, float *out, const float *in);
-
-
-/*
- * returns number of motors in coupling
- */
-unsigned int coupling_motors(const coupling_t *coupling);
 
 
 #endif /* __COUPLING__ */

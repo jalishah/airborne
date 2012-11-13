@@ -1,1 +1,1 @@
-ADD_LIBRARY(maxsonar_driver STATIC maxsonar_driver.c)
+ADD_LIBRARY(maxsonar STATIC maxsonar.c)

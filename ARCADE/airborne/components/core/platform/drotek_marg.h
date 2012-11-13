@@ -1,6 +1,6 @@
 
 /*
-   DROTEK MARG Linux Userspace Driver
+   DROTEK MARG platform driver - interface
 
    Copyright (C) 2012 Tobias Simon
 
@@ -22,19 +22,11 @@
 
 #include <util.h>
 
+#include "platform.h"
 
-#include "../hardware/libs/itg3200/itg3200.h"
-#include "../hardware/libs/bma180/bma180.h"
-#include "../hardware/libs/hmc5883/hmc5883.h"
-
-
-typedef struct
-{
-   vec3_t gyro;
-   vec3_t acc;
-   vec3_t mag;
-}
-marg_data_t;
+#include "../hardware/drivers/itg3200/itg3200.h"
+#include "../hardware/drivers/bma180/bma180.h"
+#include "../hardware/drivers/hmc5883/hmc5883.h"
 
 
 typedef struct

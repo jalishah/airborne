@@ -6,7 +6,7 @@
 
 int scl_voltage_init(void);
 
-float scl_voltage_read(void);
+int scl_voltage_read(float *voltage);
 
 
 #endif /* __SCL_VOLTAGE_H__ */

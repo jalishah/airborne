@@ -1,4 +1,22 @@
 
+/*
+   orientation library - implementation
+
+   Copyright (C) 2012 Tobias Simon
+   most of the code was stolen from the Internet
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+*/
+
+
 
 #include <string.h>
 #include <math.h>
@@ -70,9 +88,19 @@ void quat_to_euler(euler_t *euler, const quat_t *quat)
    float sqy = y * y;
    float sqz = z * z;
 
-   euler->pitch = atan2f(2.f * (x * y + z * s), sqx - sqy - sqz + sqw);
-   euler->roll = asinf(-2.f * (x * z - y * s));
-   euler->yaw = atan2f(2.f * (y * z + x * s), -sqx - sqy + sqz + sqw);
+   euler->yaw = normalize_euler_0_2pi(atan2f(2.f * (x * y + z * s), sqx - sqy - sqz + sqw));
+   euler->pitch = asinf(-2.f * (x * z - y * s));
+   euler->roll = atan2f(2.f * (y * z + x * s), -sqx - sqy + sqz + sqw);
+}
+
+
+float normalize_euler_0_2pi(float euler_angle)
+{
+   if (euler_angle < 0)
+   {
+      euler_angle += (float)(2 * M_PI);
+   }
+   return euler_angle;
 }
 
 
@@ -105,4 +133,6 @@ void quaternion_init(quat_t *quat, float ax, float ay, float az, float mx, float
    quat->q2 = cos_roll * sin_pitch * cosHeading + sin_roll * cos_pitch * sinHeading;
    quat->q3 = cos_roll * cos_pitch * sinHeading - sin_roll * sin_pitch * cosHeading;
 }
+
+
 

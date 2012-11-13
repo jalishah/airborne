@@ -1,9 +1,18 @@
 
 /*
- * main.c
- *
- *  Created on: 11.06.2010
- *      Author: tobi
+   ARCADE airborne main program - implementation
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
@@ -31,111 +40,32 @@
 #include "model/model.h"
 #include "control/control.h"
 #include "platform/platform.h"
+#include "platform/arcade_quadro.h"
+#include "control/basic/piid.h"
+#include "control/position/att_ctrl.h"
+#include "filters/sliding_avg.h"
 #include "hardware/util/calibration.h"
+#include "hardware/util/gps_util.h"
 
 
-#define MOTORS_ENABLED 0 /* set to 0 for disabling actuators */
 
 
-#define REALTIME_FREQ (200)
-#define REALTIME_PERIOD (1.0f / (float)REALTIME_FREQ * 1000.0)
+typedef enum
+{
+   CM_DISARMED,  /* motors are completely disabled for safety */
+   CM_MANUAL,    /* direct remote control without autonomy (indoor, outdoor -> fallback possible) */
+   CM_GUIDED,    /* pilot controls global speed vector using right stick, gas is "vario-height"  */
+   CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
+   CM_FULL_AUTO  /* remote control interface is unused */
+}
+control_mode_t;
+
+
+#define REALTIME_PERIOD (0.005)
 #define CONTROL_RATIO (2)
 
+
 static periodic_thread_t realtime_thread;
-
-
-#if 0
-void _main(int argc, char *argv[])
-{
-   LOG(LL_INFO, "+------------------+");
-   LOG(LL_INFO, "|   core startup   |");
-   LOG(LL_INFO, "+------------------+");
-
-   LOG(LL_INFO, "initializing system");
-
-   /* set-up real-time scheduling: */
-   struct sched_param sp;
-   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
-   sched_setscheduler(getpid(), SCHED_FIFO, &sp);
-   if (mlockall(MCL_CURRENT | MCL_FUTURE))
-   {
-      LOG(LL_ERROR, "mlockall() failed");
-      exit(EXIT_FAILURE);
-   }
-
-   /* initialize hardware/drivers: */
-   LOG(LL_INFO, "initializing platform");
-   platforms_init(0);
-   
-   LOG(LL_INFO, "initializing model/controller");
-   model_init();
-   ctrl_init();
-   
-   /* initialize command interface */
-   LOG(LL_INFO, "initializing cmd interface");
-   cmd_init();
-
-
-   //platform_start_motors();
-   float forces[4] = {0, 0, 0, 0};
-   float voltage;
-   while (1)
-   {
-      if (platform_read_voltage(&voltage) < 0)
-      {
-         voltage = -1.0;   
-      }
-      printf("voltage: %f\n", voltage);
-      sleep(1);
-   }
-
-   LOG(LL_INFO, "system up and running");
-   struct timespec ts_curr;
-   struct timespec ts_prev;
-   struct timespec ts_diff;
-   clock_gettime(CLOCK_REALTIME, &ts_curr);
-   
-   static float rc_bias[3];
-   unsigned char i2c_buffer[4] = {0, 0, 0, 0};
-
-   /* run model and controller: */
-   while (1)
-   {
-      /* calculate dt: */
-      ts_prev = ts_curr;
-      clock_gettime(CLOCK_REALTIME, &ts_curr);
-      TIMESPEC_SUB(ts_diff, ts_curr, ts_prev);
-      float dt = (float)ts_diff.tv_sec + (float)ts_diff.tv_nsec / (float)NSEC_PER_SEC;
-
-      /* read sensor values into model input structure: */
-      model_input_t model_input;
-      model_input.dt = dt;
-      //platform_read_ahrs(&model_input.ahrs_data);
-      //platform_read_gps(&model_input.gps_data);
-      //platform_read_ultra(&model_input.ultra_z);
-      //platform_read_baro(&model_input.baro_z);
-
-      /* execute model step: */
-      model_state_t model_state;
-      model_step(&model_state, &model_input);
-
-      EVERY_N_TIMES(100, printf("%f %f", model_state.x.pos, model_state.y.pos));
-      /* execute controller step: */
-      ctrl_out_t out;
-      ctrl_step(&out, dt, &model_state);
- 
-
-      /* write data to motor mixer: */
-      //EVERY_N_TIMES(OUTPUT_RATIO, motors_write(&out));
-   }
-   while (1)
-   {
-      sleep(1);
-   }
-}
-#endif
-
-
 
 
 PERIODIC_THREAD_BEGIN(realtime_thread_func)
@@ -182,19 +112,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    LOG(LL_INFO, "initializing model/controller");
    model_init();
-   ctrl_init();
-   
+   //ctrl_init();
+
+   LOG(LL_INFO, "initializing platform");
+   platform_init(arcade_quadro_init);
+
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
-   
-   platforms_init(0);
-   printf("Press 's' and return to continue\n");
-   char start_key = 0;
-   while (start_key != 's')
-   {
-      start_key = getchar();
-   }
-   
+
    float channels[MAX_CHANNELS];
    calibration_t rc_cal;
    calibration_init(&rc_cal, MAX_CHANNELS, 400);
@@ -207,120 +132,105 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    }
    LOG(LL_INFO, "system up and running");
 
-   FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
+   /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
-   fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");
+   fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
-#if 0
-   PIIDController controller;
    Filter2 filter_out;
-   filter2_lp_init(&filter_out,55.0f,0.95f,0.005f,4);
+   filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
 
-   cvxgen_init();
-   piid_controller_init(&controller, REALTIME_PERIOD);
-   controller.f_local[0] = 1.50f;
-#endif
+   piid_t piid;
+   piid_init(&piid, REALTIME_PERIOD);
 
    madgwick_ahrs_t madgwick_ahrs;
-   madgwick_ahrs_init(&madgwick_ahrs, 0.01);
+   madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 10.0f * REALTIME_PERIOD, 0.01f);
+   
+   att_ctrl_init();
+   
+   gps_util_t gps_util;
+   gps_util_init(&gps_util);
+   gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
    
    interval_t interval;
    interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
    {
       float dt = interval_measure(&interval);
-      printf("%f\n", dt);
-
       /*
        * read sensor values into model input structure:
        */
       model_input_t model_input;
       model_input.dt = dt;
 
-#if 0
-      float gyro_vals[3];
-      //platform_read_marg(&model_input.marg_data);
-      platform_read_gps(&model_input.gps_data);
+      marg_data_t marg_data;
+      platform_read_marg(&marg_data);
+      gps_data_t gps_data;
+      platform_read_gps(&gps_data);
+      gps_util_update(&gps_rel_data, &gps_util, &gps_data);
+      model_input.dx = gps_rel_data.dx;
+      model_input.dy = gps_rel_data.dy;
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
+      int rc_sig_valid = (platform_read_rc(channels) == 0);
 
-  
-      madgwick_ahrs_update(&madgwick_ahrs, itg.gyro.x, itg.gyro.y, itg.gyro.z, bma.raw.x, bma.raw.y, bma.raw.z, hmc.raw.x, hmc.raw.y, hmc.raw.z, 11.0, dt);
-      euler_angles(madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3);
-      unroll_states();
-      // EVERY_N_TIMES(20, printf("%f %f %f\n", euler.x / M_PI * 180, euler.y / M_PI * 180, euler.z / M_PI * 180); fflush(stdout));
-      //EVERY_N_TIMES(20, printf("%f %f %f %f\n", madgwick_ahrs.quat.q0, madgwick_ahrs.quat.q1, madgwick_ahrs.quat.q2, madgwick_ahrs.quat.q3); fflush(stdout));
+      float voltage;
+      platform_read_voltage(&voltage);
 
-      gyro_vals[0] = itg.gyro.x;
-      gyro_vals[1] = -itg.gyro.y;
-      gyro_vals[2] = -itg.gyro.z;
-
-    
-      //ahrs_read(&model_input.ahrs_data);
-      //gps_read(&model_input.gps_data);
-      //model_input.ultra_z = ultra_altimeter_read();
-      //model_input.baro_z = baro_altimeter_read();
+      /* compute estimate of orientation quaternion: */
+      int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
+      if (ahrs_state < 0)
+         continue;
       
-      mixer_in_t mixer_in;
-#if 0
-      /*
-       * execute model step:
-       */
+      /* compute NED accelerations using quaternion: */
+      quat_rot_vec(&model_input.acc, &marg_data.acc, &madgwick_ahrs.quat);
+      
+      /* execute kalman filters for position estimate: */
       model_state_t model_state;
       model_step(&model_state, &model_input);
-
-      float dir = model_input.gps_data.course; //atan2(model_state.y.speed, model_state.x.speed);
-      char buf[100];
-      sprintf(buf, "%f,%f;%f,%f", model_state.x.speed, model_state.y.speed, cos(dir) * model_input.gps_data.speed, sin(dir) * model_input.gps_data.speed);
-      EVERY_N_TIMES(100, udp_socket_send(udp_socket, buf, strlen(buf)));
-
-      /*
-       * execute controller step:
-       */
-      ctrl_step(&mixer_in, dt, &model_state);
-#endif
-      
-      /* determine attitude */
-      float u_ctrl[3];
-      float rc_input[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-      
-      /* get (and scale) values from remote interface */
-      float rc_pitch = (float)rc_dsl_reader_get_channel(0) / 2000.0f - rc_bias[0];
-      if (fabs(rc_pitch)<0.005f) rc_pitch = 0.0f;
-      float rc_roll = (float)rc_dsl_reader_get_channel(1) / 2000.0f - rc_bias[1];
-      if (fabs(rc_roll)<0.005f) rc_roll = 0.0f;
-      float rc_yaw = -(float)rc_dsl_reader_get_channel(3) / 2000.0f - rc_bias[2];
-      if (fabs(rc_yaw)<0.005f) rc_yaw = 0.0f;
-      float rc_gas = (float)rc_dsl_reader_get_channel(2) / 4000.0f + 0.5f;
-      float rc_ch5 = (float)rc_dsl_reader_get_channel(4) / 2000.0f;
+ 
+      /* compute euler angles from quaternion: */
+      euler_t euler;
+      quat_to_euler(&euler, &madgwick_ahrs.quat);
+      float att_dest[2] = {0, 0};
+      float att_ctrl[2];
+      float att_pos[2] = {euler.pitch, euler.roll};
+      att_ctrl_step(att_ctrl, dt, att_pos, att_dest);
 
       /* set-up input for basic controller: */
-      rc_input[0] = -2.0f * rc_roll + 0.0 * mixer_in.roll; // 0.1
-      rc_input[1] = 2.0f * rc_pitch - 0.0 * mixer_in.pitch; // 0.1
-      rc_input[2] = -3.0f * rc_yaw + 0.0 * mixer_in.yaw;
-      controller.f_local[0] = 30.0f * rc_gas;
-      
-      piid_controller_run(&controller,gyro_vals,rc_input,u_ctrl);
-      filter2_run(&filter_out,controller.f_local,controller.f_local); // TODO: WAR VORHER DRIN!!
-      controller.int_enable = force2twi(controller.f_local, &voltage,i2c_buffer);
-      //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
-      //mixer_in_t mixer_in;
-      if (1) //rc_ch5 > 0.0 || !rc_dsl_reader_signal_valid())
+      float rc_input[3];
+      rc_input[0] = att_ctrl[1] + 2.0f * channels[CH_ROLL];
+      rc_input[1] = -att_ctrl[0] + 2.0f * channels[CH_PITCH];
+      rc_input[2] = 3.0f * channels[CH_YAW];
+      piid.f_local[0] = 30.0f * channels[CH_GAS];
+ 
+      /* run feed-forward and piid controller: */
+      float u_ctrl[3];
+      float gyro_vals[3];
+      gyro_vals[0] = marg_data.gyro.x;
+      gyro_vals[1] = -marg_data.gyro.y;
+      gyro_vals[2] = -marg_data.gyro.z;
+      piid_run(&piid, gyro_vals, rc_input, u_ctrl);
+      filter2_run(&filter_out, piid.f_local, piid.f_local);
+
+      /* here we need to decide whether the motors should run: */
+      int motors_enabled;
+      if (channels[CH_SWITCH] < 0.5 && rc_sig_valid)
       {
-         //flag = 0;
-         /*mixer_in.pitch = -pitch_ctrl_val;
-         mixer_in.roll = -roll_ctrl_val;
-         mixer_in.yaw = -yaw_ctrl_val;
-         mixer_in.gas = gas_sp;*/
-         controller.int_enable = 0;
-         i2c_buffer[0] = 0;
-         i2c_buffer[1] = 0;
-         i2c_buffer[2] = 0;
-         i2c_buffer[3] = 0;
+         motors_enabled = 1;
+      }
+      else
+      {
+         piid.f_local[0] = 1.0f; /* 1 newton overall thrust */
+         piid.f_local[1] = 0.0f; /*    no .. */
+         piid.f_local[2] = 0.0f; /* .. additional .. */
+         piid.f_local[3] = 0.0f; /* .. torques */
+         motors_enabled = 1;
       }
 
-      EVERY_N_TIMES(2, motors_write_uint8(i2c_buffer));
-#endif
+      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, piid.f_local, voltage));
+      //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
+      //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
+      //mixer_in_t mixer_in;
    }
    PERIODIC_THREAD_LOOP_END
 }
@@ -344,7 +254,7 @@ void _main(int argc, char *argv[])
 {
    (void)argc;
    (void)argv;
-   const struct timespec realtime_period = {0, REALTIME_PERIOD * NSEC_PER_MSEC};
+   const struct timespec realtime_period = {0, REALTIME_PERIOD * 1000 * NSEC_PER_MSEC};
    periodic_thread_start(&realtime_thread, realtime_thread_func, "realtime_thread", 99, realtime_period, NULL);
    while (1)
    {

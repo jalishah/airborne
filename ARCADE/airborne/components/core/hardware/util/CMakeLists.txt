@@ -1,1 +1,1 @@
-ADD_LIBRARY(hardware_util STATIC calibration.c)
+ADD_LIBRARY(hardware_util STATIC calibration.c deadzone.c rc_channels.c gps_util.c)

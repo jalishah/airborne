@@ -19,13 +19,12 @@ command
 control
 model
 platform
-sensor_actor_interfaces
 holger_blmc
-rc_dsl_driver
+rc_dsl_reader
 rc_dsl
 scl_gps
 scl_voltage
-maxsonar_driver
+maxsonar_reader
 maxsonar
 bma180
 hmc5883
@@ -37,6 +36,7 @@ glib-2.0
 util network_messages
 scl_messages
 filters
+cvxgen
 hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)
 

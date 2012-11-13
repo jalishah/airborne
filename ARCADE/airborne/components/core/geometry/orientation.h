@@ -1,8 +1,9 @@
 
 /*
-   orientation interface
+   orientation library - interface
 
    Copyright (C) 2012 Tobias Simon
+   most of the code was stolen from the Internet
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -81,6 +82,9 @@ void quat_inv(quat_t *q_out, const quat_t *q_in);
 
 /* convert quaternion to euler angles: */
 void quat_to_euler(euler_t *euler, const quat_t *quat);
+
+
+float normalize_euler_0_2pi(float euler_angle);
 
 
 void quaternion_init(quat_t *quat, float ax, float ay, float az, float mx, float my, float mz);

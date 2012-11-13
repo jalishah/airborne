@@ -1,80 +1,69 @@
 
 /*
- * generic platform interface
+   multirotor platform - interface
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 
-
-#include "../hardware/interfaces/gps.h"
-#include "../hardware/interfaces/ahrs.h"
-#include "../hardware/interfaces/rc.h"
-#include "../hardware/interfaces/motors.h"
-#include "../hardware/interfaces/voltage.h"
-
-
-typedef struct
-{
-   int (*init)(void);
-   float (*read)(void);
-   float covar;
-}
-ultra_t;
-
-
-typedef struct
-{
-   int (*init)(void);
-   float (*read)(void);
-   float covar;
-}
-baro_t;
-
-
-typedef struct
-{
-   int (*init)(void);
-   void (*read)(ahrs_data_t *data);
-   float acc_covar;
-}
-ahrs_t;
+#include "../hardware/util/gps_data.h"
+#include "../hardware/util/rc_channels.h"
+#include "../geometry/orientation.h"
+#include "../model/marg_data.h"
 
 
 typedef struct
 {
    /* sensors: */
-   gps_interface_t *gps;
-   ultra_t *ultra;
-   baro_t *baro;
-   ahrs_t *ahrs;
-   rc_interface_t *rc;
-   voltage_interface_t *voltage;
+   int (*read_marg)(marg_data_t *marg_data);
+   int (*read_rc)(float channels[MAX_CHANNELS]);
+   int (*read_gps)(gps_data_t *gps_data);
+   int (*read_ultra)(float *ultra);
+   int (*read_baro)(float *baro);
+   int (*read_voltage)(float *voltage);
+   
    /* actuators: */
-   motors_interface_t *motors;
+   int (*write_motors)(int enabled, float forces[3], float voltage);
 }
 platform_t;
 
 
 
-void platforms_init(unsigned int select);
+int platform_init(int (*plat_init)(platform_t *platform));
 
-platform_t *platform_create(void);
 
-int platform_write_motors(float forces[4], float voltage);
+int platform_read_marg(marg_data_t *marg_data);
+
 
 int platform_read_rc(float channels[MAX_CHANNELS]);
 
-int platform_read_ahrs(ahrs_data_t *data);
 
-int platform_read_gps(gps_data_t *data);
+int platform_read_gps(gps_data_t *gps_data);
 
-int platform_read_ultra(float *data);
 
-int platform_read_baro(float *data);
+int platform_read_ultra(float *ultra);
+
+
+int platform_read_baro(float *baro);
+
 
 int platform_read_voltage(float *voltage);
+
+
+int platform_write_motors(int enabled, float forces[4], float voltage);
 
 
 #endif /* __PLATFORM_H__ */

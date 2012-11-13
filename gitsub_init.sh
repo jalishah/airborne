@@ -13,5 +13,3 @@ echo authenticated configuration, applying to submodules
 git submodule init
 git submodule update
 git submodule foreach git checkout master
-
-mkdir build
