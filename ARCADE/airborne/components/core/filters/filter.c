@@ -20,6 +20,8 @@
 #include <math.h>
 #include <malloc.h>
 
+#include <util.h>
+
 #include "filter.h"
 
 
@@ -61,9 +63,10 @@ void filter1_init(Filter1 *filter, float *a, float *b, float Ts, int signal_dim)
    filter->Ts = Ts;
    filter->signal_dim = signal_dim;
     
-   filter->z = malloc(signal_dim * sizeof(float)); 
+   filter->z = malloc(signal_dim * sizeof(float));
+   ASSERT_NOT_NULL(filter->z);
 
-   for (i = 0; i < signal_dim; i++)
+   FOR_N(i, signal_dim)
    {
       filter->z[i] = 0.0f;
    }
@@ -79,7 +82,7 @@ void filter1_run(Filter1 *filter, float *u_in, float *y)
 {
    int i;
    float u;
-   for (i = 0; i < filter->signal_dim; i++)
+   FOR_N(i, filter->signal_dim)
    {
       u = u_in[i];
       y[i]         = filter->b0 * u + filter->z[i];
@@ -131,9 +134,11 @@ void filter2_init(Filter2 *filter, float *a, float *b, float Ts, int signal_dim)
    filter->signal_dim = signal_dim;
     
    filter->z1 = malloc(signal_dim * sizeof(float)); 
+   ASSERT_NOT_NULL(filter->z1);
    filter->z2 = malloc(signal_dim * sizeof(float));
+   ASSERT_NOT_NULL(filter->z2);
 
-   for (i = 0; i < signal_dim; i++)
+   FOR_N(i, signal_dim)
    {
       filter->z1[i] = 0.0f;
       filter->z2[i] = 0.0f;
@@ -152,7 +157,7 @@ void filter2_run(Filter2 *filter, float *u_in, float *y)
 {
    int i;
    float u;
-   for (i = 0; i < filter->signal_dim; i++)
+   FOR_N(i, filter->signal_dim)
    {
       u = u_in[i];
       y[i]          = filter->b0 * u                     + filter->z1[i];

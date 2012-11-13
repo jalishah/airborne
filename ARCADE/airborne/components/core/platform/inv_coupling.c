@@ -25,12 +25,24 @@
 
 void inv_coupling_init(inv_coupling_t *inv_coupling, const size_t n_motors, const float *init)
 {
+   /* allocate inverse coupling matrix :*/
    inv_coupling->matrix = m_get(n_motors, 4);
+   ASSERT_NOT_NULL(inv_coupling->matrix);
+
+   /* initialize inverse coupling matrix: */
    FOR_N(i, n_motors)
       FOR_N(j, 4)
          inv_coupling->matrix->me[i][j] = init[i * 4 + j];
+   
+   /* allocate input vector: */
    inv_coupling->in = v_get(4);
+   ASSERT_NOT_NULL(inv_coupling->in);
+   
+   /* allocate output vector: */
    inv_coupling->out = v_get(n_motors);
+   ASSERT_NOT_NULL(inv_coupling->out);
+   
+   /* copy motor count: */
    inv_coupling->n_motors = n_motors;
 }
 
@@ -46,8 +58,6 @@ void inv_coupling_calc(const inv_coupling_t *inv_coupling, float *out, const flo
 
    /* copy result of computation into output vector: */
    FOR_N(i, inv_coupling->n_motors)
-   {
       out[i] = inv_coupling->out->ve[i];
-   }
 }
 
