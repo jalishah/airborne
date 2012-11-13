@@ -25,10 +25,16 @@
 #include "filter.h"
 
 
+static float filter_constant(float fg)
+{
+   return 1.0f / (2.0f * M_PI * fg);
+}
+
+
 void filter1_lp_init(Filter1 *filter, float fg, float Ts, int signal_dim)
 {
    /* calculate filter time constant */
-   float T = 1.0f / (2.0f * M_PI * fg);
+   float T = filter_constant(fg);
 
    /* filter coefficients for 2nd order highpass filter */
    float a[1];
@@ -44,7 +50,7 @@ void filter1_lp_init(Filter1 *filter, float fg, float Ts, int signal_dim)
 void filter1_hp_init(Filter1 *filter, float fg, float Ts, int signal_dim)
 {
    /* calculate filter time constant */
-   float T = 1.0f / (2.0f * M_PI * fg);
+   float T = filter_constant(fg);
 
    /* filter coefficients for 2nd order highpass filter */
    float a[1];
@@ -59,7 +65,6 @@ void filter1_hp_init(Filter1 *filter, float fg, float Ts, int signal_dim)
 
 void filter1_init(Filter1 *filter, float *a, float *b, float Ts, int signal_dim)
 {
-   int i;
    filter->Ts = Ts;
    filter->signal_dim = signal_dim;
     
@@ -80,11 +85,9 @@ void filter1_init(Filter1 *filter, float *a, float *b, float Ts, int signal_dim)
 
 void filter1_run(Filter1 *filter, float *u_in, float *y)
 {
-   int i;
-   float u;
    FOR_N(i, filter->signal_dim)
    {
-      u = u_in[i];
+      float u = u_in[i];
       y[i]         = filter->b0 * u + filter->z[i];
       filter->z[i] = filter->b1 * u - filter->a1 * y[i];
    }
@@ -94,7 +97,7 @@ void filter1_run(Filter1 *filter, float *u_in, float *y)
 void filter2_lp_init(Filter2 *filter, float fg, float d, float Ts, int signal_dim)
 {
    /* calculate filter fime constant */
-   float T = 1.0f / (2.0f * M_PI * fg);
+   float T = filter_constant(fg);
 
    /* filter coefficients for 2nd order highpass filter */
    float a[2];
@@ -112,7 +115,7 @@ void filter2_lp_init(Filter2 *filter, float fg, float d, float Ts, int signal_di
 void filter2_hp_init(Filter2 *filter, float fg, float d, float Ts, int signal_dim)
 {
    /* calculate filter fime constant */
-   float T = 1.0f / (2.0f * M_PI * fg);
+   float T = filter_constant(fg);
 
    /* Filter coefficients for 2nd order highpass filter */
    float a[2];
@@ -129,7 +132,6 @@ void filter2_hp_init(Filter2 *filter, float fg, float d, float Ts, int signal_di
 
 void filter2_init(Filter2 *filter, float *a, float *b, float Ts, int signal_dim)
 {
-   int i;
    filter->Ts = Ts;
    filter->signal_dim = signal_dim;
     
@@ -155,11 +157,9 @@ void filter2_init(Filter2 *filter, float *a, float *b, float Ts, int signal_dim)
 
 void filter2_run(Filter2 *filter, float *u_in, float *y)
 {
-   int i;
-   float u;
    FOR_N(i, filter->signal_dim)
    {
-      u = u_in[i];
+      float u = u_in[i];
       y[i]          = filter->b0 * u                     + filter->z1[i];
       filter->z1[i] = filter->b1 * u - filter->a1 * y[i] + filter->z2[i];
       filter->z2[i] = filter->b2 * u - filter->a2 * y[i];

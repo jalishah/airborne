@@ -49,8 +49,6 @@
 #include "hardware/util/gps_util.h"
 
 
-
-
 typedef enum
 {
    CM_DISARMED,  /* motors are completely disabled for safety */

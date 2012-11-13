@@ -1,6 +1,6 @@
 
 /*
-   inverse motor coupling matrix - implementation
+   Inverse Motor Coupling Matrix Implementation
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 

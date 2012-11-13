@@ -1,6 +1,6 @@
 
 /*
-   feed forward system - interface
+   Feed Forward System Interface
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
@@ -29,6 +29,7 @@
 
 typedef struct 
 {
+   /* [x, y, z] 2nd order filters: */
    Filter2 filters[3];
 }
 feed_forward_t;

@@ -1,6 +1,6 @@
 
 /*
-   stabilizing PIID controller - implementation
+   Stabilizing PIID Controller Implementation
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
@@ -64,7 +64,7 @@ void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
    float rc_filt[3];
 
    /* filter reference signals */
-   filter2_run(&piid->filter_ref, rc, rc);
+   filter2_run(&piid->filter_ref, rc, rc_filt);
 
    FOR_N(i, 3)
    {
@@ -84,17 +84,23 @@ void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
 
    /* error integration: */
    FOR_N(i, 3)
+   {
       piid->int_err1.f0[i] = error[i];
+   }
    adams4_run(&piid->int_err1, piid->xi_err, piid->Ts, piid->int_enable);
 
    /* 2nd error integration: */
    FOR_N(i, 3)
+   {
       piid->int_err2.f0[i] = piid->xi_err[i];
+   }
    adams4_run(&piid->int_err2, piid->xii_err, piid->Ts, piid->int_enable);
 
    /* compute feedback: */
    FOR_N(i, 2)
+   {
       u_ctrl[i + 1] += PIID_KP * error[i] + PIID_KI * piid->xi_err[i] + PIID_KII * piid->xii_err[i] + PIID_KD * derror[i];
+   }
    u_ctrl[3] += PIID_Y_KP * error[2] +  PIID_Y_KI * piid->xi_err[2] + PIID_Y_KII * piid->xii_err[2] +  PIID_Y_KD * derror[2];
 }
 

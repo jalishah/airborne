@@ -1,6 +1,6 @@
 
 /*
-   system and control parameters - interface
+   System and Control Parameters Interface
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology

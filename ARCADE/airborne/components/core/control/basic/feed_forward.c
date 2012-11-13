@@ -1,6 +1,6 @@
 
 /*
-   feed forward system and stabilizing PIID controller - implementation
+   Feed Forward System Implementation
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
@@ -31,8 +31,8 @@ void feed_forward_init(feed_forward_t *ff, float Ts)
    float temp_a0 = (4.0f * T * T + 4.0f * FILT_FF_D * T * Ts + Ts*Ts);
 
    float a[2] = {
-       (2.0f * Ts * Ts - 8.0f * T * T) / temp_a0,
-       (4.0f * T * T   - 4.0f * FILT_FF_D * T * Ts + Ts * Ts) / temp_a0
+      (2.0f * Ts * Ts - 8.0f * T * T) / temp_a0,
+      (4.0f * T * T   - 4.0f * FILT_FF_D * T * Ts + Ts * Ts) / temp_a0
    };
 
    /* x-axis: */
@@ -61,9 +61,7 @@ void feed_forward_run(feed_forward_t *ff, float u_ctrl[3], float torques[3])
 {
    FOR_N(i, 3)
    {
-      float val;
-      filter2_run(&ff->filters[i], &torques[i], &val);
-      u_ctrl[i] = val;
+      filter2_run(&ff->filters[i], &torques[i], &u_ctrl[i]);
    }
 }
 

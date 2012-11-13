@@ -1,6 +1,6 @@
 
 /*
-   inverse motor coupling matrix - interface
+   Inverse Motor Coupling Matrix Interface
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 
