@@ -48,6 +48,19 @@
 #include "hardware/util/gps_util.h"
 
 
+
+
+typedef enum
+{
+   CM_DISARMED,  /* motors are completely disabled for safety */
+   CM_MANUAL,    /* direct remote control without autonomy (indoor, outdoor -> fallback possible) */
+   CM_GUIDED,    /* pilot controls global speed vector using right stick, gas is "vario-height"  */
+   CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
+   CM_FULL_AUTO  /* remote control interface is unused */
+}
+control_mode_t;
+
+
 #define REALTIME_PERIOD (0.005)
 #define CONTROL_RATIO (2)
 
