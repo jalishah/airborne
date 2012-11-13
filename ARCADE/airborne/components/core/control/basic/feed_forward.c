@@ -26,10 +26,10 @@
 
 
 /* system parameters: */
-#define CTRL_JXX 1.0f * 0.0097f
-#define CTRL_JYY 1.0f * 0.0097f
-#define CTRL_JZZ 0.45f * 1.273177e-002f
-#define CTRL_TMC 0.06f
+#define CTRL_JXX (1.0f * 0.0097f)
+#define CTRL_JYY (1.0f * 0.0097f)
+#define CTRL_JZZ (0.45f * 1.273177e-002f)
+#define CTRL_TMC (0.06f)
 
 
 void feed_forward_init(feed_forward_t *ff, float Ts)

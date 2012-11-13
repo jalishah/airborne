@@ -29,21 +29,21 @@
 
 
 /* pitch and roll: */
-#define PIID_KD  0.02352953418f
-#define PIID_KP  0.32876523028f
-#define PIID_KI  2.20026754887f
-#define PIID_KII 4.37086296837f
+#define PIID_KD  (0.02352953418f)
+#define PIID_KP  (0.32876523028f)
+#define PIID_KI  (2.20026754887f)
+#define PIID_KII (4.37086296837f)
 
 
 /* yaw: */
-#define PIID_Y_KP  0.108f
-#define PIID_Y_KD  0.00648f
-#define PIID_Y_KI  0.45f
-#define PIID_Y_KII 0.0f
+#define PIID_Y_KP  (0.108f)
+#define PIID_Y_KD  (0.00648f)
+#define PIID_Y_KI  (0.45f)
+#define PIID_Y_KII (0.0f)
 
 
 /* filter configuration: */
-#define FILT_C_FG 10.0f
+#define FILT_C_FG (10.0f)
 
 
 void piid_init(piid_t *piid, float Ts)
@@ -100,7 +100,7 @@ void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
    filter1_run(&piid->filter_hp_err, error, derror);
    filter1_run(&piid->filter_lp_err, error, error);
 
-   /* error integration: */
+   /* 1st error integration: */
    FOR_N(i, 3)
    {
       piid->int_err1.f0[i] = error[i];
