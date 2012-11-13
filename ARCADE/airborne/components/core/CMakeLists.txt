@@ -29,6 +29,7 @@ maxsonar
 bma180
 hmc5883
 itg3200
+mpu6050
 ms5611
 geometry
 i2c serial logger opcd_params threads ltime scl
