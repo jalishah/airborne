@@ -22,7 +22,6 @@
 #include <sclhelper.h>
 
 #include "model.h"
-#include "../geometry/body_to_world.h"
 #include "../geometry/orientation.h"
 #include "../filters/kalman.h"
 #include "../filters/sliding_avg.h"
@@ -35,9 +34,7 @@ static tsfloat_t ultra_noise;
 static tsfloat_t baro_noise;
 static tsfloat_t gps_noise;
 static tsint_t acc_avg_update_s;
-static tsfloat_t x_acc_avg_conf;
-static tsfloat_t y_acc_avg_conf;
-static tsfloat_t z_acc_avg_conf;
+static tsfloat_t acc_avg_start[3];
 
 /* kalman filters: */
 static kalman_t ultra_z_kalman;
@@ -46,11 +43,8 @@ static kalman_t y_kalman;
 static kalman_t x_kalman;
 
 /* averages: */
-static sliding_avg_t *y_acc_avg;
-static sliding_avg_t *x_acc_avg;
-static sliding_avg_t *z_acc_avg;
+static sliding_avg_t acc_avgs[3];
 
-static body_to_world_t *btw;
 
 
 void model_step(model_state_t *out, model_input_t *in)
@@ -58,52 +52,45 @@ void model_step(model_state_t *out, model_input_t *in)
    ASSERT_NOT_NULL(out);
    ASSERT_NOT_NULL(in);
 
-   world_vector_t world_vector;
-
-   world_vector.x_dir = in->acc.x;
-   world_vector.y_dir = in->acc.y;
-   world_vector.z_dir = in->acc.z;
-
-   sliding_avg_calc(x_acc_avg, world_vector.x_dir);
-   sliding_avg_calc(y_acc_avg, world_vector.y_dir);
-   sliding_avg_calc(z_acc_avg, world_vector.z_dir);
-
-   float world_acc_x = world_vector.x_dir - sliding_avg_get(x_acc_avg);
-   float world_acc_y = world_vector.y_dir - sliding_avg_get(y_acc_avg);
-   float world_acc_z = world_vector.z_dir - sliding_avg_get(z_acc_avg);
+   vec3_t world_acc;
+   FOR_N(i, 3)
+   {
+      float avg = sliding_avg_calc(&acc_avgs[i], in->acc.vec[i]);
+      world_acc.vec[i] = in->acc.vec[i] - avg;
+   }
 
    /* set-up kalman filter inputs: */
    const kalman_in_t x_in =
    {
       in->dt,
       in->dx,
-      world_acc_x
+      world_acc.x
    };
 
    const kalman_in_t y_in =
    {
       in->dt,
       in->dy,
-      world_acc_y
+      world_acc.y
    };
 
    const kalman_in_t ultra_z_in =
    {
       in->dt,
       in->ultra_z,
-      -world_acc_z
+      -world_acc.z
    };
 
    const kalman_in_t baro_z_in =
    {
       in->dt,
       in->baro_z,
-      -world_acc_z
+      -world_acc.z
    };
 
    /* run kalman filters: */
-   kalman_out_t y_kalman_out;
    kalman_out_t x_kalman_out;
+   kalman_out_t y_kalman_out;
    kalman_out_t ultra_z_kalman_out;
    kalman_out_t baro_z_kalman_out;
 
@@ -139,9 +126,9 @@ void model_init(void)
       {"baro_noise", &baro_noise},
       {"gps_noise", &gps_noise},
       {"acc_avg_update_s", &acc_avg_update_s},
-      {"x_acc_avg", &x_acc_avg_conf},
-      {"y_acc_avg", &y_acc_avg_conf},
-      {"z_acc_avg", &z_acc_avg_conf},
+      {"x_acc_avg", &acc_avg_start[0]},
+      {"y_acc_avg", &acc_avg_start[1]},
+      {"z_acc_avg", &acc_avg_start[2]},
       OPCD_PARAMS_END
    };
    opcd_params_apply("model.", params);
@@ -157,13 +144,11 @@ void model_init(void)
    kalman_init(&ultra_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&ultra_noise), 0, 0);
    kalman_init(&baro_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&baro_noise), 0, 0);
    
-   /* set-up body to world coordinate transformation: */
-   btw = body_to_world_create();
-
    /* intitialize averages: */
    const int ACC_AVG_SIZE = 10000;
-   x_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&x_acc_avg_conf));
-   y_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&y_acc_avg_conf));
-   z_acc_avg = sliding_avg_create(ACC_AVG_SIZE, tsfloat_get(&z_acc_avg_conf));
+   FOR_N(i, 3)
+   {
+      sliding_avg_init(&acc_avgs[i], ACC_AVG_SIZE, tsfloat_get(&acc_avg_start[i]));
+   }
 }
 

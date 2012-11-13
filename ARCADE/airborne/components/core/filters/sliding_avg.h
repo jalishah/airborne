@@ -1,26 +1,38 @@
 
 /*
- * sliding_avg.h - fast sliding average interface
- *
- * Created on: 08.10.2011
- * Author: tobi
+   Sliding Average
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
+
 
 #ifndef __SLIDING_AVG_H__
 #define __SLIDING_AVG_H__
 
 
-struct sliding_avg;
-typedef struct sliding_avg sliding_avg_t;
+typedef struct
+{
+   float *hist;
+   size_t wnd_size;
+   float sum;
+   size_t pos;
+} 
+sliding_avg_t;
 
 
-sliding_avg_t *sliding_avg_create(int wnd_size, float init);
+void sliding_avg_init(sliding_avg_t *sliding_avg, size_t wnd_size, float init);
 
 float sliding_avg_calc(sliding_avg_t *sliding_avg, float val);
-
-float sliding_avg_get(sliding_avg_t *sliding_avg);
-
-void sliding_avg_destroy(sliding_avg_t *sliding_avg);
 
 
 #endif /* __SLIDING_AVG_H__ */

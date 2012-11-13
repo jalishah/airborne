@@ -1,38 +1,37 @@
 
 /*
- * sliding_avg.c - fast sliding average implementation
- *
- * Created on: 08.10.2011
- * Author: tobi
+   Sliding Average Interface
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
-#include <malloc.h>
+#include <util.h>
 
 #include "sliding_avg.h"
 
 
-struct sliding_avg
+void sliding_avg_init(sliding_avg_t *sliding_avg, size_t wnd_size, float init)
 {
-   float *hist;
-   int wnd_size;
-   float sum;
-   int pos;
-};
-
-
-sliding_avg_t *sliding_avg_create(int wnd_size, float init)
-{
-   sliding_avg_t *sliding_avg = malloc(sizeof(sliding_avg_t));
    sliding_avg->wnd_size = wnd_size + 1;
    sliding_avg->hist = malloc(sizeof(float) * sliding_avg->wnd_size);
+   ASSERT_NOT_NULL(sliding_avg->hist);
    sliding_avg->sum = init * wnd_size;
-   for (int i = 0; i < sliding_avg->wnd_size; i++)
+   FOR_N(i, sliding_avg->wnd_size)
    {
       sliding_avg->hist[i] = init;
    }
    sliding_avg->pos = 0;
-   return sliding_avg;
 }
 
 
@@ -43,19 +42,6 @@ float sliding_avg_calc(sliding_avg_t *sliding_avg, float val)
    sliding_avg->sum = sliding_avg->sum - last + val;
    sliding_avg->hist[sliding_avg->pos] = val;
    sliding_avg->pos = next_pos;
-   return sliding_avg_get(sliding_avg);
-}
-
-
-float sliding_avg_get(sliding_avg_t *sliding_avg)
-{
    return sliding_avg->sum / (sliding_avg->wnd_size - 1);
-}
-
-
-void sliding_avg_destroy(sliding_avg_t *sliding_avg)
-{
-   free(sliding_avg->hist);
-   free(sliding_avg);
 }
 
