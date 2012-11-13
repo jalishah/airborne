@@ -1,9 +1,20 @@
+
 /*
- * model.h
- *
- *  Created on: 26.09.2010
- *      Author: tobi
+   Position/Speed Model Interface
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
+
 
 #ifndef __MODEL_H__
 #define __MODEL_H__
@@ -12,9 +23,6 @@
 #include "../geometry/orientation.h"
 
 
-/*
- * position-speed-acceleration state:
- */
 typedef struct
 {
    float pos; /* position, in m */
@@ -23,24 +31,16 @@ typedef struct
 position_state_t;
 
 
-/*
- * model state:
- */
 typedef struct
 {
-   /* local position estimates: */
    position_state_t x; /* x state */
    position_state_t y; /* y state */
    position_state_t ultra_z; /* ultrasonoc altitude over ground */
    position_state_t baro_z; /* barometric altitude above sea level */
-   euler_t euler;
 }
 model_state_t;
 
 
-/*
- * model input:
- */
 typedef struct
 {
    float dt;
@@ -57,15 +57,8 @@ typedef struct
 model_input_t;
 
 
-/*
- * state access primitives
- */
 void model_init(void);
 
-
-/*
- * model state update function
- */
 void model_step(model_state_t *out, model_input_t *input);
 
 

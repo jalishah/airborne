@@ -1,19 +1,21 @@
 
 /*
- * model.c
- *
- *  Created on: 17.06.2010
- *      Author: tobi
- *
- * purpose:
- *
- * - reads sensor data and performs sensor fusion
- * - provides estimated system states for controllers
- *
+   Position/Speed Model
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
-#include <unistd.h>
 
 #include <util.h>
 #include <simple_thread.h>
@@ -45,6 +47,44 @@ static kalman_t x_kalman;
 /* averages: */
 static sliding_avg_t acc_avgs[3];
 
+
+void model_init(void)
+{
+   ASSERT_ONCE();
+
+   /* read configuration and initialize scl gates: */
+   opcd_param_t params[] =
+   {
+      {"process_noise", &process_noise},
+      {"ultra_noise", &ultra_noise},
+      {"baro_noise", &baro_noise},
+      {"gps_noise", &gps_noise},
+      {"acc_avg_update_s", &acc_avg_update_s},
+      {"x_acc_avg", &acc_avg_start[0]},
+      {"y_acc_avg", &acc_avg_start[1]},
+      {"z_acc_avg", &acc_avg_start[2]},
+      OPCD_PARAMS_END
+   };
+   opcd_params_apply("model.", params);
+   LOG(LL_DEBUG, "process noise: %f, ultra noise: %f, baro noise: %f, gps noise: %f\n",
+       tsfloat_get(&process_noise),
+       tsfloat_get(&ultra_noise),
+       tsfloat_get(&baro_noise),
+       tsfloat_get(&gps_noise));
+
+   /* set-up kalman filters: */
+   kalman_init(&x_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
+   kalman_init(&y_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
+   kalman_init(&ultra_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&ultra_noise), 0, 0);
+   kalman_init(&baro_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&baro_noise), 0, 0);
+   
+   /* intitialize averages: */
+   const int ACC_AVG_SIZE = 10000;
+   FOR_N(i, 3)
+   {
+      sliding_avg_init(&acc_avgs[i], ACC_AVG_SIZE, tsfloat_get(&acc_avg_start[i]));
+   }
+}
 
 
 void model_step(model_state_t *out, model_input_t *in)
@@ -114,41 +154,4 @@ void model_step(model_state_t *out, model_input_t *in)
 }
 
 
-void model_init(void)
-{
-   ASSERT_ONCE();
-
-   /* read configuration and initialize scl gates: */
-   opcd_param_t params[] =
-   {
-      {"process_noise", &process_noise},
-      {"ultra_noise", &ultra_noise},
-      {"baro_noise", &baro_noise},
-      {"gps_noise", &gps_noise},
-      {"acc_avg_update_s", &acc_avg_update_s},
-      {"x_acc_avg", &acc_avg_start[0]},
-      {"y_acc_avg", &acc_avg_start[1]},
-      {"z_acc_avg", &acc_avg_start[2]},
-      OPCD_PARAMS_END
-   };
-   opcd_params_apply("model.", params);
-   LOG(LL_DEBUG, "process noise: %f, ultra noise: %f, baro noise: %f, gps noise: %f\n",
-       tsfloat_get(&process_noise),
-       tsfloat_get(&ultra_noise),
-       tsfloat_get(&baro_noise),
-       tsfloat_get(&gps_noise));
-
-   /* set-up kalman filters: */
-   kalman_init(&x_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
-   kalman_init(&y_kalman, tsfloat_get(&process_noise), tsfloat_get(&gps_noise), 0, 0);
-   kalman_init(&ultra_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&ultra_noise), 0, 0);
-   kalman_init(&baro_z_kalman, tsfloat_get(&process_noise), tsfloat_get(&baro_noise), 0, 0);
-   
-   /* intitialize averages: */
-   const int ACC_AVG_SIZE = 10000;
-   FOR_N(i, 3)
-   {
-      sliding_avg_init(&acc_avgs[i], ACC_AVG_SIZE, tsfloat_get(&acc_avg_start[i]));
-   }
-}
 

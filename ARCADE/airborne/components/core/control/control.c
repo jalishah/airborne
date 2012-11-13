@@ -64,7 +64,7 @@ override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
 
 
 
-void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
+void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *euler)
 {
    /*
     * just some shortcut definitions:
@@ -73,13 +73,13 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    float pos_y = model_state->y.pos;
    float speed_x = model_state->x.speed;
    float speed_y = model_state->y.speed;
-   float yaw = model_state->euler.yaw;
+   float yaw = euler->yaw;
 
    /* run yaw controller: */
    float yaw_err;
    float yaw_ctrl_val = yaw_ctrl_step
    (
-      &yaw_err, model_state->euler.yaw,
+      &yaw_err, yaw,
       0, dt
    );
 
@@ -103,15 +103,15 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state)
    
    
    float att_ctrl[2];
-   float att_pos[2] = {model_state->euler.pitch, model_state->euler.roll};
+   float att_pos[2] = {euler->pitch, euler->roll};
    att_ctrl_step(att_ctrl, dt, att_pos, navi_output);
 
    /* set monitoring data: */
    if (pthread_mutex_trylock(&mon_data_mutex) == 0)
    {
-      mon_data.pitch = model_state->euler.pitch;
-      mon_data.roll = model_state->euler.roll;
-      mon_data.yaw = model_state->euler.yaw;
+      mon_data.pitch = euler->pitch;
+      mon_data.roll = euler->roll;
+      mon_data.yaw = euler->yaw;
       mon_data.x = model_state->x.pos;
       mon_data.y = model_state->y.pos;
       mon_data.z = model_state->baro_z.pos;

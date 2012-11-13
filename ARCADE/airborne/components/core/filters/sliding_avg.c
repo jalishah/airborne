@@ -1,6 +1,6 @@
 
 /*
-   Sliding Average Interface
+   Sliding Average
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 

@@ -21,7 +21,7 @@
 #include <core.pb-c.h>
 
 #include "../model/model.h"
-//#include "../sensor_actor/interfaces/motors.h"
+#include "../geometry/orientation.h"
 
 
 typedef struct
@@ -61,7 +61,7 @@ void ctrl_reset(void);
 /*
  * run the controllers
  */
-void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state);
+void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *euler);
 
 
 /*
