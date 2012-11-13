@@ -132,11 +132,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    madgwick_ahrs_t madgwick_ahrs;
    madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 10.0f * REALTIME_PERIOD, 0.01f);
    
-   float avg_init[3] = {0.0f, 0.0f, -9.81f};
-   sliding_avg_t *avg[3];
-   FOR_N(i, 3)
-      avg[i] = sliding_avg_create(1000, avg_init[i]);
-
    att_ctrl_init();
    
    gps_util_t gps_util;
@@ -159,6 +154,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       gps_data_t gps_data;
       platform_read_gps(&gps_data);
       gps_util_update(&gps_rel_data, &gps_util, &gps_data);
+      model_input.dx = gps_rel_data.dx;
+      model_input.dy = gps_rel_data.dy;
       platform_read_ultra(&model_input.ultra_z);
       platform_read_baro(&model_input.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
@@ -172,13 +169,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          continue;
       
       /* compute NED accelerations using quaternion: */
-      vec3_t global_acc;
-      quat_rot_vec(&global_acc, &marg_data.acc, &madgwick_ahrs.quat);
-      FOR_N(i, 3)
-         global_acc.vec[i] -= sliding_avg_calc(avg[i], global_acc.vec[i]);
-      model_input.acc_n = global_acc.x;
-      model_input.acc_e = global_acc.y;
-      model_input.acc_d = global_acc.z;
+      quat_rot_vec(&model_input.acc, &marg_data.acc, &madgwick_ahrs.quat);
       
       /* execute kalman filters for position estimate: */
       model_state_t model_state;

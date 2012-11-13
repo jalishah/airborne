@@ -59,9 +59,9 @@ void model_step(model_state_t *out, model_input_t *in)
 
    world_vector_t world_vector;
 
-   world_vector.x_dir = in->acc_n;
-   world_vector.y_dir = in->acc_e;
-   world_vector.z_dir = in->acc_d;
+   world_vector.x_dir = in->acc.x;
+   world_vector.y_dir = in->acc.y;
+   world_vector.z_dir = in->acc.z;
 
    sliding_avg_calc(x_acc_avg, world_vector.x_dir);
    sliding_avg_calc(y_acc_avg, world_vector.y_dir);

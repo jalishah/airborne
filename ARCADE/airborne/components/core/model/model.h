@@ -9,6 +9,9 @@
 #define __MODEL_H__
 
 
+#include "../geometry/orientation.h"
+
+
 /*
  * position-speed-acceleration state:
  */
@@ -30,10 +33,7 @@ typedef struct
    position_state_t y; /* y state */
    position_state_t ultra_z; /* ultrasonoc altitude over ground */
    position_state_t baro_z; /* barometric altitude above sea level */
-
-   float yaw;
-   float pitch;
-   float roll;
+   euler_t euler;
 }
 model_state_t;
 
@@ -52,9 +52,7 @@ typedef struct
    float dy;
 
    /* control acc input: */
-   float acc_n;
-   float acc_e;
-   float acc_d;
+   vec3_t acc;
 }
 model_input_t;
 
