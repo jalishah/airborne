@@ -49,6 +49,20 @@
 #include "hardware/util/gps_util.h"
 
 
+typedef union
+{
+   struct
+   {
+      float gas; /* [N] */
+      float roll; /* rad/s */
+      float pitch; /* rad/s */
+      float yaw; /* rad/s */
+   };
+   float vec[4];
+}
+f_local_t;
+
+
 typedef enum
 {
    CM_DISARMED,  /* motors are completely disabled for safety */
@@ -208,8 +222,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       rc_input[0] = att_ctrl[1] + 2.0f * channels[CH_ROLL]; /* [rad/s] */
       rc_input[1] = -att_ctrl[0] + 2.0f * channels[CH_PITCH]; /* [rad/s] */
       rc_input[2] = 3.0f * channels[CH_YAW]; /* [rad/s] */
-      float f_local[4];
-      f_local[0] = 30.0f * channels[CH_GAS]; /* [N] */
  
       /* run feed-forward and piid controller: */
       float u_ctrl[3];
@@ -219,11 +231,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       gyro_vals[2] = -marg_data.gyro.z;
       feed_forward_run(&feed_forward, u_ctrl, rc_input);
       piid_run(&piid, u_ctrl, gyro_vals, rc_input);
-      FOR_N(i, 3)
-         f_local[i + 1] = u_ctrl[i];
       
-      /* filter output signals: */
-      filter2_run(&filter_out, f_local, f_local);
+
+      /* fill and filter 4d output signals: */
+      f_local_t f_local;
+      f_local.gas = 30.0f * channels[CH_GAS]; /* [N] */
+      FOR_N(i, 3)
+         f_local.vec[i + 1] = u_ctrl[i];
+      filter2_run(&filter_out, f_local.vec, f_local.vec);
 
       /* here we need to decide whether the motors should run: */
       int motors_enabled;
@@ -233,15 +248,15 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       else
       {
-         f_local[0] = 1.0f; /* 1 newton overall thrust */
-         f_local[1] = 0.0f; /*    no .. */
-         f_local[2] = 0.0f; /* .. additional .. */
-         f_local[3] = 0.0f; /* .. torques */
+         f_local.gas = 1.0f;   /* 1 newton overall thrust */
+         f_local.roll = 0.0f;  /*    no .. */
+         f_local.pitch = 0.0f; /* .. additional .. */
+         f_local.yaw = 0.0f;   /* .. torques */
          motors_enabled = 1;
       }
       motors_enabled = 0;
 
-      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local, voltage));
+      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
       //mixer_in_t mixer_in;
