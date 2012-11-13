@@ -28,6 +28,24 @@
 #include "../../filters/filter.h"
 
 
+/* pitch and roll: */
+#define PIID_KD  0.02352953418f
+#define PIID_KP  0.32876523028f
+#define PIID_KI  2.20026754887f
+#define PIID_KII 4.37086296837f
+
+
+/* yaw: */
+#define PIID_Y_KP  0.108f
+#define PIID_Y_KD  0.00648f
+#define PIID_Y_KI  0.45f
+#define PIID_Y_KII 0.0f
+
+
+/* filter configuration: */
+#define FILT_C_FG 10.0f
+
+
 void piid_init(piid_t *piid, float Ts)
 {
    piid->Ts = Ts;
@@ -96,7 +114,7 @@ void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
    }
    adams4_run(&piid->int_err2, piid->xii_err, piid->Ts, piid->int_enable);
 
-   /* compute feedback: */
+   /* apply feedback: */
    FOR_N(i, 2)
    {
       u_ctrl[i + 1] += PIID_KP * error[i] + PIID_KI * piid->xi_err[i] + PIID_KII * piid->xii_err[i] + PIID_KD * derror[i];

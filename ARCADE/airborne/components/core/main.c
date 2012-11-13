@@ -217,7 +217,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       float att_pos[2] = {euler.pitch, euler.roll};
       att_ctrl_step(att_ctrl, dt, att_pos, att_dest);
 
-      /* set-up input for basic controller: */
+      /* set-up input for piid controller: */
       float rc_input[3];
       rc_input[0] = att_ctrl[1] + 2.0f * channels[CH_ROLL]; /* [rad/s] */
       rc_input[1] = -att_ctrl[0] + 2.0f * channels[CH_PITCH]; /* [rad/s] */
@@ -231,13 +231,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       gyro_vals[2] = -marg_data.gyro.z;
       feed_forward_run(&feed_forward, u_ctrl, rc_input);
       piid_run(&piid, u_ctrl, gyro_vals, rc_input);
-      
 
-      /* fill and filter 4d output signals: */
+      /* set up and filter output signals: */
       f_local_t f_local;
       f_local.gas = 30.0f * channels[CH_GAS]; /* [N] */
       FOR_N(i, 3)
+      {
          f_local.vec[i + 1] = u_ctrl[i];
+      }
       filter2_run(&filter_out, f_local.vec, f_local.vec);
 
       /* here we need to decide whether the motors should run: */

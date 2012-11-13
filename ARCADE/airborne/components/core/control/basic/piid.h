@@ -27,6 +27,9 @@
 #include "../../filters/filter.h"
 
 
+#define CTRL_NUM_TSTEP 7
+
+
 typedef struct 
 {
    float Ts;

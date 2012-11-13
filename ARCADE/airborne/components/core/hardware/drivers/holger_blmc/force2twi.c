@@ -8,6 +8,11 @@
 #include "../../../control/basic/control_param.h"
 
 
+/* rpm ^ 2 = a * voltage ^ 1.5 * i2c ^ b */
+#define CTRL_F_A 609.6137f
+#define CTRL_F_B 1.3154f
+
+
 int force2twi_calc(uint8_t *i2c, const float voltage, const float *rpm_square, const size_t n_motors)
 {
    int int_enable = 1;
