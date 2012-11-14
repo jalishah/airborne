@@ -203,6 +203,7 @@ static void ms5611_compensate(ms5611_dev_t *dev)
 THROW ms5611_measure(ms5611_dev_t *dev)
 {
    THROW_BEGIN();
+
    /* read temperature: */
    THROW_ON_ERR(ms5611_start_temp_conv(dev));
    msleep(conv_time_ms[dev->t_osr]);
