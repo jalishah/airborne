@@ -1,6 +1,6 @@
 
 /*
-   DROTEK MARG platform driver - implementation
+   DROTEK MARG2 platform driver - implementation
 
    Copyright (C) 2012 Tobias Simon
 
@@ -18,25 +18,23 @@
 
 #include "../util/logger/logger.h"
 
-#include "drotek_marg.h"
+#include "drotek_marg2.h"
 
 
-THROW drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus)
+THROW drotek_marg2_init(drotek_marg2_t *marg2, i2c_bus_t *bus)
 {
    THROW_BEGIN();
-   THROW_ON_ERR(itg3200_init(&marg->itg, bus, ITG3200_DLPF_98HZ));
-   THROW_ON_ERR(bma180_init(&marg->bma, bus, BMA180_RANGE_4G, BMA180_BW_40HZ));
-   THROW_ON_ERR(hmc5883_init(&marg->hmc, bus));
+   THROW_ON_ERR(mpu6050_init(&marg2->mpu, bus, MPU6050_DLPF_CFG_94_98Hz, MPU6050_FS_SEL_500, MPU6050_AFS_SEL_4G));
+   THROW_ON_ERR(hmc5883_init(&marg2->hmc, bus));
    THROW_END();
 }
 
 
-THROW drotek_marg_read(marg_data_t *data, drotek_marg_t *marg)
+THROW drotek_marg2_read(marg_data_t *data, drotek_marg2_t *marg2)
 {
    THROW_BEGIN();
-   THROW_ON_ERR(itg3200_read_gyro(data->gyro.vec, &marg->itg));
-   THROW_ON_ERR(bma180_read_acc(data->acc.vec, &marg->bma));
-   THROW_ON_ERR(hmc5883_read_mag(data->mag.vec, &marg->hmc));
+   THROW_ON_ERR(mpu6050_read(&marg2->mpu, &data->gyro, &data->acc, NULL));
+   THROW_ON_ERR(hmc5883_read_mag(data->mag.vec, &marg2->hmc));
    THROW_END();
 }
 

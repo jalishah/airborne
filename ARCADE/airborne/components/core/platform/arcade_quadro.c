@@ -126,7 +126,7 @@ static int read_marg(marg_data_t *marg_data)
 THROW arcade_quadro_init(platform_t *plat)
 {
    ASSERT_ONCE();
-   THROW_START();
+   THROW_BEGIN();
    convex_opt_init();
 
    /* initialize buses: */

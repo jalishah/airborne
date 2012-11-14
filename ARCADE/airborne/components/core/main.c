@@ -149,6 +149,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (fp == NULL) printf("ERROR: could not open File");
    fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
+   calibration_t gyro_cal;
+   cal_init(&gyro_cal, 3, 1000);
+   
    Filter2 filter_out;
    filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
 
@@ -180,6 +183,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       marg_data_t marg_data;
       platform_read_marg(&marg_data);
+      cal_sample_apply(&gyro_cal, marg_data.gyro.vec);
+
       gps_data_t gps_data;
       platform_read_gps(&gps_data);
       gps_util_update(&gps_rel_data, &gps_util, &gps_data);
@@ -195,7 +200,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* compute estimate of orientation quaternion: */
       int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
       if (ahrs_state < 0)
+      {
          continue;
+      }
       else if (ahrs_state == 0)
       {
          start_quat = madgwick_ahrs.quat;

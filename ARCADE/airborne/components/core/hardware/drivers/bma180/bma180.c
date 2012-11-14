@@ -125,7 +125,7 @@ static const float ACC_RANGE_TABLE[] =
 
 static THROW bma180_read_calibration(bma180_t *bma)
 {
-   THROW_START();
+   THROW_BEGIN();
    uint8_t off[6];
    uint8_t gain[4];
 
@@ -157,7 +157,7 @@ static THROW bma180_read_calibration(bma180_t *bma)
 
 THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_init(&bma->i2c_dev, bus, BMA180_ADDRESS);
 
    /* copy value */
@@ -206,7 +206,7 @@ THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw
 
 THROW bma180_read_temp(float *temperature, bma180_t *bma)
 {
-   THROW_START();
+   THROW_BEGIN();
    THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_TEMP));
    *temperature = (float)((int8_t)(THROW_PREV)) / 2.0 + 24.0;
    THROW_END();
@@ -215,7 +215,7 @@ THROW bma180_read_temp(float *temperature, bma180_t *bma)
 
 int bma180_read_acc(float acc[3], bma180_t *bma)
 {
-   THROW_START();
+   THROW_BEGIN();
    /* read acc values */
    uint8_t acc_data[6];
    THROW_ON_ERR(i2c_read_block_reg(&bma->i2c_dev, BMA180_ACC_X_LSB, acc_data, sizeof(acc_data)));

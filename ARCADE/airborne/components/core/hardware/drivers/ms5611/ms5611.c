@@ -49,7 +49,7 @@ static const int conv_time_ms[5] =
  * and a negative error code is returned */
 static THROW ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
 {
-   THROW_START();
+   THROW_BEGIN();
    uint8_t raw[2];
    THROW_ON_ERR(i2c_read_block_reg(&dev->i2c_dev, MS5611_PROM_READ(reg), raw, sizeof(raw)));
    dev->prom[reg] = raw[1] | (raw[0] << 8);
@@ -59,7 +59,7 @@ static THROW ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
 
 static THROW ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
 {
-   THROW_START();
+   THROW_BEGIN();
    uint8_t raw[3]; /* 24-bit adc data */
    THROW_ON_ERR(i2c_read_block_reg(&dev->i2c_dev, MS5611_ADC, raw, sizeof(raw)));
    *val = raw[2] | (raw[1] << 8) | (raw[0] << 16);
@@ -126,7 +126,7 @@ static uint16_t ms5611_crc4(uint16_t *n_prom)
 
 THROW ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr)
 {
-   THROW_START();
+   THROW_BEGIN();
    /* copy values */
    i2c_dev_init(&dev->i2c_dev, bus, MS5611_ADDRESS);
 
@@ -202,7 +202,7 @@ static void ms5611_compensate(ms5611_dev_t *dev)
 
 THROW ms5611_measure(ms5611_dev_t *dev)
 {
-   THROW_START();
+   THROW_BEGIN();
    /* read temperature: */
    THROW_ON_ERR(ms5611_start_temp_conv(dev));
    msleep(conv_time_ms[dev->t_osr]);

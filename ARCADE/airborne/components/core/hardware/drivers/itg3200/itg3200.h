@@ -49,9 +49,6 @@ typedef struct
 
    /* filter configuration: */
    itg3200_dlpf_t lp_filter;
-
-   /* calibration settings: */
-   vec3_t bias;
 }
 itg3200_t;
 

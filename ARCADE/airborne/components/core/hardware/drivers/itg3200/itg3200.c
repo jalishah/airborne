@@ -69,7 +69,7 @@
 
 static THROW read_gyro_raw(itg3200_t *itg, int16_t *data)
 {
-   THROW_START();
+   THROW_BEGIN();
 
    /* read gyro registers */
    uint8_t raw[6];
@@ -85,42 +85,15 @@ static THROW read_gyro_raw(itg3200_t *itg, int16_t *data)
 }
 
 
-THROW itg3200_zero_gyros(itg3200_t *itg)
-{
-   THROW_START();
-   int16_t val[3];
-   float avg[3] = {0, 0, 0};
-
-   FOR_N(n, ITG3200_GYRO_INIT_COUNT) 
-   {
-      THROW_ON_ERR(read_gyro_raw(itg, val));
-      FOR_N(i, 3)
-      {
-         THROW_IF(fabs((float)val[i]) > 200, -EAGAIN);
-         avg[i] += (float)(val[i]);
-      }
-   }
-
-   FOR_N(i, 3)
-   {
-      itg->bias.vec[i] = -avg[i] / (float)ITG3200_GYRO_INIT_COUNT;
-   }
-
-   THROW_END();
-}
-
-
 THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
 {
-   THROW_START();
+   THROW_BEGIN();
 
    /* copy values */
    i2c_dev_init(&itg->i2c_dev, bus, ITG3200_ADDRESS);
 
-   /* check chip identificatio:n */
+   /* verify chip identificatio:n */
    THROW_ON_ERR(i2c_read_reg(&itg->i2c_dev, ITG3200_WHO_AM_I));
-
-   /* validate address: */
    THROW_IF((uint8_t)THROW_PREV != itg->i2c_dev.addr, -ENODEV);
 
    /* reset device: */
@@ -135,16 +108,13 @@ THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
    /* set full scale mode and low-pass filter: */
    THROW_ON_ERR(i2c_write_reg(&itg->i2c_dev, ITG3200_DLPF_FS, ITG3200_DLPF_FS_FS_SEL(0x3) | ITG3200_DLPF_FS_DLPF_CFG(filter)));
 
-   /* calibrate: */
-   THROW_ON_ERR(itg3200_zero_gyros(itg));
-
    THROW_END();
 }
 
 
 THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
 {
-   THROW_START();
+   THROW_BEGIN();
    
    /* read raw gyro data: */
    int16_t raw[3];
@@ -153,7 +123,7 @@ THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
    /* construct, scale and bias-correct values: */
    FOR_N(i, 3)
    {
-      gyro[i] = ((float)(raw[i] + itg->bias.vec[i]) / 14.375) * M_PI / 180.0;
+      gyro[i] = ((float)raw[i] / 14.375) * M_PI / 180.0;
    }
 
    THROW_END();
@@ -162,7 +132,7 @@ THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
 
 THROW itg3200_read_temperature(float *temperature, itg3200_t *itg)
 {
-   THROW_START();
+   THROW_BEGIN();
 
    /* read temperature registers: */
    uint8_t raw[2];

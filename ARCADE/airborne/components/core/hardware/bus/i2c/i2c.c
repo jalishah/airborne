@@ -27,7 +27,7 @@
 
 THROW i2c_bus_open(i2c_bus_t *bus, char *path)
 {
-   THROW_START();
+   THROW_BEGIN();
    THROW_ON_ERR(open(path, O_RDWR));
    bus->dev_addr = 0xFF; /* invalid i2c addess in 7 bit mode */
    bus->handle = THROW_PREV;
@@ -63,7 +63,7 @@ static void i2c_dev_unlock_bus(i2c_dev_t *dev)
 
 static THROW set_slave_address_if_needed(i2c_dev_t *dev)
 {
-   THROW_START();
+   THROW_BEGIN();
    if (dev->bus->dev_addr != dev->addr)
    {
       THROW_ON_ERR(ioctl(dev->bus->handle, I2C_SLAVE, dev->addr));
@@ -75,7 +75,7 @@ static THROW set_slave_address_if_needed(i2c_dev_t *dev)
 
 THROW i2c_write(i2c_dev_t *dev, uint8_t val)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_lock_bus(dev);
    THROW_ON_ERR(set_slave_address_if_needed(dev));
    THROW_ON_ERR(i2c_smbus_write_byte(dev->bus->handle, val));
@@ -85,7 +85,7 @@ THROW i2c_write(i2c_dev_t *dev, uint8_t val)
 
 THROW i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_lock_bus(dev);
    THROW_ON_ERR(set_slave_address_if_needed(dev));
    THROW_ON_ERR(i2c_smbus_write_byte_data(dev->bus->handle, reg, val));
@@ -95,7 +95,7 @@ THROW i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
 
 THROW_DATA i2c_read(i2c_dev_t *dev)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_lock_bus(dev);
    THROW_ON_ERR(set_slave_address_if_needed(dev));
    THROW_ON_ERR(i2c_smbus_read_byte(dev->bus->handle));
@@ -105,7 +105,7 @@ THROW_DATA i2c_read(i2c_dev_t *dev)
 
 THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_lock_bus(dev);
    THROW_ON_ERR(set_slave_address_if_needed(dev));
    THROW_ON_ERR(i2c_smbus_read_byte_data(dev->bus->handle, reg));
@@ -115,7 +115,7 @@ THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
 
 THROW i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len)
 {
-   THROW_START();
+   THROW_BEGIN();
    i2c_dev_lock_bus(dev);
    THROW_ON_ERR(set_slave_address_if_needed(dev));
    THROW_ON_ERR(i2c_smbus_read_i2c_block_data(dev->bus->handle, reg, len, buf) == (int)len ? 0 : -EIO)
