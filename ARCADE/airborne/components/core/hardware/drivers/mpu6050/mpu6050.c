@@ -134,113 +134,82 @@
 
 int mpu6050_init(mpu6050_dev_t *dev, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu6050_fs_sel_t fs_sel, mpu6050_afs_sel_t afs_sel)
 {
-	int ret;
-	
-	dev->dlpf = dlpf;
-	dev->gfs = fs_sel;
-	dev->afs = afs_sel;
+   ASSERT_NOT_NULL(dev);
+   ASSERT_NOT_NULL(bus);
+   THROW_START();
 
-	i2c_dev_init(&dev->i2c_dev, bus, MPU6050_ADDRESS);
+   dev->gfs = fs_sel;
+   dev->afs = afs_sel;
 
-	ret = i2c_read_reg(&dev->i2c_dev, MPU6050_WHO_AM_I);
-	if (ret < 0)
-	{
-		goto out;
-	}
-	
-	/* validate address: */
-	uint8_t addr = (uint8_t)(ret);
-	if (dev->i2c_dev.addr != addr)
-	{
-		ret = -ENODEV;
-		goto out;
-	}
+   i2c_dev_init(&dev->i2c_dev, bus, MPU6050_ADDRESS);
 
-	/* Device reset */
-	ret = i2c_write_reg(&dev->i2c_dev, MPU6050_PWR_MGMT_1, MPU6050_PWR_MGMT_1_DEVICE_RESET);
-	if (ret < 0)
-	{
-		goto out;
-	}
+   /* verify address: */
+   THROW_ON_ERR(i2c_read_reg(&dev->i2c_dev, MPU6050_WHO_AM_I));
+   THROW_IF(THROW_PREV != dev->i2c_dev.addr, -ENODEV);
 
-	/* set Z-Axis gyro as clock reference */
-	ret = i2c_write_reg(&dev->i2c_dev, MPU6050_PWR_MGMT_1, MPU6050_PWR_MGMT_1_CLKSEL(0x3));
-	if (ret < 0)
-	{
-		goto out;
-	}
+   /* device reset */
+   THROW_ON_ERR(i2c_write_reg(&dev->i2c_dev, MPU6050_PWR_MGMT_1, MPU6050_PWR_MGMT_1_DEVICE_RESET));
 
-	/* configure digital low pass filter */
-	ret = i2c_write_reg(&dev->i2c_dev, MPU6050_CONFIG, MPU6050_CONFIG_DLPF_CFG(dev->dlpf));
-	if (ret < 0)
-	{
-		goto out;
-	}
+   /* set Z-Axis gyro as clock reference */
+   THROW_ON_ERR(i2c_write_reg(&dev->i2c_dev, MPU6050_PWR_MGMT_1, MPU6050_PWR_MGMT_1_CLKSEL(0x3)));
 
-	/* configure full scale range for gyros */
-	ret = i2c_write_reg(&dev->i2c_dev, MPU6050_GYRO_CONFIG, MPU6050_GYRO_CONFIG_FS_SEL(dev->gfs));
-	if (ret < 0)
-	{
-		goto out;
-	}
-	
-	/* configure full scale range for ACCs */
-	ret = i2c_write_reg(&dev->i2c_dev, MPU6050_ACCEL_CONFIG, MPU6050_ACCEL_CONFIG_AFS_SEL(dev->afs));
-	if (ret < 0)
-	{
-		goto out;
-	}
+   /* configure digital low pass filter */
+   THROW_ON_ERR(i2c_write_reg(&dev->i2c_dev, MPU6050_CONFIG, MPU6050_CONFIG_DLPF_CFG(dlpf)));
 
-out:
-	return ret;
-}
+   /* configure full scale range for gyros */
+   THROW_ON_ERR(i2c_write_reg(&dev->i2c_dev, MPU6050_GYRO_CONFIG, MPU6050_GYRO_CONFIG_FS_SEL(dev->gfs)));
 
-static int read_raw(mpu6050_dev_t *dev, int16_t *data)
-{
-	int ret, i;
-	uint8_t raw[14];	/* 6 bytes ACC, 2 temperature, 6 gyro */
+   /* configure full scale range for ACCs */
+   THROW_ON_ERR(i2c_write_reg(&dev->i2c_dev, MPU6050_ACCEL_CONFIG, MPU6050_ACCEL_CONFIG_AFS_SEL(dev->afs)));
 
-	ret = i2c_read_block_reg(&dev->i2c_dev, MPU6050_ACCEL_XOUT_H, raw, sizeof(raw));
-	if(ret < 0)
-	{
-		goto out;
-	}
-
-	for(i = 0; i < (sizeof(raw) >> 1); i++)
-	{
-		data[i] = (int16_t)((raw[(i << 1)] << 8) | raw[(i << 1) + 1]);
-	}
-
-out:
-	return ret;
+   THROW_END();
 }
 
 
-int mpu6050_read(mpu6050_dev_t *dev)
+static THROW read_raw(mpu6050_dev_t *dev, int16_t *data)
 {
-	int i, off, ret;
-	int16_t val[7];
+   ASSERT_NOT_NULL(dev);
+   ASSERT_NOT_NULL(data);
+ 
+   THROW_START();
+   uint8_t raw[14]; /* 6 bytes acc, 2 temperature, 6 gyro */
 
-	ret = read_raw(dev, val);
-	if (ret < 0)
-	{
-		goto out;
-	}
+   THROW_ON_ERR(i2c_read_block_reg(&dev->i2c_dev, MPU6050_ACCEL_XOUT_H, raw, sizeof(raw)));
 
-	FOR_N(i, 3)
-	{
-		dev->acc.vec[i] = (float)(val[i]) / (float)((1 << 14) >> dev->afs);
-	}
-	
-	dev->temperature = (float)(val[i++]) / 340.0 + 36.53;
-	off = i;
-	
-	for(; i < 7; i++)
-	{
-		dev->gyro.vec[i - off] = (float)(val[i]) * (float)(250 << dev->gfs) / (float)(1 << 15);
-	}
-	
-out:
-	return ret;
+   FOR_N(i, sizeof(raw) >> 1)
+   {
+      data[i] = (int16_t)((raw[(i << 1)] << 8) | raw[(i << 1) + 1]);
+   }
+
+   THROW_END();
+}
+
+
+THROW mpu6050_read(mpu6050_dev_t *dev, vec3_t *acc, vec3_t *gyro, float *temperature)
+{
+   ASSERT_NOT_NULL(dev);
+   ASSERT_NOT_NULL(acc);
+   ASSERT_NOT_NULL(gyro);
+   ASSERT_NOT_NULL(temperature);
+
+   THROW_START();
+   
+   int16_t val[7];
+   THROW_ON_ERR(read_raw(dev, val));
+
+   int read_pos = 0;
+   FOR_N(i, 3)
+   {
+      acc->vec[i] = (float)(val[read_pos++]) / (float)((1 << 14) >> dev->afs);
+   }
+
+   *temperature = (float)(val[read_pos++]) / 340.0 + 36.53;
+
+   FOR_N(i, 3)
+   {
+      gyro->vec[i] = (float)(val[read_pos++]) * (float)(250 << dev->gfs) / (float)(1 << 15);
+   }
+
+   THROW_END();
 }
 
