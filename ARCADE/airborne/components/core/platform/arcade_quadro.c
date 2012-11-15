@@ -30,6 +30,7 @@
 /* hardware includes: */
 #include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
+#include "../hardware/drivers/i2cxl_reader/i2cxl_reader.h"
 #include "../hardware/drivers/rc_dsl_reader/rc_dsl_reader.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc.h"
 #include "../hardware/drivers/holger_blmc/force2twi.h"
@@ -88,6 +89,8 @@ static void convex_opt_init(void);
 static void convex_opt_run(float forces[4]);
 
 
+
+
 static int write_motors(int enabled, float forces[4], float voltage)
 {
    convex_opt_run(forces);
@@ -136,6 +139,10 @@ THROW arcade_quadro_init(platform_t *plat)
    THROW_ON_ERR(drotek_marg2_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
+   /* initialize sonar sensor: */
+   THROW_ON_ERR(i2cxl_reader_init(&i2c_3));
+   plat->read_ultra = i2cxl_reader_get_alt;
+
    /* initialize inverse coupling matrix: */
    inv_coupling_init(&inv_coupling, N_MOTORS, inv_coupling_matrix);
 
@@ -161,7 +168,6 @@ THROW arcade_quadro_init(platform_t *plat)
    deadzone_init(&deadzone, 0.05, 1.0, 1.0);
    rc_channels_init(&rc_channels, channel_mapping, channel_scale, &deadzone);
    plat->read_rc = read_rc;
-   
 
    if (scl_voltage_init() < 0)
    {

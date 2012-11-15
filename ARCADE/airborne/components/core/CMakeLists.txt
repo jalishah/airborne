@@ -27,6 +27,7 @@ scl_voltage
 maxsonar_reader
 maxsonar
 i2cxl
+i2cxl_reader
 bma180
 hmc5883
 itg3200
