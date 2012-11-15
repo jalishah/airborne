@@ -1,0 +1,1 @@
+ADD_LIBRARY(i2cxl STATIC i2cxl.c)

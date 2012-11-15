@@ -26,6 +26,7 @@ scl_gps
 scl_voltage
 maxsonar_reader
 maxsonar
+i2cxl
 bma180
 hmc5883
 itg3200
