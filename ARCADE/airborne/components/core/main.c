@@ -194,6 +194,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_baro(&model_input.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
 
+      //EVERY_N_TIMES(10, printf("%f %f %f; %f %f %f; %f %f %f\n", marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, marg_data.mag.x, marg_data.mag.y, marg_data.mag.z));
       float voltage;
       platform_read_voltage(&voltage);
 
@@ -203,11 +204,11 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       {
          continue;
       }
-      else if (ahrs_state == 0)
+      /*else if (ahrs_state == 0)
       {
          start_quat = madgwick_ahrs.quat;
          LOG(LL_DEBUG, "initial quaternion orientation estimate: %f %f %f %f", start_quat.q0, start_quat.q1, start_quat.q2, start_quat.q3);
-      }
+      }*/
 
       /* compute NED accelerations using quaternion: */
       quat_rot_vec(&model_input.acc, &marg_data.acc, &madgwick_ahrs.quat);
@@ -219,6 +220,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* compute euler angles from quaternion: */
       euler_t euler;
       quat_to_euler(&euler, &madgwick_ahrs.quat);
+      EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
       float att_dest[2] = {0, 0};
       float att_ctrl[2];
       float att_pos[2] = {euler.pitch, euler.roll};

@@ -7,7 +7,7 @@
 #include "mpu6050.h"
 
 
-#define MPU6050_ADDRESS						0x68
+#define MPU6050_ADDRESS						0x69
 
 #define MPU6050_SELF_TEST_X					0x0D
 #define MPU6050_SELF_TEST_Y					0x0E
@@ -145,7 +145,7 @@ int mpu6050_init(mpu6050_t *mpu, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu605
 
    /* verify chip identification: */
    THROW_ON_ERR(i2c_read_reg(&mpu->i2c_dev, MPU6050_WHO_AM_I));
-   THROW_IF(THROW_PREV != mpu->i2c_dev.addr, -ENODEV);
+   THROW_IF(THROW_PREV + 1 != mpu->i2c_dev.addr, -ENODEV);
 
    /* reset device: */
    THROW_ON_ERR(i2c_write_reg(&mpu->i2c_dev, MPU6050_PWR_MGMT_1, MPU6050_PWR_MGMT_1_DEVICE_RESET));
@@ -161,6 +161,9 @@ int mpu6050_init(mpu6050_t *mpu, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu605
 
    /* configure full scale range for accs: */
    THROW_ON_ERR(i2c_write_reg(&mpu->i2c_dev, MPU6050_ACCEL_CONFIG, MPU6050_ACCEL_CONFIG_AFS_SEL(mpu->afs)));
+
+   THROW_ON_ERR(i2c_write_reg(&mpu->i2c_dev, MPU6050_INT_PIN_CFG, 0x02));
+   THROW_ON_ERR(i2c_write_reg(&mpu->i2c_dev, MPU6050_USER_CTRL, 0x00));
 
    THROW_END();
 }
@@ -198,7 +201,7 @@ THROW mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature
    {
       FOR_N(i, 3)
       {
-         acc->vec[i] = (float)(val[i]) / (float)((1 << 14) >> mpu->afs);
+         acc->vec[i] = 9.81f * (float)(val[i]) / (float)((1 << 14) >> mpu->afs);
       }
    }
 
@@ -211,7 +214,7 @@ THROW mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature
    {
       FOR_N(i, 3)
       {
-         gyro->vec[i] = (float)(val[i + 4]) * (float)(250 << mpu->gfs) / (float)(1 << 15);
+         gyro->vec[i] = M_PI /180.0f * (float)(val[i + 4]) * (float)(250 << mpu->gfs) / (float)(1 << 15);
       }
    }
 

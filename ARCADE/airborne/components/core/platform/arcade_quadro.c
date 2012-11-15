@@ -35,7 +35,7 @@
 #include "../hardware/drivers/holger_blmc/force2twi.h"
 #include "../hardware/drivers/scl_voltage/scl_voltage.h"
 #include "../hardware/util/rc_channels.h"
-#include "drotek_marg.h"
+#include "drotek_marg2.h"
 
 /* optimizer includes: */
 #include "../control/util/cvxgen/solver.h"
@@ -79,7 +79,7 @@ static deadzone_t deadzone;
 static rc_channels_t rc_channels;
 static uint8_t channel_mapping[MAX_CHANNELS] =  {0, 1, 3, 2, 4}; /* pitch: 0, roll: 1, yaw: 3, gas: 2, switch: 4 */
 static float channel_scale[MAX_CHANNELS] =  {1.0f, -1.0f, -1.0f, 1.0f, 1.0f};
-static drotek_marg_t marg;
+static drotek_marg2_t marg;
 static inv_coupling_t inv_coupling; 
 static float *rpm_square;
 
@@ -119,7 +119,7 @@ static int read_rc(float channels[MAX_CHANNELS])
 
 static int read_marg(marg_data_t *marg_data)
 {
-   return drotek_marg_read(marg_data, &marg);   
+   return drotek_marg2_read(marg_data, &marg);   
 }
 
 
@@ -133,7 +133,7 @@ THROW arcade_quadro_init(platform_t *plat)
    THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));
 
    /* set-up MARG sensor cluster: */
-   THROW_ON_ERR(drotek_marg_init(&marg, &i2c_3));
+   THROW_ON_ERR(drotek_marg2_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
    /* initialize inverse coupling matrix: */
