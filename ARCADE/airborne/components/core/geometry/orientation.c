@@ -94,8 +94,16 @@ float normalize_euler_0_2pi(float euler_angle)
 }
 
 
-void quaternion_init(quat_t *quat, float ax, float ay, float az, float mx, float my, float mz)
+void quaternion_init(quat_t *quat, vec3_t *acc, vec3_t *mag)
 {
+   float ax = acc->x;
+   float ay = acc->y;
+   float az = acc->z;
+   float mx = mag->x;
+   float my = mag->y;
+   float mz = mag->z;
+
+
    float init_roll = atan2(-ay, -az);
    float init_pitch = atan2(ax, -az);
 

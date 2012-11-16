@@ -41,6 +41,7 @@
 /* optimizer includes: */
 #include "../control/util/cvxgen/solver.h"
 
+#define CONVEXOPT_MIN_GROUND_DIST 1.0f
 
 #define RPM_MIN 1340.99f
 #define RPM_MAX 7107.6f
@@ -93,7 +94,14 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
-   convex_opt_run(forces);
+   float ground_dist = 1.0f;
+   if (i2cxl_reader_get_alt(&ground_dist) == 0)
+   {
+      if (ground_dist > CONVEXOPT_MIN_GROUND_DIST)
+      {
+         convex_opt_run(forces);
+      }
+   }
    /* computation of rpm ^ 2 out of the desired forces */
    inv_coupling_calc(&inv_coupling, rpm_square, forces);
    int int_enable = force2twi_calc(motor_setpoints, voltage, rpm_square, N_MOTORS);

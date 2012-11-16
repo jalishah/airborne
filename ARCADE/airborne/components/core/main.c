@@ -86,6 +86,19 @@ control_mode_t control_mode = CM_DISARMED;
 static periodic_thread_t realtime_thread;
 
 
+static int gyro_moved(vec3_t *gyro)
+{
+   FOR_N(i, 3)
+   {
+      if (fabs(gyro->vec[i]) >  0.05)
+      {
+         return 1;   
+      }
+   }
+   return 0;
+}
+
+
 PERIODIC_THREAD_BEGIN(realtime_thread_func)
 { 
    syslog(LOG_INFO, "initializing core");
@@ -144,7 +157,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       calibration_sample_bias(&rc_cal, channels);
       msleep(1);
    }*/
-   LOG(LL_INFO, "system up and running");
 
    /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
@@ -161,9 +173,15 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_t piid;
    piid_init(&piid, REALTIME_PERIOD);
 
+  
    madgwick_ahrs_t madgwick_ahrs;
-   madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 10.0f * REALTIME_PERIOD, 0.01f);
+   madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.03f);
    quat_t start_quat;
+   
+   /* perform initial marg reading to acquire an initial orientation guess: */
+   marg_data_t marg_data;
+   platform_read_marg(&marg_data);
+   quaternion_init(&madgwick_ahrs.quat, &marg_data.acc, &marg_data.mag);
  
    att_ctrl_init();
  
@@ -171,21 +189,23 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    gps_util_init(&gps_util);
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
 
+   LOG(LL_INFO, "entering main loop");
    interval_t interval;
    interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
    {
       float dt = interval_measure(&interval);
-      /*
-       * read sensor values into model input structure:
-       */
+      /* read sensors: */
       model_input_t model_input;
       model_input.dt = dt;
-
-      marg_data_t marg_data;
       platform_read_marg(&marg_data);
-      cal_sample_apply(&gyro_cal, marg_data.gyro.vec);
-
+      if (cal_sample_apply(&gyro_cal, marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
+      {
+         LOG(LL_ERROR, "gyro moved during calibration, retrying");
+         sleep(1);
+         cal_reset(&gyro_cal);
+      }
+      
       gps_data_t gps_data;
       platform_read_gps(&gps_data);
       gps_util_update(&gps_rel_data, &gps_util, &gps_data);
@@ -203,13 +223,15 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
       if (ahrs_state < 0)
       {
+         
          continue;
       }
-      /*else if (ahrs_state == 0)
+      else if (ahrs_state == 1)
       {
          start_quat = madgwick_ahrs.quat;
+         LOG(LL_INFO, "system initialized");
          LOG(LL_DEBUG, "initial quaternion orientation estimate: %f %f %f %f", start_quat.q0, start_quat.q1, start_quat.q2, start_quat.q3);
-      }*/
+      }
 
       /* compute NED accelerations using quaternion: */
       quat_rot_vec(&model_input.acc, &marg_data.acc, &madgwick_ahrs.quat);
@@ -221,7 +243,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* compute euler angles from quaternion: */
       euler_t euler;
       quat_to_euler(&euler, &madgwick_ahrs.quat);
-      EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
+      //EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
       float att_dest[2] = {0, 0};
       float att_ctrl[2];
       float att_pos[2] = {euler.pitch, euler.roll};

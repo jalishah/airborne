@@ -16,41 +16,40 @@
 */
 
 
-#include <unistd.h>
-#include <stdio.h>
-#include <math.h>
-#include <time.h>
-
 #include "i2cxl.h"
 
+#include <util.h>
 
-#define I2CXL_ADDRESS       0xE0
+
+#define I2CXL_ADDRESS       0x70
 #define I2CXL_RANGE_COMMAND 0x51
 #define I2CXL_READ          0x02
+#define I2CXL_MIN_RANGE     0.2f
+#define I2CXL_MAX_RANGE     7.0f
+#define I2CXL_M_SCALE       1.0e-2f
 
 
 THROW i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus)
 {
-   THROW_BEGIN();
-
    /* copy values */
    i2c_dev_init(&i2cxl->i2c_dev, bus, I2CXL_ADDRESS);
-
-   THROW_END();
+   return 0;
 }
 
 
 THROW i2cxl_read(i2cxl_t *i2cxl, float *dist)
 {
    THROW_BEGIN();
-   
+   /* start measurement: */
    THROW_ON_ERR(i2c_write(&i2cxl->i2c_dev, I2CXL_RANGE_COMMAND));
 
-   msleep(100);
+   /* sleep at least 60ms - we do 70 for safety: */
+   msleep(70);
    
+   /* read back the result: */
    uint8_t raw[2];
    THROW_ON_ERR(i2c_read_block_reg(&i2cxl->i2c_dev, I2CXL_READ, raw, sizeof(raw)));
-
+   *dist = limit(I2CXL_M_SCALE * (float)((raw[0] << 8) | raw[1]), I2CXL_MIN_RANGE, I2CXL_MAX_RANGE);
    THROW_END();
 }
 
