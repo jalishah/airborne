@@ -26,40 +26,38 @@
 
 
 /* system parameters: */
-#define CTRL_JXX (1.0f * 0.0097f)
-#define CTRL_JYY (1.0f * 0.0097f)
-#define CTRL_JZZ (0.45f * 1.273177e-002f)
-#define CTRL_TMC (0.06f)
+#define CTRL_JXX_JYY (1.0f * 0.0097f)
+#define CTRL_JZZ     (0.45f * 1.273177e-002f)
+#define CTRL_TMC     (0.06f)
 
 
 void feed_forward_init(feed_forward_t *ff, float Ts)
 {
    float T = 1.0f / (2.0f * M_PI * FILT_FF_FG);
-   float temp_a0 = (4.0f * T * T + 4.0f * FILT_FF_D * T * Ts + Ts*Ts);
+   float a0 = (4.0f * T * T + 4.0f * FILT_FF_D * T * Ts + Ts * Ts);
 
-   float a[2] = {
-      (2.0f * Ts * Ts - 8.0f * T * T) / temp_a0,
-      (4.0f * T * T   - 4.0f * FILT_FF_D * T * Ts + Ts * Ts) / temp_a0
+   float a[2] =
+   {
+      (2.0f * Ts * Ts - 8.0f * T * T) / a0,
+      (4.0f * T * T   - 4.0f * FILT_FF_D * T * Ts + Ts * Ts) / a0
    };
+   float b[3];
+
+#define __FF_B_SETUP(j) \
+   b[0] =  (2.0f * j * (2.0f * CTRL_TMC + Ts)) / a0; \
+   b[1] = -(8.0f * j * CTRL_TMC) / a0; \
+   b[2] =  (2.0f * j * (2.0f * CTRL_TMC - Ts)) / a0;
 
    /* x-axis: */
-   float b[3] = {
-       (2.0f * CTRL_JXX * (2.0f * CTRL_TMC + Ts)) / temp_a0,
-      -(8.0f * CTRL_JXX * CTRL_TMC) / temp_a0,
-       (2.0f * CTRL_JXX * (2.0f * CTRL_TMC - Ts)) / temp_a0
-   };
+   __FF_B_SETUP(CTRL_JXX_JYY);
    filter2_init(&ff->filters[0], a, b, Ts, 1);
 
    /* y-axis: */
-   b[0] =  (2.0f * CTRL_JYY * (2.0f * CTRL_TMC + Ts)) / temp_a0;
-   b[1] = -(8.0f * CTRL_JYY * CTRL_TMC) / temp_a0;
-   b[2] =  (2.0f * CTRL_JYY * (2.0f * CTRL_TMC - Ts)) / temp_a0;
+   __FF_B_SETUP(CTRL_JXX_JYY);
    filter2_init(&ff->filters[1], a, b, Ts, 1);
 
    /* z-axis: */
-   b[0] =  (2.0f * CTRL_JZZ * (2.0f * CTRL_TMC + Ts)) / temp_a0;
-   b[1] = -(8.0f * CTRL_JZZ * CTRL_TMC) / temp_a0;
-   b[2] =  (2.0f * CTRL_JZZ * (2 * CTRL_TMC - Ts)) / temp_a0;
+   __FF_B_SETUP(CTRL_JZZ);
    filter2_init(&ff->filters[2], a, b, Ts, 1);
 }
 

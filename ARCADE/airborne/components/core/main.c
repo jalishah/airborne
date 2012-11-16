@@ -339,6 +339,21 @@ void _main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+   feed_forward_t ff;
+   feed_forward_init(&ff, 0.005);
+   piid_t piid;
+   piid_init(&piid, 0.005);
+   float u_ctrl[3];
+   float gyro[3] = {0, 0, 0};
+   float torques[3] = {1.5, 1.5, 1.5};
+   FOR_N(i, 100)
+   {
+      feed_forward_run(&ff, u_ctrl, torques);
+      piid_run(&piid, u_ctrl, gyro, torques);
+      printf("%f %f %f\n", u_ctrl[0], u_ctrl[1], u_ctrl[2]);
+   }
+   return 0;
+   
    _main(argc, argv);
    daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
