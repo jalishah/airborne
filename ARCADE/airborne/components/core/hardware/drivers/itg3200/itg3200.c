@@ -67,7 +67,7 @@
 
 
 
-static THROW read_gyro_raw(itg3200_t *itg, int16_t *data)
+static int read_gyro_raw(itg3200_t *itg, int16_t *data)
 {
    THROW_BEGIN();
 
@@ -85,7 +85,7 @@ static THROW read_gyro_raw(itg3200_t *itg, int16_t *data)
 }
 
 
-THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
+int itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
 {
    THROW_BEGIN();
 
@@ -112,7 +112,7 @@ THROW itg3200_init(itg3200_t *itg, i2c_bus_t *bus, itg3200_dlpf_t filter)
 }
 
 
-THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
+int itg3200_read_gyro(float gyro[3], itg3200_t *itg)
 {
    THROW_BEGIN();
    
@@ -130,7 +130,7 @@ THROW itg3200_read_gyro(float gyro[3], itg3200_t *itg)
 }
 
 
-THROW itg3200_read_temperature(float *temperature, itg3200_t *itg)
+int itg3200_read_temperature(float *temperature, itg3200_t *itg)
 {
    THROW_BEGIN();
 

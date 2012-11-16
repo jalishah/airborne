@@ -25,7 +25,7 @@
 #include "i2c-dev.h"
 
 
-THROW i2c_bus_open(i2c_bus_t *bus, char *path)
+int i2c_bus_open(i2c_bus_t *bus, char *path)
 {
    THROW_BEGIN();
    THROW_ON_ERR(open(path, O_RDWR));
@@ -36,7 +36,7 @@ THROW i2c_bus_open(i2c_bus_t *bus, char *path)
 }
 
 
-THROW i2c_bus_close(i2c_bus_t *bus)
+int i2c_bus_close(i2c_bus_t *bus)
 {
    THROW_PROPAGATE(close(bus->handle));
 }
@@ -61,7 +61,7 @@ static void i2c_dev_unlock_bus(i2c_dev_t *dev)
 }
 
 
-static THROW set_slave_address_if_needed(i2c_dev_t *dev)
+static int set_slave_address_if_needed(i2c_dev_t *dev)
 {
    THROW_BEGIN();
    if (dev->bus->dev_addr != dev->addr)
@@ -73,7 +73,7 @@ static THROW set_slave_address_if_needed(i2c_dev_t *dev)
 }
 
 
-THROW i2c_write(i2c_dev_t *dev, uint8_t val)
+int i2c_write(i2c_dev_t *dev, uint8_t val)
 {
    THROW_BEGIN();
    i2c_dev_lock_bus(dev);
@@ -83,7 +83,7 @@ THROW i2c_write(i2c_dev_t *dev, uint8_t val)
 }
 
 
-THROW i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
+int i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
 {
    THROW_BEGIN();
    i2c_dev_lock_bus(dev);
@@ -113,7 +113,7 @@ THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
 }
 
 
-THROW i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len)
+int i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len)
 {
    THROW_BEGIN();
    i2c_dev_lock_bus(dev);

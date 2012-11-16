@@ -108,11 +108,11 @@ typedef struct
 bma180_t;
 
 
-THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth);
+int bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth);
 
-THROW bma180_read_acc(float acc[3], bma180_t *bma);
+int bma180_read_acc(float acc[3], bma180_t *bma);
 
-THROW bma180_read_temperature(float *temperature, bma180_t *bma);
+int bma180_read_temperature(float *temperature, bma180_t *bma);
 
 
 #endif /* __BMA180_H__ */

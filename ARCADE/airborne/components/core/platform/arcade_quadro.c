@@ -1,6 +1,6 @@
 
 /*
-   ARCADE quadrotor platform - implementation
+   ARCADE Quadrotor Platform
 
    Copyright (C) 2012 Alexander Barth, Ilmenau University of Technology
    Copyright (C) 2012 Benjamin Jahn, Ilmenau University of Technology
@@ -134,7 +134,7 @@ static int read_marg(marg_data_t *marg_data)
 }
 
 
-THROW arcade_quadro_init(platform_t *plat)
+int arcade_quadro_init(platform_t *plat)
 {
    ASSERT_ONCE();
    THROW_BEGIN();

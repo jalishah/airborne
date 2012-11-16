@@ -46,18 +46,18 @@ i2c_dev_t;
 
 
 /* management: */
-THROW i2c_bus_open(i2c_bus_t *bus, char *path);
-THROW i2c_bus_close(i2c_bus_t *bus);
+int i2c_bus_open(i2c_bus_t *bus, char *path);
+int i2c_bus_close(i2c_bus_t *bus);
 void i2c_dev_init(i2c_dev_t *dev, i2c_bus_t *bus, uint8_t addr);
 
 /* writing: */
-THROW i2c_write(i2c_dev_t *dev, uint8_t val);
-THROW i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val);
+int i2c_write(i2c_dev_t *dev, uint8_t val);
+int i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val);
 
 /* reading: */
 THROW_DATA i2c_read(i2c_dev_t *dev);
 THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg);
-THROW i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len);
+int i2c_read_block_reg(i2c_dev_t *dev, uint8_t reg, uint8_t *buf, size_t len);
 
 
 #endif /* __I2C_H__ */

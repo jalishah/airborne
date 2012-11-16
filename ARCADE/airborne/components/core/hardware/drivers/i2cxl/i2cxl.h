@@ -33,9 +33,9 @@ typedef struct
 i2cxl_t;
 
 
-THROW i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus);
+int i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus);
 
-THROW i2cxl_read(i2cxl_t *i2cxl, float *dist);
+int i2cxl_read(i2cxl_t *i2cxl, float *dist);
 
 
 #endif /* __I2CXL_H__ */

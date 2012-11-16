@@ -29,7 +29,7 @@
 #define I2CXL_M_SCALE       1.0e-2f
 
 
-THROW i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus)
+int i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus)
 {
    /* copy values */
    i2c_dev_init(&i2cxl->i2c_dev, bus, I2CXL_ADDRESS);
@@ -37,7 +37,7 @@ THROW i2cxl_init(i2cxl_t *i2cxl, i2c_bus_t *bus)
 }
 
 
-THROW i2cxl_read(i2cxl_t *i2cxl, float *dist)
+int i2cxl_read(i2cxl_t *i2cxl, float *dist)
 {
    THROW_BEGIN();
    /* start measurement: */

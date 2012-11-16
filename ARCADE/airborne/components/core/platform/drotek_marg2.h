@@ -36,9 +36,9 @@ typedef struct
 drotek_marg2_t;
 
 
-THROW drotek_marg2_init(drotek_marg2_t *marg, i2c_bus_t *bus);
+int drotek_marg2_init(drotek_marg2_t *marg, i2c_bus_t *bus);
 
-THROW drotek_marg2_read(marg_data_t *data, drotek_marg2_t *marg);
+int drotek_marg2_read(marg_data_t *data, drotek_marg2_t *marg);
 
 
 #endif /* __DROTEK_MARG2_H__ */

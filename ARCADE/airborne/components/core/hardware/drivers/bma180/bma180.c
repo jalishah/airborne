@@ -123,7 +123,7 @@ static const float ACC_RANGE_TABLE[] =
 };
 
 
-static THROW bma180_read_calibration(bma180_t *bma)
+static int bma180_read_calibration(bma180_t *bma)
 {
    THROW_BEGIN();
    uint8_t off[6];
@@ -155,7 +155,7 @@ static THROW bma180_read_calibration(bma180_t *bma)
 }
 
 
-THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth)
+int bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw_t bandwidth)
 {
    THROW_BEGIN();
    i2c_dev_init(&bma->i2c_dev, bus, BMA180_ADDRESS);
@@ -204,7 +204,7 @@ THROW bma180_init(bma180_t *bma, i2c_bus_t *bus, bma180_range_t range, bma180_bw
 }
 
 
-THROW bma180_read_temp(float *temperature, bma180_t *bma)
+int bma180_read_temp(float *temperature, bma180_t *bma)
 {
    THROW_BEGIN();
    THROW_ON_ERR(i2c_read_reg(&bma->i2c_dev, BMA180_TEMP));

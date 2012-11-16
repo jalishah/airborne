@@ -36,9 +36,9 @@ typedef struct
 hmc5883_t;
 
 
-THROW hmc5883_init(hmc5883_t *dev, i2c_bus_t *bus);
+int hmc5883_init(hmc5883_t *dev, i2c_bus_t *bus);
 
-THROW hmc5883_read_mag(float mag[3], hmc5883_t *dev);
+int hmc5883_read_mag(float mag[3], hmc5883_t *dev);
 
 
 #endif /* __HMC5883_H__ */

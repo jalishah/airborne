@@ -21,7 +21,7 @@
 #include "drotek_marg2.h"
 
 
-THROW drotek_marg2_init(drotek_marg2_t *marg2, i2c_bus_t *bus)
+int drotek_marg2_init(drotek_marg2_t *marg2, i2c_bus_t *bus)
 {
    THROW_BEGIN();
    THROW_ON_ERR(mpu6050_init(&marg2->mpu, bus, MPU6050_DLPF_CFG_94_98Hz, MPU6050_FS_SEL_500, MPU6050_AFS_SEL_4G));
@@ -30,7 +30,7 @@ THROW drotek_marg2_init(drotek_marg2_t *marg2, i2c_bus_t *bus)
 }
 
 
-THROW drotek_marg2_read(marg_data_t *data, drotek_marg2_t *marg2)
+int drotek_marg2_read(marg_data_t *data, drotek_marg2_t *marg2)
 {
    THROW_BEGIN();
    THROW_ON_ERR(mpu6050_read(&marg2->mpu, &data->gyro, &data->acc, NULL));

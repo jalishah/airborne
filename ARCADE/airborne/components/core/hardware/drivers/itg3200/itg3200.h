@@ -53,13 +53,13 @@ typedef struct
 itg3200_t;
 
 
-THROW itg3200_init(itg3200_t *dev, i2c_bus_t *bus, itg3200_dlpf_t filter);
+int itg3200_init(itg3200_t *dev, i2c_bus_t *bus, itg3200_dlpf_t filter);
 
-THROW itg3200_zero_gyros(itg3200_t *dev);
+int itg3200_zero_gyros(itg3200_t *dev);
 
-THROW itg3200_read_gyro(float gyro[3], itg3200_t *dev);
+int itg3200_read_gyro(float gyro[3], itg3200_t *dev);
 
-THROW itg3200_read_temperature(float *temperature, itg3200_t *dev);
+int itg3200_read_temperature(float *temperature, itg3200_t *dev);
 
 
 #endif /* __ITG3200_H__ */

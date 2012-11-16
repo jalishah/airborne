@@ -169,7 +169,7 @@ int mpu6050_init(mpu6050_t *mpu, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu605
 }
 
 
-static THROW read_raw(mpu6050_t *mpu, int16_t *data)
+static int read_raw(mpu6050_t *mpu, int16_t *data)
 {
    ASSERT_NOT_NULL(mpu);
    ASSERT_NOT_NULL(data);
@@ -188,7 +188,7 @@ static THROW read_raw(mpu6050_t *mpu, int16_t *data)
 }
 
 
-THROW mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature)
+int mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature)
 {
    ASSERT_NOT_NULL(mpu);
 

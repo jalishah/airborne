@@ -80,7 +80,7 @@ static float sens_conv_tab[8] =
 
 
 
-THROW hmc5883_init(hmc5883_t *hmc, i2c_bus_t *bus)
+int hmc5883_init(hmc5883_t *hmc, i2c_bus_t *bus)
 {
    THROW_BEGIN();
    i2c_dev_init(&hmc->i2c_dev, bus, HMC5883_ADDRESS);
@@ -94,7 +94,7 @@ THROW hmc5883_init(hmc5883_t *hmc, i2c_bus_t *bus)
 }
 
 
-THROW hmc5883_read_mag(float mag[3], hmc5883_t *hmc)
+int hmc5883_read_mag(float mag[3], hmc5883_t *hmc)
 {
    THROW_BEGIN();
    uint8_t data[6];

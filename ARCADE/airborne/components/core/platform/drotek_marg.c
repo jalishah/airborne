@@ -21,7 +21,7 @@
 #include "drotek_marg.h"
 
 
-THROW drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus)
+int drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus)
 {
    THROW_BEGIN();
    THROW_ON_ERR(itg3200_init(&marg->itg, bus, ITG3200_DLPF_98HZ));
@@ -31,7 +31,7 @@ THROW drotek_marg_init(drotek_marg_t *marg, i2c_bus_t *bus)
 }
 
 
-THROW drotek_marg_read(marg_data_t *data, drotek_marg_t *marg)
+int drotek_marg_read(marg_data_t *data, drotek_marg_t *marg)
 {
    THROW_BEGIN();
    THROW_ON_ERR(itg3200_read_gyro(data->gyro.vec, &marg->itg));

@@ -71,10 +71,10 @@ typedef struct
 mpu6050_t;
 
 
-THROW mpu6050_init(mpu6050_t *mpu, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu6050_fs_sel_t fs_sel, mpu6050_afs_sel_t afs_sel);
+int mpu6050_init(mpu6050_t *mpu, i2c_bus_t *bus, mpu6050_dlpf_cfg_t dlpf, mpu6050_fs_sel_t fs_sel, mpu6050_afs_sel_t afs_sel);
 
 /* read gyro, acc and temperature; parameters may be NULL */
-THROW mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature);
+int mpu6050_read(mpu6050_t *mpu, vec3_t *gyro, vec3_t *acc, float *temperature);
 
 
 #endif /* __MPU6050_H__ */

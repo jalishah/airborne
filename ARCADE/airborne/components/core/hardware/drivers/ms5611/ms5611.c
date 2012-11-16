@@ -47,7 +47,7 @@ static const int conv_time_ms[5] =
 /* reads prom register into val and returns 0
  * if the read failed, val remains untouched
  * and a negative error code is returned */
-static THROW ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
+static int ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
 {
    THROW_BEGIN();
    uint8_t raw[2];
@@ -57,7 +57,7 @@ static THROW ms5611_read_prom(ms5611_dev_t *dev, uint8_t reg)
 }
 
 
-static THROW ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
+static int ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
 {
    THROW_BEGIN();
    uint8_t raw[3]; /* 24-bit adc data */
@@ -68,21 +68,21 @@ static THROW ms5611_read_adc(uint32_t *val, ms5611_dev_t *dev)
 
 
 /* starts temperature conversion using configurable oversampling rate */
-static THROW ms5611_start_temp_conv(ms5611_dev_t *dev)
+static int ms5611_start_temp_conv(ms5611_dev_t *dev)
 {
    THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_CONV_D2(dev->t_osr)));
 }
 
 
 /* starts pressure conversion using configurable oversampling rate */
-static THROW ms5611_start_pressure_conv(ms5611_dev_t *dev)
+static int ms5611_start_pressure_conv(ms5611_dev_t *dev)
 {
    THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_CONV_D1(dev->p_osr)));
 }
 
 
 /* resets the device */
-static THROW ms5611_reset(ms5611_dev_t *dev)
+static int ms5611_reset(ms5611_dev_t *dev)
 {
    THROW_PROPAGATE(i2c_write(&dev->i2c_dev, MS5611_RESET));
 }
@@ -124,7 +124,7 @@ static uint16_t ms5611_crc4(uint16_t *n_prom)
 }
 
 
-THROW ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr)
+int ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr)
 {
    THROW_BEGIN();
    /* copy values */
@@ -200,7 +200,7 @@ static void ms5611_compensate(ms5611_dev_t *dev)
 }
 
 
-THROW ms5611_measure(ms5611_dev_t *dev)
+int ms5611_measure(ms5611_dev_t *dev)
 {
    THROW_BEGIN();
 
