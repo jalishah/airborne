@@ -128,13 +128,23 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    LOG(LL_INFO, "core initializing");
 
+   
+   LOG(LL_INFO, "setting maximum CPU clock");
+   if (system("echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") != 0)
+   {
+      LOG(LL_ERROR, "failed");
+      exit(EXIT_FAILURE);
+   }
+   
+   LOG(LL_INFO, "setting up real-time scheduling");
    struct sched_param sp;
    sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
    sched_setscheduler(getpid(), SCHED_FIFO, &sp);
 
-   if (mlockall(MCL_CURRENT | MCL_FUTURE))
+   if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
    {
       LOG(LL_ERROR, "mlockall() failed");
+      exit(EXIT_FAILURE);
    }
 
    LOG(LL_INFO, "initializing model/controller");
