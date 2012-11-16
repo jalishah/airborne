@@ -147,7 +147,7 @@ THROW arcade_quadro_init(platform_t *plat)
    THROW_ON_ERR(drotek_marg2_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
-   /* initialize sonar sensor: */
+   /* initialize i2cxl sonar sensor: */
    THROW_ON_ERR(i2cxl_reader_init(&i2c_3));
    plat->read_ultra = i2cxl_reader_get_alt;
 

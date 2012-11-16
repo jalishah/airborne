@@ -4,10 +4,9 @@ class ADC:
 
    def __init__(self, adc_id):
       self.path = '/sys/class/hwmon/hwmon0/device/in%d_input' % adc_id
-      self.file = file(self.path)
 
    def read(self):
-      return int(self.file.read())
+      return int(open(self.path).read())
 
 
 class GPIO_Bank:

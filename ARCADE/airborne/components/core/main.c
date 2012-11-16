@@ -90,7 +90,7 @@ static int gyro_moved(vec3_t *gyro)
 {
    FOR_N(i, 3)
    {
-      if (fabs(gyro->vec[i]) >  0.05)
+      if (fabs(gyro->vec[i]) >  0.15)
       {
          return 1;   
       }
@@ -209,7 +209,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_input_t model_input;
       model_input.dt = dt;
       platform_read_marg(&marg_data);
-      if (cal_sample_apply(&gyro_cal, marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
+      if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
          LOG(LL_ERROR, "gyro moved during calibration, retrying");
          sleep(1);
@@ -225,22 +225,26 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_baro(&model_input.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
 
-      //EVERY_N_TIMES(10, printf("%f %f %f; %f %f %f; %f %f %f\n", marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, marg_data.mag.x, marg_data.mag.y, marg_data.mag.z));
-      float voltage;
+      float voltage = 16.0f;
       platform_read_voltage(&voltage);
 
       /* compute estimate of orientation quaternion: */
+      euler_t euler;
       int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
       if (ahrs_state < 0)
       {
-         
          continue;
       }
-      else if (ahrs_state == 1)
+      else
       {
-         start_quat = madgwick_ahrs.quat;
-         LOG(LL_INFO, "system initialized");
-         LOG(LL_DEBUG, "initial quaternion orientation estimate: %f %f %f %f", start_quat.q0, start_quat.q1, start_quat.q2, start_quat.q3);
+         /* compute euler angles from quaternion: */
+         quat_to_euler(&euler, &madgwick_ahrs.quat);
+         if (ahrs_state == 1)
+         {
+            start_quat = madgwick_ahrs.quat;
+            LOG(LL_INFO, "system initialized");
+            LOG(LL_DEBUG, "initial orientation estimate; yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
+         }
       }
 
       /* compute NED accelerations using quaternion: */
@@ -250,10 +254,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       model_state_t model_state;
       model_step(&model_state, &model_input);
  
-      /* compute euler angles from quaternion: */
-      euler_t euler;
-      quat_to_euler(&euler, &madgwick_ahrs.quat);
-      //EVERY_N_TIMES(10, printf("%f %f %f\n", euler.yaw, euler.pitch, euler.roll));
       float att_dest[2] = {0, 0};
       float att_ctrl[2];
       float att_pos[2] = {euler.pitch, euler.roll};
@@ -261,10 +261,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       /* set-up input for piid controller: */
       float rc_input[3];
-      rc_input[0] = att_ctrl[1] + 2.0f * channels[CH_ROLL]; /* [rad/s] */
-      rc_input[1] = -att_ctrl[0] + 2.0f * channels[CH_PITCH]; /* [rad/s] */
+      rc_input[0] = /*att_ctrl[1] +*/ 2.0f * channels[CH_ROLL]; /* [rad/s] */
+      rc_input[1] = /*-att_ctrl[0] +*/ 2.0f * channels[CH_PITCH]; /* [rad/s] */
       rc_input[2] = 3.0f * channels[CH_YAW]; /* [rad/s] */
  
+      //EVERY_N_TIMES(10, printf("%f %f %f %f\n", channels[CH_GAS], channels[CH_YAW], channels[CH_PITCH], channels[CH_ROLL]));
+      
       /* run feed-forward and piid controller: */
       float u_ctrl[3];
       float gyro_signs[3] = {1.0f, -1.0f, -1.0f};
@@ -293,14 +295,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       else
       {
-         f_local.gas = 1.0f;   /* 1 newton overall thrust */
+         f_local.gas = 0.0f;   /* 1 newton overall thrust */
          f_local.roll = 0.0f;  /*    no .. */
          f_local.pitch = 0.0f; /* .. additional .. */
          f_local.yaw = 0.0f;   /* .. torques */
          motors_enabled = 1;
       }
-      motors_enabled = 0;
-
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);

@@ -69,6 +69,7 @@ SIMPLE_THREAD_END
 int rc_dsl_reader_init(void)
 {
    ASSERT_ONCE();
+   THROW_BEGIN();
    memset(channels, 0, sizeof(channels));
    opcd_param_t params[] =
    {
@@ -76,17 +77,11 @@ int rc_dsl_reader_init(void)
       OPCD_PARAMS_END   
    };
    opcd_params_apply("sensors.rc_dsl.", params);
-   int ret;
-   if ((ret = serial_open(&port, dev_path, 38400, 0, 0, 0)) != 0)
-   {
-      LOG(LL_ERROR, "could not open dsl serial port");
-      goto out;
-   }
+   THROW_ON_ERR(serial_open(&port, dev_path, 38400, 0, 0, 0));
    rc_dsl_init(&rc_dsl);
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 
-out:
-   return ret;
+   THROW_END();
 }
 
 
