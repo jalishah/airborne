@@ -138,7 +138,12 @@ int arcade_quadro_init(platform_t *plat)
 {
    ASSERT_ONCE();
    THROW_BEGIN();
+
+   /* local initializations: */
    convex_opt_init();
+   
+   /* init parameters: */
+   plat->thrust = 30.0f; /* N */
 
    /* initialize buses: */
    THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));

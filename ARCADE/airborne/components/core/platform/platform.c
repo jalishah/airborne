@@ -87,3 +87,9 @@ int platform_write_motors(int enabled, float forces[4], float voltage)
    return platform.write_motors(enabled, forces, voltage);
 }
 
+
+float platform_thrust(void)
+{
+   return platform.thrust;
+}
+

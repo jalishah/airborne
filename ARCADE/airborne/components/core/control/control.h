@@ -47,10 +47,6 @@ controller_errors_t;
 
 void ctrl_init(void);
 
-void ctrl_override(float pitch, float roll, float yaw, float gas);
-
-void ctrl_stop_override(void);
- 
 
 /*
  * reset controllers (affects i-parts)

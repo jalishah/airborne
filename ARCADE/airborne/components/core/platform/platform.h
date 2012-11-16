@@ -27,6 +27,9 @@
 
 typedef struct
 {
+   /* parameters: */
+   float thrust;
+
    /* sensors: */
    int (*read_marg)(marg_data_t *marg_data);
    int (*read_rc)(float channels[MAX_CHANNELS]);
@@ -64,6 +67,9 @@ int platform_read_voltage(float *voltage);
 
 
 int platform_write_motors(int enabled, float forces[4], float voltage);
+
+
+float platform_thrust(void);
 
 
 #endif /* __PLATFORM_H__ */

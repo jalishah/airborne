@@ -43,7 +43,6 @@
 #include "platform/arcade_quadro.h"
 #include "control/basic/piid.h"
 #include "control/basic/feed_forward.h"
-#include "control/position/att_ctrl.h"
 #include "filters/sliding_avg.h"
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
@@ -68,19 +67,22 @@ typedef enum
    CM_DISARMED,  /* motors are completely disabled for safety */
    CM_MANUAL,    /* direct remote control without any position control
                     if the RC signal is lost, altitude stabilization is enabled and the GPS setpoint is reset */
-   CM_GUIDED,    /* pilot controls global speed vector using right stick, gas is "vario-height"  */
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
    CM_FULL_AUTO  /* remote control interface is unused */
 }
-control_mode_t;
+uav_mode_t;
 
 
-control_mode_t control_mode = CM_DISARMED;
+uav_mode_t mode = CM_SAFE_AUTO;
 
 
 
 #define REALTIME_PERIOD (0.005)
 #define CONTROL_RATIO (2)
+
+
+#define RC_PITCH_ROLL_STICK_P 2.0f
+#define RC_YAW_STICK_P 3.0f
 
 
 static periodic_thread_t realtime_thread;
@@ -149,7 +151,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    LOG(LL_INFO, "initializing model/controller");
    pos_init();
-   //ctrl_init();
+   ctrl_init();
 
    LOG(LL_INFO, "initializing platform");
    platform_init(arcade_quadro_init);
@@ -158,15 +160,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    cmd_init();
 
    float channels[MAX_CHANNELS];
-   /*calibration_t rc_cal;
-   calibration_init(&rc_cal, MAX_CHANNELS, 400);
-   unsigned int timer = 0;
-   for (timer = 0; timer < 400; timer++)
-   {
-      platform_read_rc(channels);
-      calibration_sample_bias(&rc_cal, channels);
-      msleep(1);
-   }*/
 
    /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
@@ -192,8 +185,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    marg_data_t marg_data;
    platform_read_marg(&marg_data);
    quaternion_init(&ahrs.quat, &marg_data.acc, &marg_data.mag);
- 
-   att_ctrl_init();
  
    gps_util_t gps_util;
    gps_util_init(&gps_util);
@@ -254,40 +245,63 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* compute next position estimate: */
       pos_t pos;
       pos_update(&pos, &pos_in);
- 
-      float att_dest[2] = {0, 0};
-      float att_ctrl[2];
-      float att_pos[2] = {euler.pitch, euler.roll};
-      att_ctrl_step(att_ctrl, dt, att_pos, att_dest);
+
+      /* run higher level controllers including navigation: */
+      ctrl_out_t ctrl_stick;
+      ctrl_step(&ctrl_stick, dt, &pos, &euler);
 
       /* set-up input for piid controller: */
-      float rc_input[3];
-      rc_input[0] = /*att_ctrl[1] +*/ 2.0f * channels[CH_ROLL]; /* [rad/s] */
-      rc_input[1] = /*-att_ctrl[0] +*/ 2.0f * channels[CH_PITCH]; /* [rad/s] */
-      rc_input[2] = 3.0f * channels[CH_YAW]; /* [rad/s] */
- 
+      float rc_input[3] = {0.0f, 0.0f, 0.0f};
+      f_local_t f_local;
+      f_local.gas = 1.0f;
+
+      /* determine if the motors should be enabled: */
+      int motors_enabled;
+      if (mode == CM_DISARMED)
+      {
+         motors_enabled = 0;
+      }
+      else if (mode != CM_FULL_AUTO)
+      {
+         motors_enabled = channels[CH_SWITCH] < 0.5 && rc_sig_valid;
+      }
+      else
+      {
+         motors_enabled = 1;
+      }
+
+      /* set up controller inputs: */
+      if (mode >= CM_SAFE_AUTO)
+      {
+         /* (safe) autonomous mode: */
+         rc_input[0] = ctrl_stick.roll;
+         rc_input[1] = ctrl_stick.pitch;
+         rc_input[2] = ctrl_stick.yaw;
+         f_local.gas = ctrl_stick.gas * platform_thrust();
+      }
+      if (rc_sig_valid && mode != CM_FULL_AUTO)
+      {
+         /* mix in rc signals for "emergency takeover": */
+         rc_input[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
+         rc_input[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+         rc_input[2] += RC_YAW_STICK_P * channels[CH_YAW];
+
+         /* limit thrust by the gas stick: */
+         if (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+         {
+            f_local.gas = channels[CH_GAS];
+         }
+      }
+      f_local.gas *= platform_thrust();
+
       /* run feed-forward system and stabilizing PIID controller: */
       float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
-      f_local_t f_local;
-      f_local.gas = 30.0f * channels[CH_GAS]; /* [N] */
+
       feed_forward_run(&feed_forward, &f_local.vec[1], rc_input);
       piid_run(&piid, &f_local.vec[1], gyro_vals, rc_input);
       filter2_run(&filter_out, f_local.vec, f_local.vec);
 
-      /* here we need to decide whether the motors should run: */
-      int motors_enabled;
-      if (channels[CH_SWITCH] < 0.5 && rc_sig_valid)
-      {
-         motors_enabled = 1;
-      }
-      else
-      {
-         f_local.gas = 0.0f;   /* 1 newton overall thrust */
-         f_local.roll = 0.0f;  /*    no .. */
-         f_local.pitch = 0.0f; /* .. additional .. */
-         f_local.yaw = 0.0f;   /* .. torques */
-         motors_enabled = 1;
-      }
+      /* write motors: */
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);

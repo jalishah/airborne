@@ -50,20 +50,6 @@ PERIODIC_THREAD_BEGIN(mon_emitter)
 PERIODIC_THREAD_END
 
 
-
-static struct
-{
-   float pitch;
-   float roll;
-   float yaw;
-   float gas;
-   int enabled;
-   pthread_mutex_t mutex;
-} 
-override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
-
-
-
 void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
 {
    /*
@@ -127,23 +113,10 @@ void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
       pthread_mutex_unlock(&mon_data_mutex);
    }
 
-   /* finally, set actuator outputs: */
-   pthread_mutex_lock(&override_data.mutex);
-   if (override_data.enabled)
-   {
-      out->pitch = override_data.pitch;
-      out->roll = override_data.roll;
-      out->yaw = override_data.yaw;
-      out->gas = override_data.gas;
-   }
-   else
-   {
-      out->pitch = att_ctrl[0];
-      out->roll = att_ctrl[1];
-      out->yaw = yaw_ctrl_val;
-      out->gas = gas_ctrl_val;
-   }
-   pthread_mutex_unlock(&override_data.mutex);
+   out->pitch = att_ctrl[0];
+   out->roll = att_ctrl[1];
+   out->yaw = yaw_ctrl_val;
+   out->gas = gas_ctrl_val;
 }
 
 
@@ -153,26 +126,6 @@ void ctrl_reset(void)
    z_ctrl_reset();
    att_ctrl_reset();
    navi_reset(); // TODO: not threadsafe
-}
-
-
-void ctrl_override(float pitch, float roll, float yaw, float gas)
-{
-   pthread_mutex_lock(&override_data.mutex);
-   override_data.pitch = pitch;
-   override_data.roll = roll;
-   override_data.yaw = yaw;
-   override_data.gas = gas;
-   override_data.enabled = 1;
-   pthread_mutex_unlock(&override_data.mutex);
-}
-
-
-void ctrl_stop_override(void)
-{
-   pthread_mutex_lock(&override_data.mutex);
-   override_data.enabled = 0;
-   pthread_mutex_unlock(&override_data.mutex);
 }
 
 
