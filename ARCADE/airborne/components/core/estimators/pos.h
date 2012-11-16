@@ -1,8 +1,12 @@
 
 /*
-   Position/Speed Model Interface
-
+   Kalman Filter based Position/Speed Estimate
+   
+   | 1 dt | * | p | + | 0.5 * dt ^ 2 | * | a | = | p |
+   | 0  1 | * | v |   |     dt       |   | v |
+ 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+   Copyright (C) 2012 Jan Roemisch, Ilmenau University of Technology
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,8 +20,8 @@
  */
 
 
-#ifndef __MODEL_H__
-#define __MODEL_H__
+#ifndef __POS_H__
+#define __POS_H__
 
 
 #include "../geometry/orientation.h"
@@ -28,17 +32,18 @@ typedef struct
    float pos; /* position, in m */
    float speed; /* in m / s */
 }
-position_state_t;
+pos_speed_t;
 
 
 typedef struct
 {
-   position_state_t x; /* x state */
-   position_state_t y; /* y state */
-   position_state_t ultra_z; /* ultrasonoc altitude over ground */
-   position_state_t baro_z; /* barometric altitude above sea level */
+   /* system positions/speeds in NEU ground reference frame: */
+   pos_speed_t x; /* east direction */
+   pos_speed_t y; /* north direction */
+   pos_speed_t ultra_z; /* ultrasonic altitude altitude above ground */
+   pos_speed_t baro_z; /* barometric altitude above MSL */
 }
-model_state_t;
+pos_t;
 
 
 typedef struct
@@ -51,16 +56,19 @@ typedef struct
    float dx;
    float dy;
 
-   /* control acc input: */
+   /* control acc input in NEU ground reference frame: */
    vec3_t acc;
 }
-model_input_t;
+pos_in_t;
 
 
-void model_init(void);
+/* initializes the position estimate subsystem */
+void pos_init(void);
 
-void model_step(model_state_t *out, model_input_t *input);
+
+/* computes new position/speed estimates using the given input signals */
+void pos_update(pos_t *out, pos_in_t *in);
 
 
-#endif /* __MODEL_H__ */
+#endif /* __POS_H__ */
 

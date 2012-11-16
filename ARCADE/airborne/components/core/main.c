@@ -36,8 +36,8 @@
 #include "command/command.h"
 #include "util/time/ltime.h"
 #include "filters/sliding_avg.h"
-#include "model/madgwick_ahrs.h"
-#include "model/model.h"
+#include "estimators/ahrs.h"
+#include "estimators/pos.h"
 #include "control/control.h"
 #include "platform/platform.h"
 #include "platform/arcade_quadro.h"
@@ -148,7 +148,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    }
 
    LOG(LL_INFO, "initializing model/controller");
-   model_init();
+   pos_init();
    //ctrl_init();
 
    LOG(LL_INFO, "initializing platform");
@@ -184,14 +184,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_init(&piid, REALTIME_PERIOD);
 
   
-   madgwick_ahrs_t madgwick_ahrs;
-   madgwick_ahrs_init(&madgwick_ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.03f);
+   ahrs_t ahrs;
+   ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.03f);
    quat_t start_quat;
    
    /* perform initial marg reading to acquire an initial orientation guess: */
    marg_data_t marg_data;
    platform_read_marg(&marg_data);
-   quaternion_init(&madgwick_ahrs.quat, &marg_data.acc, &marg_data.mag);
+   quaternion_init(&ahrs.quat, &marg_data.acc, &marg_data.mag);
  
    att_ctrl_init();
  
@@ -206,8 +206,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    {
       float dt = interval_measure(&interval);
       /* read sensors: */
-      model_input_t model_input;
-      model_input.dt = dt;
+      pos_in_t pos_in;
+      pos_in.dt = dt;
       platform_read_marg(&marg_data);
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
@@ -219,10 +219,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       gps_data_t gps_data;
       platform_read_gps(&gps_data);
       gps_util_update(&gps_rel_data, &gps_util, &gps_data);
-      model_input.dx = gps_rel_data.dx;
-      model_input.dy = gps_rel_data.dy;
-      platform_read_ultra(&model_input.ultra_z);
-      platform_read_baro(&model_input.baro_z);
+      pos_in.dx = gps_rel_data.dx;
+      pos_in.dy = gps_rel_data.dy;
+      platform_read_ultra(&pos_in.ultra_z);
+      platform_read_baro(&pos_in.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
 
       float voltage = 16.0f;
@@ -230,7 +230,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       /* compute estimate of orientation quaternion: */
       euler_t euler;
-      int ahrs_state = madgwick_ahrs_update(&madgwick_ahrs, &marg_data, 1.0, dt);
+      int ahrs_state = ahrs_update(&ahrs, &marg_data, 1.0, dt);
       if (ahrs_state < 0)
       {
          continue;
@@ -238,21 +238,22 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       else
       {
          /* compute euler angles from quaternion: */
-         quat_to_euler(&euler, &madgwick_ahrs.quat);
+         quat_to_euler(&euler, &ahrs.quat);
          if (ahrs_state == 1)
          {
-            start_quat = madgwick_ahrs.quat;
+            start_quat = ahrs.quat;
             LOG(LL_INFO, "system initialized");
             LOG(LL_DEBUG, "initial orientation estimate; yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
          }
       }
 
-      /* compute NED accelerations using quaternion: */
-      quat_rot_vec(&model_input.acc, &marg_data.acc, &madgwick_ahrs.quat);
+      /* compute NEU accelerations using quaternion: */
+      quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
+      pos_in.acc.z *= -1.0f; /* <-- transform from NED to NEU frame */
       
-      /* execute kalman filters for position estimate: */
-      model_state_t model_state;
-      model_step(&model_state, &model_input);
+      /* compute next position estimate: */
+      pos_t pos;
+      pos_update(&pos, &pos_in);
  
       float att_dest[2] = {0, 0};
       float att_ctrl[2];
@@ -265,26 +266,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       rc_input[1] = /*-att_ctrl[0] +*/ 2.0f * channels[CH_PITCH]; /* [rad/s] */
       rc_input[2] = 3.0f * channels[CH_YAW]; /* [rad/s] */
  
-      //EVERY_N_TIMES(10, printf("%f %f %f %f\n", channels[CH_GAS], channels[CH_YAW], channels[CH_PITCH], channels[CH_ROLL]));
-      
-      /* run feed-forward and piid controller: */
-      float u_ctrl[3];
-      float gyro_signs[3] = {1.0f, -1.0f, -1.0f};
-      float gyro_vals[3];
-      FOR_N(i, 3)
-      {
-         gyro_vals[i] = gyro_signs[i] * marg_data.gyro.vec[i];
-      }
-      feed_forward_run(&feed_forward, u_ctrl, rc_input);
-      piid_run(&piid, u_ctrl, gyro_vals, rc_input);
-
-      /* set up and filter output signals: */
+      /* run feed-forward system and stabilizing PIID controller: */
+      float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
       f_local_t f_local;
       f_local.gas = 30.0f * channels[CH_GAS]; /* [N] */
-      FOR_N(i, 3)
-      {
-         f_local.vec[i + 1] = u_ctrl[i];
-      }
+      feed_forward_run(&feed_forward, &f_local.vec[1], rc_input);
+      piid_run(&piid, &f_local.vec[1], gyro_vals, rc_input);
       filter2_run(&filter_out, f_local.vec, f_local.vec);
 
       /* here we need to decide whether the motors should run: */
@@ -304,7 +291,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
-      //mixer_in_t mixer_in;
    }
    PERIODIC_THREAD_LOOP_END
 }
@@ -339,21 +325,6 @@ void _main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-   feed_forward_t ff;
-   feed_forward_init(&ff, 0.005);
-   piid_t piid;
-   piid_init(&piid, 0.005);
-   float u_ctrl[3];
-   float gyro[3] = {0, 0, 0};
-   float torques[3] = {1.5, 1.5, 1.5};
-   FOR_N(i, 100)
-   {
-      feed_forward_run(&ff, u_ctrl, torques);
-      piid_run(&piid, u_ctrl, gyro, torques);
-      printf("%f %f %f\n", u_ctrl[0], u_ctrl[1], u_ctrl[2]);
-   }
-   return 0;
-   
    _main(argc, argv);
    daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;

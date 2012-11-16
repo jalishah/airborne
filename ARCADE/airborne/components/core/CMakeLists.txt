@@ -5,7 +5,7 @@ ADD_SUBDIRECTORY(hardware)
 ADD_SUBDIRECTORY(control)
 ADD_SUBDIRECTORY(geometry)
 ADD_SUBDIRECTORY(platform)
-ADD_SUBDIRECTORY(model)
+ADD_SUBDIRECTORY(estimators)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
@@ -17,7 +17,7 @@ TARGET_LINK_LIBRARIES(core
 daemon
 command
 control
-model
+estimators
 platform
 holger_blmc
 rc_dsl_reader

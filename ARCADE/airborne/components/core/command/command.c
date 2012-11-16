@@ -14,7 +14,6 @@
 #include "../platform/platform.h"
 #include "../util/logger/logger.h"
 #include "../control/control.h"
-#include "../model/model.h"
 #include "../control/position/z_ctrl.h"
 #include "../control/position/navi.h"
 #include "../control/position/yaw_ctrl.h"

@@ -64,15 +64,15 @@ override_data = {0.0f, 0.0f, 0.0f, 0.0f, 0, PTHREAD_MUTEX_INITIALIZER};
 
 
 
-void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *euler)
+void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
 {
    /*
     * just some shortcut definitions:
     */
-   float pos_x = model_state->x.pos;
-   float pos_y = model_state->y.pos;
-   float speed_x = model_state->x.speed;
-   float speed_y = model_state->y.speed;
+   float pos_x = pos->x.pos;
+   float pos_y = pos->y.pos;
+   float speed_x = pos->x.speed;
+   float speed_y = pos->y.speed;
    float yaw = euler->yaw;
 
    /* run yaw controller: */
@@ -87,9 +87,9 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *e
    float z_err;
    float gas_ctrl_val = z_ctrl_step
    (
-      &z_err, model_state->ultra_z.pos,
-      model_state->baro_z.pos,
-      model_state->baro_z.speed, dt
+      &z_err, pos->ultra_z.pos,
+      pos->baro_z.pos,
+      pos->baro_z.speed, dt
    );
 
    /* run navi controller: */
@@ -112,13 +112,13 @@ void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *e
       mon_data.pitch = euler->pitch;
       mon_data.roll = euler->roll;
       mon_data.yaw = euler->yaw;
-      mon_data.x = model_state->x.pos;
-      mon_data.y = model_state->y.pos;
-      mon_data.z = model_state->baro_z.pos;
-      mon_data.z_ground = model_state->ultra_z.pos;
-      mon_data.x_speed = model_state->x.speed;
-      mon_data.y_speed = model_state->y.speed;
-      mon_data.z_speed = model_state->baro_z.speed;
+      mon_data.x = pos->x.pos;
+      mon_data.y = pos->y.pos;
+      mon_data.z = pos->baro_z.pos;
+      mon_data.z_ground = pos->ultra_z.pos;
+      mon_data.x_speed = pos->x.speed;
+      mon_data.y_speed = pos->y.speed;
+      mon_data.z_speed = pos->baro_z.speed;
       mon_data.x_err = pos_x - navi_get_dest_x();
       mon_data.y_err = pos_y - navi_get_dest_y();
       mon_data.z_err = z_err;

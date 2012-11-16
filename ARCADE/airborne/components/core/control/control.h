@@ -20,7 +20,7 @@
 #include <threadsafe_types.h>
 #include <core.pb-c.h>
 
-#include "../model/model.h"
+#include "../estimators/pos.h"
 #include "../geometry/orientation.h"
 
 
@@ -61,7 +61,7 @@ void ctrl_reset(void);
 /*
  * run the controllers
  */
-void ctrl_step(ctrl_out_t *out, float dt, model_state_t *model_state, euler_t *euler);
+void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler);
 
 
 /*
