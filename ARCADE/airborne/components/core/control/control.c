@@ -63,29 +63,25 @@ void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
 
    /* run z controller: */
    float z_err;
-   float gas_ctrl_val = z_ctrl_step
-   (
-      &z_err, pos->ultra_z.pos,
-      pos->baro_z.pos,
-      pos->baro_z.speed, dt
-   );
+   float gas_ctrl_val = z_ctrl_step(&z_err, pos->ultra_z.pos,
+                                    pos->baro_z.pos, pos->baro_z.speed, dt);
 
    /* run navi controller: */
-   vec2_t speed_setpoint_vec;
+   vec2_t speed_sp;
    int direct_speed_ctrl = 1;
    if (direct_speed_ctrl)
    {
-      speed_setpoint_vec.x = 0.0f;
-      speed_setpoint_vec.y = 0.0f;
+      speed_sp.x = 0.0f;
+      speed_sp.y = 0.0f;
    }
    else
    {
       vec2_t pos_vec = {pos->x.pos, pos->y.pos};
-      navi_run(&speed_setpoint_vec, &pos_vec, dt);
+      navi_run(&speed_sp, &pos_vec, dt);
    }
    vec2_t speed_vec = {pos->x.speed, pos->y.speed};
    vec2_t pitch_roll_sp;
-   xy_speed_ctrl_run(&pitch_roll_sp, &speed_setpoint_vec, &speed_vec, euler->yaw);
+   xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler->yaw);
    
    vec2_t pitch_roll_ctrl;
    vec2_t pitch_roll = {euler->pitch, euler->roll};
