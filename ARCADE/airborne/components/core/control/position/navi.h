@@ -3,14 +3,7 @@
 #define __NAVI_H__
 
 
-typedef struct
-{
-   float pos[2];
-   float speed[2];
-   float dt; /* control loop iteration time delta, in seconds */
-   float yaw; /* angle between magnetic north and device front, in rad */
-}
-navi_input_t;
+#include "../../util/math/vec2.h"
 
 
 /*
@@ -64,8 +57,7 @@ int navi_set_travel_speed(float speed);
 /*
  * executes navigation control subsystem
  */
-void navi_run(float output[2], const navi_input_t *input);
-
+void navi_run(vec2_t *speed_setpoint, vec2_t *pos, float dt);
 
 
 #endif /* __NAVI_H__ */

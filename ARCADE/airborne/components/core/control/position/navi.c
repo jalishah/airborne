@@ -10,12 +10,10 @@
 
 #include "navi.h"
 
-#include "../../geometry/rot2d.h"
-#include "../../geometry/vector2d.h"
+#include "../../util/math/vec2.h"
 
 
 /* configurable parameters: */
-static tsfloat_t speed_p;
 static tsfloat_t speed_min;
 static tsfloat_t speed_std;
 static tsfloat_t speed_max;
@@ -29,25 +27,11 @@ static tsint_t direct_speed_ctrl;
 
 
 /* vectors for use in navigation algorithm: */
-static vector2d_t dest_pos;
-static vector2d_t virt_dest_pos;
-static vector2d_t curr_pos;
-static vector2d_t curr_speed;
-static vector2d_t speed_setpoint;
-static vector2d_t world_thrust;
-static vector2d_t speed_err;
-static vector2d_t pos_err;
-static vector2d_t dest_dir;
-static vector2d_t pos_err_sum;
-static vector2d_t pos_err_addend;
-static vector2d_t prev_dest_pos;
-static vector2d_t ortho_vec;
-static vector2d_t ortho_pos_err;
-static vector2d_t ortho_thrust;
-static vector2d_t setpoints_dir;
-static vector2d_t virt_pos_err;
+static vec2_t dest_pos;
+static vec2_t pos_err_sum;
+static vec2_t prev_dest_pos;
 
-static rot2d_context_t *rot2d_context;
+
 /* setpoints: */
 static tsfloat_t travel_speed;
 static tsfloat_t dest_x; /* destination in lon direction, in m */
@@ -87,7 +71,6 @@ void navi_init(void)
    ASSERT_ONCE();
    opcd_param_t params[] =
    {
-      {"speed_p", &speed_p},
       {"sqrt_shift", &sqrt_shift},
       {"sqrt_scale", &sqrt_scale},
       {"square_shift", &square_shift},
@@ -102,28 +85,9 @@ void navi_init(void)
    };
    opcd_params_apply("controllers.navigation.", params);
    
-   vector2d_alloc(&dest_pos);
-   vector2d_alloc(&virt_dest_pos);
-   vector2d_alloc(&curr_pos);
-   vector2d_alloc(&curr_speed);
-   vector2d_alloc(&speed_setpoint);
-   vector2d_alloc(&world_thrust);
-   vector2d_alloc(&speed_err);
-   vector2d_alloc(&pos_err);
-   vector2d_alloc(&dest_dir);
-   vector2d_alloc(&pos_err_sum);
-   vector2d_alloc(&pos_err_addend);
-   vector2d_alloc(&prev_dest_pos);
-   vector2d_alloc(&ortho_vec);
-   vector2d_alloc(&ortho_pos_err);
-   vector2d_alloc(&ortho_thrust);
-   vector2d_alloc(&setpoints_dir);
-   vector2d_alloc(&virt_pos_err);
-
-   vector2d_set(&pos_err_sum, 0.0, 0.0);
-   vector2d_set(&dest_pos, 0.0, 0.0);
-   vector2d_set(&prev_dest_pos, 0.0, 0.0);
-   rot2d_context = rot2d_create();
+   vec2_set(&pos_err_sum, 0.0, 0.0);
+   vec2_set(&dest_pos, 0.0, 0.0);
+   vec2_set(&prev_dest_pos, 0.0, 0.0);
 
    tsfloat_init(&travel_speed, 0.0f);
    tsfloat_init(&dest_x, 0.0f);
@@ -135,7 +99,7 @@ void navi_init(void)
 
 void navi_reset(void)
 {
-   vector2d_set(&pos_err_sum, 0.0f, 0.0f);
+   vec2_set(&pos_err_sum, 0.0f, 0.0f);
 }
 
 
@@ -183,61 +147,55 @@ int navi_set_travel_speed(float speed)
 /*
  * executes navigation control subsystem
  */
-void navi_run(float out[2], const navi_input_t *input)
+void navi_run(vec2_t *speed_setpoint, vec2_t *pos, float dt)
 {
    /* set-up input vectors: */
-   vector2d_set(&curr_speed, input->speed[0], input->speed[1]);
-   
    float _dest_x = tsfloat_get(&dest_x);
    float _dest_y = tsfloat_get(&dest_y);
 
-   if (vector2d_get_x(&dest_pos) != _dest_x ||
-       vector2d_get_y(&dest_pos) != _dest_y)
+   if (dest_pos.x != _dest_x ||
+       dest_pos.y != _dest_y)
    {
-      vector2d_copy(&prev_dest_pos, &dest_pos);
-      vector2d_set(&dest_pos, _dest_x, _dest_y);
+      prev_dest_pos = dest_pos;
+      vec2_set(&dest_pos, _dest_x, _dest_y);
    }
-   vector2d_set(&curr_pos, input->pos[0], input->pos[1]);
-   vector2d_sub(&pos_err, &dest_pos, &curr_pos);
+   vec2_t pos_err;
+   vec2_sub(&pos_err, &dest_pos, pos);
  
    /* add correction for inter-setpoint trajectory */
-   vector2d_sub(&setpoints_dir, &dest_pos, &prev_dest_pos);
-   vector2d_orthogonal_right(&ortho_vec, &setpoints_dir);
-   vector2d_project(&ortho_pos_err, &pos_err, &ortho_vec);
-   vector2d_scalar_multiply(&ortho_thrust, tsfloat_get(&ortho_p), &ortho_pos_err);
+   vec2_t setpoints_dir;
+   vec2_sub(&setpoints_dir, &dest_pos, &prev_dest_pos);
+   vec2_t ortho_vec;
+   vec2_ortho_right(&ortho_vec, &setpoints_dir);
+   vec2_t ortho_pos_err;
+   vec2_project(&ortho_pos_err, &pos_err, &ortho_vec);
+   vec2_t ortho_thrust;
+   vec2_scale(&ortho_thrust, &ortho_pos_err, tsfloat_get(&ortho_p));
  
    /* calculate speed setpoint vector: */
-   vector2d_copy(&virt_dest_pos, &dest_pos);
-   vector2d_add(&virt_dest_pos, &dest_pos, &pos_err_sum);
-   vector2d_add(&virt_dest_pos, &virt_dest_pos, &ortho_thrust);
-   vector2d_sub(&virt_pos_err, &virt_dest_pos, &curr_pos);
-   vector2d_sub(&speed_setpoint, &virt_dest_pos, &curr_pos);
-   float target_dist = vector2d_length(&speed_setpoint);
+   vec2_t virt_dest_pos;
+   virt_dest_pos = dest_pos;
+   vec2_add(&virt_dest_pos, &dest_pos, &pos_err_sum);
+   vec2_add(&virt_dest_pos, &virt_dest_pos, &ortho_thrust);
+   vec2_t virt_pos_err;
+   vec2_sub(&virt_pos_err, &virt_dest_pos, pos);
+   vec2_sub(speed_setpoint, &virt_dest_pos, pos);
+   float target_dist = vec2_norm(speed_setpoint);
 
    /* caluclate error sum for "i-part" of controller,
       if sum is below pos_i_max: */
-   if (vector2d_length(&pos_err_sum) < tsfloat_get(&pos_i_max))
+   if (vec2_norm(&pos_err_sum) < tsfloat_get(&pos_i_max))
    {
       float _speed_max = tsfloat_get(&speed_max);
       float i_weight = (_speed_max - desired_speed(target_dist)) / _speed_max;
-      vector2d_scalar_multiply(&pos_err_addend, input->dt * tsfloat_get(&pos_i) * i_weight, &pos_err);
-      vector2d_add(&pos_err_sum, &pos_err_sum, &pos_err_addend);
+      vec2_t pos_err_addend;
+      vec2_scale(&pos_err_addend, &pos_err, dt * tsfloat_get(&pos_i) * i_weight);
+      vec2_add(&pos_err_sum, &pos_err_sum, &pos_err_addend);
    }
 
    float speed_val = desired_speed(target_dist) * tsfloat_get(&travel_speed);
-   vector2d_normalize(&dest_dir, &virt_pos_err);
-   vector2d_scalar_multiply(&speed_setpoint, speed_val, &dest_dir);
-
-   /* calculate controller thrust vector: */
-   if (tsint_get(&direct_speed_ctrl))
-   {
-      vector2d_set(&speed_setpoint, _dest_x, _dest_y);
-   }
-   vector2d_sub(&speed_err, &speed_setpoint, &curr_speed);
-   vector2d_scalar_multiply(&world_thrust, tsfloat_get(&speed_p), &speed_err);
-
-   /* transform thrust vector to global coordinate system: */
-   float in[2] = {vector2d_get_x(&world_thrust), vector2d_get_y(&world_thrust)};
-   rot2d_calc(rot2d_context, out, in, input->yaw);
+   vec2_t dest_dir;
+   vec2_normalize(&dest_dir, &virt_pos_err);
+   vec2_scale(speed_setpoint, &dest_dir, speed_val);
 }
 

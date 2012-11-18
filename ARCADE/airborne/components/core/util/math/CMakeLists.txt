@@ -1,0 +1,1 @@
+ADD_LIBRARY(vec2 STATIC vec2.c)

@@ -39,6 +39,7 @@ glib-2.0
 util network_messages
 scl_messages
 filters
+vec2
 cvxgen
 hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)

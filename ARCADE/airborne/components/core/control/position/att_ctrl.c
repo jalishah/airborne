@@ -60,15 +60,15 @@ void att_ctrl_reset(void)
 }
 
 
-void att_ctrl_step(float out[2], const float dt, const float pos[2], const float setp[2])
+void att_ctrl_step(vec2_t *ctrl, const float dt, const vec2_t *pos, const vec2_t *setp)
 {
    float _angle_max = tsfloat_get(&angle_max);
    FOR_EACH(i, controllers)
    {
       /* limit setpoint: */
-      float lim_sp = sym_limit(setp[i], _angle_max);
+      float lim_sp = sym_limit(setp->vec[i], _angle_max);
       /* run controller: */
-      out[i] = pid_control(&controllers[i], lim_sp + tsfloat_get(&bias[i]) - pos[i], dt);
+      ctrl->vec[i] = pid_control(&controllers[i], lim_sp + tsfloat_get(&bias[i]) - pos->vec[i], dt);
    }
 }
 

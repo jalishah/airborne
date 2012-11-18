@@ -26,6 +26,7 @@
 #include "position/att_ctrl.h"
 #include "position/z_ctrl.h"
 #include "position/yaw_ctrl.h"
+#include "xy_speed.h"
 #include "../util/logger/logger.h"
 #include "../util/time/ltime.h"
 
@@ -52,20 +53,11 @@ PERIODIC_THREAD_END
 
 void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
 {
-   /*
-    * just some shortcut definitions:
-    */
-   float pos_x = pos->x.pos;
-   float pos_y = pos->y.pos;
-   float speed_x = pos->x.speed;
-   float speed_y = pos->y.speed;
-   float yaw = euler->yaw;
-
    /* run yaw controller: */
    float yaw_err;
    float yaw_ctrl_val = yaw_ctrl_step
    (
-      &yaw_err, yaw,
+      &yaw_err, euler->yaw,
       0, dt
    );
 
@@ -79,18 +71,25 @@ void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
    );
 
    /* run navi controller: */
-   float navi_output[2];
-   navi_input_t navi_input = 
+   vec2_t speed_setpoint_vec;
+   int direct_speed_ctrl = 1;
+   if (direct_speed_ctrl)
    {
-      {pos_x, pos_y}, {speed_x, speed_y},
-      dt, yaw
-   };
-   navi_run(navi_output, &navi_input);
+      speed_setpoint_vec.x = 0.0f;
+      speed_setpoint_vec.y = 0.0f;
+   }
+   else
+   {
+      vec2_t pos_vec = {pos->x.pos, pos->y.pos};
+      navi_run(&speed_setpoint_vec, &pos_vec, dt);
+   }
+   vec2_t speed_vec = {pos->x.speed, pos->y.speed};
+   vec2_t pitch_roll_sp;
+   xy_speed_ctrl_run(&pitch_roll_sp, &speed_setpoint_vec, &speed_vec, euler->yaw);
    
-   
-   float att_ctrl[2];
-   float att_pos[2] = {euler->pitch, euler->roll};
-   att_ctrl_step(att_ctrl, dt, att_pos, navi_output);
+   vec2_t pitch_roll_ctrl;
+   vec2_t pitch_roll = {euler->pitch, euler->roll};
+   att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
 
    /* set monitoring data: */
    if (pthread_mutex_trylock(&mon_data_mutex) == 0)
@@ -105,16 +104,16 @@ void ctrl_step(ctrl_out_t *out, float dt, pos_t *pos, euler_t *euler)
       mon_data.x_speed = pos->x.speed;
       mon_data.y_speed = pos->y.speed;
       mon_data.z_speed = pos->baro_z.speed;
-      mon_data.x_err = pos_x - navi_get_dest_x();
-      mon_data.y_err = pos_y - navi_get_dest_y();
+      mon_data.x_err = pos->x.pos - navi_get_dest_x();
+      mon_data.y_err = pos->y.pos - navi_get_dest_y();
       mon_data.z_err = z_err;
       mon_data.yaw_err = yaw_err;
       mon_data.dt = dt;
       pthread_mutex_unlock(&mon_data_mutex);
    }
 
-   out->pitch = att_ctrl[0];
-   out->roll = att_ctrl[1];
+   out->pitch = pitch_roll_ctrl.x;
+   out->roll = pitch_roll_ctrl.y;
    out->yaw = yaw_ctrl_val;
    out->gas = gas_ctrl_val;
 }
@@ -132,11 +131,8 @@ void ctrl_reset(void)
 void ctrl_init(void)
 {
    ASSERT_ONCE();
-
    mon_socket = scl_get_socket("mon");
    ASSERT_NOT_NULL(mon_socket);
-   int64_t hwm = 1;
-   zmq_setsockopt(mon_socket, ZMQ_HWM, &hwm, sizeof(hwm));
 
    /* create monitoring connection: */
    const struct timespec period = {0, 100 * NSEC_PER_MSEC};
