@@ -116,6 +116,60 @@ void die(void)
 }
 
 
+typedef struct
+{
+   int spinning;
+   int enabled;
+   float timer;
+}
+motors_state_t;
+
+
+void motors_state_init(motors_state_t *state)
+{
+   state->spinning = 0;
+   state->enabled = 0;
+   state->timer = 0.0f;
+}
+
+
+int motors_control_enabled(motors_state_t *state)
+{
+   return state->spinning;
+}
+
+
+void motors_state_update(motors_state_t *state, float ground_z, float gas, float dt)
+{
+   if (state->spinning && ground_z < 0.21f && gas < 1.0f)
+   {
+      if (state->timer < 3.0f)
+      {
+         state->timer += dt;
+         state->enabled = 0;
+      }
+      else
+      {
+         state->spinning = 0;
+         state->timer = 0.0f;
+      }
+   }
+   if (!state->spinning && ground_z < 0.21f && gas >= 2.0f)
+   {
+      if (state->timer < 3.0f)
+      {
+         state->timer += dt;
+         state->enabled = 1;
+      }
+      else
+      {
+         state->spinning = 1;
+         state->timer = 0.0f;
+      }
+   }
+}
+
+
 PERIODIC_THREAD_BEGIN(realtime_thread_func)
 { 
    syslog(LOG_INFO, "initializing core");
@@ -218,6 +272,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    gps_util_init(&gps_util);
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
 
+   
+   motors_state_t motors_state;
+   motors_state_init(&motors_state);
    LOG(LL_INFO, "entering main loop");
    interval_t interval;
    interval_init(&interval);
@@ -372,14 +429,18 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       {
          motors_enabled = 0;
       }
-      else if (mode != CM_FULL_AUTO)
-      {
-         motors_enabled = channels[CH_SWITCH] < 0.5 && rc_sig_valid;
-      }
       else
       {
-         motors_enabled = 1;
+         motors_state_update(&motors_state, pos_estimate.ultra_z.pos, f_local.gas, dt);
+         motors_enabled = motors_state.enabled;
+         if (!motors_state.spinning)
+         {
+            f_local.pitch = 0.0f;
+            f_local.roll = 0.0f;
+            f_local.yaw = 0.0f;
+         }
       }
+
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       
       
