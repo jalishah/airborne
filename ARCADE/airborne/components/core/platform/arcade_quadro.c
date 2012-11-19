@@ -100,7 +100,7 @@ static int write_motors(int enabled, float forces[4], float voltage)
    {
       if (ground_dist > CONVEXOPT_MIN_GROUND_DIST)
       {
-         convex_opt_run(forces);
+         //convex_opt_run(forces);
       }
    }
    /* computation of rpm ^ 2 out of the desired forces */

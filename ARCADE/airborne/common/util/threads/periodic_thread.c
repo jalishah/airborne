@@ -75,9 +75,9 @@ int periodic_thread_wait_for_next_period(periodic_thread_t *thread)
    }
    else
    {
-      /*fprintf(stderr, "thread %s missed deadline. now: %ld sec %ld nsec next: %ld sec %ld nsec \n",
+      printf("thread %s missed deadline. now: %ld sec %ld nsec next: %ld sec %ld nsec \n",
           thread->name, thread->periodic_data.now.tv_sec, thread->periodic_data.now.tv_nsec,
-          thread->periodic_data.next.tv_sec, thread->periodic_data.next.tv_nsec);*/
+          thread->periodic_data.next.tv_sec, thread->periodic_data.next.tv_nsec);
       ret = 1;
    }
    return ret;

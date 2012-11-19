@@ -75,11 +75,11 @@ enum
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
    CM_FULL_AUTO  /* remote control interface is unused */
 }
-mode = CM_SAFE_AUTO; //CM_SAFE_AUTO;
+mode = CM_DISARMED; //SAFE_AUTO;
 
 
 
-#define REALTIME_PERIOD (0.005)
+#define REALTIME_PERIOD (0.007)
 #define CONTROL_RATIO (2)
 
 
@@ -157,6 +157,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    struct sched_param sp;
    sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
    sched_setscheduler(getpid(), SCHED_FIFO, &sp);
+
+   if (nice(-20) == -1)
+   {
+      LOG(LL_ERROR, "could not renice process");
+      die();
+   }
 
    if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
    {
@@ -317,8 +323,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       pitch_roll_sp.x = 0;
       pitch_roll_sp.y = 0;
       att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
-      auto_stick.pitch = pitch_roll_ctrl.x;
-      auto_stick.roll = -pitch_roll_ctrl.y;
+      auto_stick.pitch = -pitch_roll_ctrl.x;
+      auto_stick.roll = pitch_roll_ctrl.y;
 
 
       /*************************************
@@ -383,7 +389,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    PERIODIC_THREAD_LOOP_END
 }
 PERIODIC_THREAD_END
-
 
 
 void _main(int argc, char *argv[])
