@@ -67,7 +67,7 @@ typedef union
 f_local_t;
 
 
-typedef enum
+enum
 {
    CM_DISARMED,  /* motors are completely disabled for safety */
    CM_MANUAL,    /* direct remote control without any position control
@@ -75,10 +75,7 @@ typedef enum
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
    CM_FULL_AUTO  /* remote control interface is unused */
 }
-uav_mode_t;
-
-
-uav_mode_t mode = CM_SAFE_AUTO;
+mode = CM_SAFE_AUTO; //CM_SAFE_AUTO;
 
 
 
@@ -106,6 +103,19 @@ static int gyro_moved(vec3_t *gyro)
 }
 
 
+void die(void)
+{
+   static int killing = 0;
+   if (!killing)
+   {
+      killing = 1;
+      LOG(LL_INFO, "shutting down");
+      sleep(1);
+      kill(0, 9);
+   }
+}
+
+
 PERIODIC_THREAD_BEGIN(realtime_thread_func)
 { 
    syslog(LOG_INFO, "initializing core");
@@ -115,7 +125,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (scl_init("core") != 0)
    {
       syslog(LOG_CRIT, "could not init scl module");
-      exit(EXIT_FAILURE);
+      die();
    }
    
    /* init params subsystem: */
@@ -127,7 +137,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (logger_open() != 0)
    {
       syslog(LOG_CRIT, "could not open logger");
-      exit(EXIT_FAILURE);
+      die();
    }
    syslog(LOG_CRIT, "logger opened");
    sleep(1); /* give scl some time to establish
@@ -140,7 +150,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (system("echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") != 0)
    {
       LOG(LL_ERROR, "failed");
-      exit(EXIT_FAILURE);
+      die();
    }
    
    LOG(LL_INFO, "setting up real-time scheduling");
@@ -151,18 +161,23 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
    {
       LOG(LL_ERROR, "mlockall() failed");
-      exit(EXIT_FAILURE);
+      die();
+   }
+
+   LOG(LL_INFO, "initializing platform");
+   if (platform_init(arcade_quadro_init) < 0)
+   {
+      LOG(LL_ERROR, "could not initialize platform");
+      die();
    }
 
    LOG(LL_INFO, "initializing model/controller");
    pos_init();
+   xy_speed_ctrl_init();
    att_ctrl_init();
    yaw_ctrl_init();
-   z_ctrl_init();
+   z_ctrl_init(platform_param()->mass_kg * 10.0f);
    navi_init();
-
-   LOG(LL_INFO, "initializing platform");
-   platform_init(arcade_quadro_init);
 
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
@@ -184,15 +199,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_t piid;
    piid_init(&piid, REALTIME_PERIOD);
 
-  
    ahrs_t ahrs;
    ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.03f);
    quat_t start_quat;
    
    /* perform initial marg reading to acquire an initial orientation guess: */
    marg_data_t marg_data;
-   platform_read_marg(&marg_data);
-   quaternion_init(&ahrs.quat, &marg_data.acc, &marg_data.mag);
+   /*platform_read_marg(&marg_data);
+     quaternion_init(&ahrs.quat, &marg_data.acc, &marg_data.mag);*/
  
    gps_util_t gps_util;
    gps_util_init(&gps_util);
@@ -230,9 +244,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_voltage(&voltage);
 
 
-      /***************************************
-       * perform data fusion on sensor data: *
-       ***************************************/
+      /********************************
+       * perform sensor data fusion : *
+       ********************************/
 
       euler_t euler;
       int ahrs_state = ahrs_update(&ahrs, &marg_data, 1.0, dt);
@@ -260,6 +274,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       pos_t pos_estimate;
       pos_update(&pos_estimate, &pos_in);
 
+      //EVERY_N_TIMES(10, printf("%f %f %f %f\n", pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos));
 
       /******************************************************
        * run higher level controllers including navigation  *
@@ -270,11 +285,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    
       /* run yaw controller: */
       float yaw_err;
-      auto_stick.yaw = yaw_ctrl_step(&yaw_err, euler.yaw, 0, dt);
+      auto_stick.yaw = yaw_ctrl_step(&yaw_err, euler.yaw, marg_data.gyro.z, dt);
 
       /* run z controller: */
       float z_err;
-      float neutral_gas = 
       auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
                                    pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
 
@@ -300,9 +314,11 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* run attitude controller: */
       vec2_t pitch_roll_ctrl;
       vec2_t pitch_roll = {{euler.pitch, euler.roll}};
+      pitch_roll_sp.x = 0;
+      pitch_roll_sp.y = 0;
       att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
       auto_stick.pitch = pitch_roll_ctrl.x;
-      auto_stick.roll = pitch_roll_ctrl.y;
+      auto_stick.roll = -pitch_roll_ctrl.y;
 
 
       /*************************************
@@ -314,11 +330,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
       if (mode >= CM_SAFE_AUTO)
       {
-         /* (safe) autonomous mode: */
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = auto_stick.pitch;
-         ff_piid_sp[2] = auto_stick.yaw;
-         f_local.gas = auto_stick.gas * platform_param()->max_thrust_n;
+         ff_piid_sp[2] = 0.0f; //auto_stick.yaw;
+         f_local.gas = 8.0f; //auto_stick.gas * platform_param()->max_thrust_n;
       }
       if (rc_sig_valid && mode != CM_FULL_AUTO)
       {
@@ -327,10 +342,11 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
          ff_piid_sp[2] += RC_YAW_STICK_P * channels[CH_YAW];
 
-         /* limit thrust by the gas stick: */
-         if (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+         /* adjust thrust by gas stick: */
+         if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+             || (mode == CM_MANUAL))
          {
-            f_local.gas = channels[CH_GAS];
+            f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
          }
       }
 
@@ -339,7 +355,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
       piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
       filter2_run(&filter_out, f_local.vec, f_local.vec);
- 
  
  
       /********************
@@ -359,7 +374,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       {
          motors_enabled = 1;
       }
-
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
       
       
@@ -370,18 +384,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 }
 PERIODIC_THREAD_END
 
-
-void _cleanup(void)
-{
-   static int killing = 0;
-   if (!killing)
-   {
-      killing = 1;
-      LOG(LL_INFO, "system shutdown by user");
-      sleep(1);
-      kill(0, 9);
-   }
-}
 
 
 void _main(int argc, char *argv[])
@@ -400,7 +402,7 @@ void _main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
    _main(argc, argv);
-   daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
+   daemonize("/var/run/core.pid", _main, die, argc, argv);
    return 0;
 }
 

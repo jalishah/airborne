@@ -1,0 +1,2 @@
+ADD_LIBRARY(ms5611_reader STATIC ms5611_reader.c)
+TARGET_LINK_LIBRARIES(ms5611_reader ms5611)

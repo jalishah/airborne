@@ -35,6 +35,7 @@ hmc5883
 itg3200
 mpu6050
 ms5611
+ms5611_reader
 geometry
 i2c serial logger opcd_params threads ltime scl
 glib-2.0

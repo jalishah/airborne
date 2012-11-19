@@ -31,6 +31,7 @@
 #include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/i2cxl_reader/i2cxl_reader.h"
+#include "../hardware/drivers/ms5611_reader/ms5611_reader.h"
 #include "../hardware/drivers/rc_dsl_reader/rc_dsl_reader.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc.h"
 #include "../hardware/drivers/holger_blmc/force2twi.h"
@@ -142,25 +143,30 @@ int arcade_quadro_init(platform_t *plat)
    /* local initializations: */
    convex_opt_init();
    
-   /* init parameters: */
+   LOG(LL_INFO, "setting platform parameters");
    plat->param.max_thrust_n = 30.0f;
    plat->param.mass_kg = 1.1f;
 
-   /* initialize buses: */
+   LOG(LL_INFO, "initializing i2c bus");
    THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));
 
-   /* set-up MARG sensor cluster: */
+   LOG(LL_INFO, "initializing MARG sensor cluster");
    THROW_ON_ERR(drotek_marg2_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
-   /* initialize i2cxl sonar sensor: */
+   LOG(LL_INFO, "initializing i2cxl sonar sensor");
    THROW_ON_ERR(i2cxl_reader_init(&i2c_3));
    plat->read_ultra = i2cxl_reader_get_alt;
+   
+   LOG(LL_INFO, "initializing ms5611 barometric pressure sensor");
+   THROW_ON_ERR(ms5611_reader_init(&i2c_3));
+   plat->read_baro = ms5611_reader_get_alt;
 
-   /* initialize inverse coupling matrix: */
+   LOG(LL_INFO, "initializing inverse coupling matrix");
    inv_coupling_init(&inv_coupling, N_MOTORS, inv_coupling_matrix);
 
    /* set-up motors driver: */
+   LOG(LL_INFO, "initializing motor drivers");
    rpm_square = malloc(N_MOTORS * sizeof(float));
    motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
    memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
@@ -174,6 +180,7 @@ int arcade_quadro_init(platform_t *plat)
 #endif
 
    /* set-up dsl reader: */
+   LOG(LL_INFO, "DSL reader");
    if (rc_dsl_reader_init() < 0)
    {
       LOG(LL_ERROR, "could not initialize dsl reader");

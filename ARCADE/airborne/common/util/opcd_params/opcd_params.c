@@ -118,7 +118,7 @@ static void init_param(Value *val, char *id, void *data)
    /* insert param into hash table for later use in event handler thread: */
    if (g_hash_table_lookup(params_ht, id) != NULL)
    {
-      printf("parameter already registered: %s", id);
+      printf("libOPCD: parameter already registered: %s\n", id);
       exit(1);
    }
    ht_entry_t *entry = malloc(sizeof(ht_entry_t));
@@ -137,7 +137,7 @@ static void update_param(void *data, Pair *pair)
    {
       case TYPE_STR:
       {
-         printf("not going to update string parameter %s", pair->id);
+         fprintf(stderr, "libOPCD: not going to update string parameter %s\n", pair->id);
          break;
       }
       case TYPE_INT:
@@ -186,15 +186,15 @@ void opcd_params_apply(char *_prefix, opcd_param_t *params)
          }
          else
          {
-            printf("could not find parameter: %s", req.id);   
-            exit(1);
+            fprintf(stderr, "libOPCD: could not find parameter: %s\n", req.id);   
+            exit(EXIT_FAILURE);
          }
          SCL_FREE(ctrl_rep, rep);
       }
       else
       {
-         printf("could not communicate with opcd"); 
-         exit(1);
+         fprintf(stderr, "libOPCD: could not communicate with opcd\n");
+         exit(EXIT_FAILURE);
       }
    }
 }
@@ -220,13 +220,13 @@ void opcd_float_param_set(char *id, float val)
    {
       if (rep->status != CTRL_REP__STATUS__OK)
       {
-         printf("could not override or find float parameter: %s", req.id);   
+         fprintf(stderr, "libOPCD: could not override or find float parameter: %s\n", req.id);   
       }
       SCL_FREE(ctrl_rep, rep);
    }
    else
    {
-      printf("could not communicate with opcd"); 
+      fprintf(stderr, "libOPCD: could not communicate with opcd\n"); 
    }
 }
 
@@ -248,7 +248,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       }
       else
       {
-         printf("could not receive event from opcd");  
+         fprintf(stderr, "could not receive event from opcd\n");
          sleep(1);
       }
    }
