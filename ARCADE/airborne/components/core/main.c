@@ -46,6 +46,11 @@
 #include "filters/sliding_avg.h"
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
+#include "control/position/navi.h"
+#include "control/position/att_ctrl.h"
+#include "control/position/z_ctrl.h"
+#include "control/position/yaw_ctrl.h"
+#include "control/speed/xy_speed.h"
 
 
 typedef union
@@ -151,7 +156,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    LOG(LL_INFO, "initializing model/controller");
    pos_init();
-   ctrl_init();
+   att_ctrl_init();
+   yaw_ctrl_init();
+   z_ctrl_init();
+   navi_init();
 
    LOG(LL_INFO, "initializing platform");
    platform_init(arcade_quadro_init);
@@ -195,8 +203,11 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    interval_init(&interval);
    PERIODIC_THREAD_LOOP_BEGIN
    {
+      /*******************************************
+       * read sensor data and calibrate sensors: *
+       *******************************************/
+
       float dt = interval_measure(&interval);
-      /* read sensors: */
       pos_in_t pos_in;
       pos_in.dt = dt;
       platform_read_marg(&marg_data);
@@ -215,11 +226,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       platform_read_ultra(&pos_in.ultra_z);
       platform_read_baro(&pos_in.baro_z);
       int rc_sig_valid = (platform_read_rc(channels) == 0);
-
       float voltage = 16.0f;
       platform_read_voltage(&voltage);
 
-      /* compute estimate of orientation quaternion: */
+
+      /***************************************
+       * perform data fusion on sensor data: *
+       ***************************************/
+
       euler_t euler;
       int ahrs_state = ahrs_update(&ahrs, &marg_data, 1.0, dt);
       if (ahrs_state < 0)
@@ -242,20 +256,96 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
       pos_in.acc.z *= -1.0f; /* <-- transform from NED to NEU frame */
       
-      /* compute next position estimate: */
-      pos_t pos;
-      pos_update(&pos, &pos_in);
+      /* compute next 3d position estimate: */
+      pos_t pos_estimate;
+      pos_update(&pos_estimate, &pos_in);
 
-      /* run higher level controllers including navigation: */
-      ctrl_out_t ctrl_stick;
-      ctrl_step(&ctrl_stick, dt, &pos, &euler);
 
-      /* set-up input for piid controller: */
-      float rc_input[3] = {0.0f, 0.0f, 0.0f};
-      f_local_t f_local;
-      f_local.gas = 1.0f;
+      /******************************************************
+       * run higher level controllers including navigation  *
+       * results are stored in auto_stick:                  *
+       ******************************************************/
 
-      /* determine if the motors should be enabled: */
+      ctrl_out_t auto_stick;
+   
+      /* run yaw controller: */
+      float yaw_err;
+      auto_stick.yaw = yaw_ctrl_step(&yaw_err, euler.yaw, 0, dt);
+
+      /* run z controller: */
+      float z_err;
+      float neutral_gas = 
+      auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
+                                   pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
+
+      int xy_speed_control = 1;
+      vec2_t speed_sp;
+      if (xy_speed_control)
+      {
+         /* direct speed control */
+         speed_sp.x = 0.0f;
+         speed_sp.y = 0.0f;
+      }
+      else
+      {
+         /* run xy navigation controller: */
+         vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
+         navi_run(&speed_sp, &pos_vec, dt);
+      }
+      /* run speed vector controller: */
+      vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
+      vec2_t pitch_roll_sp;
+      xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
+   
+      /* run attitude controller: */
+      vec2_t pitch_roll_ctrl;
+      vec2_t pitch_roll = {{euler.pitch, euler.roll}};
+      att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
+      auto_stick.pitch = pitch_roll_ctrl.x;
+      auto_stick.roll = pitch_roll_ctrl.y;
+
+
+      /*************************************
+       * run basic stabilizing controller: *
+       *************************************/
+      
+      /* set up controller inputs: */
+      float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
+      f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
+      if (mode >= CM_SAFE_AUTO)
+      {
+         /* (safe) autonomous mode: */
+         ff_piid_sp[0] = auto_stick.roll;
+         ff_piid_sp[1] = auto_stick.pitch;
+         ff_piid_sp[2] = auto_stick.yaw;
+         f_local.gas = auto_stick.gas * platform_param()->max_thrust_n;
+      }
+      if (rc_sig_valid && mode != CM_FULL_AUTO)
+      {
+         /* mix in rc signals for "emergency takeover": */
+         ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
+         ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+         ff_piid_sp[2] += RC_YAW_STICK_P * channels[CH_YAW];
+
+         /* limit thrust by the gas stick: */
+         if (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+         {
+            f_local.gas = channels[CH_GAS];
+         }
+      }
+
+      /* run feed-forward system and stabilizing PIID controller: */
+      float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
+      feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
+      piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
+      filter2_run(&filter_out, f_local.vec, f_local.vec);
+ 
+ 
+ 
+      /********************
+       * actuator output: *
+       ********************/
+ 
       int motors_enabled;
       if (mode == CM_DISARMED)
       {
@@ -270,39 +360,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          motors_enabled = 1;
       }
 
-      /* set up controller inputs: */
-      if (mode >= CM_SAFE_AUTO)
-      {
-         /* (safe) autonomous mode: */
-         rc_input[0] = ctrl_stick.roll;
-         rc_input[1] = ctrl_stick.pitch;
-         rc_input[2] = ctrl_stick.yaw;
-         f_local.gas = ctrl_stick.gas * platform_thrust();
-      }
-      if (rc_sig_valid && mode != CM_FULL_AUTO)
-      {
-         /* mix in rc signals for "emergency takeover": */
-         rc_input[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
-         rc_input[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
-         rc_input[2] += RC_YAW_STICK_P * channels[CH_YAW];
-
-         /* limit thrust by the gas stick: */
-         if (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
-         {
-            f_local.gas = channels[CH_GAS];
-         }
-      }
-      f_local.gas *= platform_thrust();
-
-      /* run feed-forward system and stabilizing PIID controller: */
-      float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
-
-      feed_forward_run(&feed_forward, &f_local.vec[1], rc_input);
-      piid_run(&piid, &f_local.vec[1], gyro_vals, rc_input);
-      filter2_run(&filter_out, f_local.vec, f_local.vec);
-
-      /* write motors: */
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
+      
+      
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
       //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
    }

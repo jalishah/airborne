@@ -88,8 +88,8 @@ int platform_write_motors(int enabled, float forces[4], float voltage)
 }
 
 
-float platform_thrust(void)
+platform_param_t *platform_param(void)
 {
-   return platform.thrust;
+   return &platform.param;
 }
 

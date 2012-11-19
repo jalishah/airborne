@@ -5,7 +5,6 @@
 #include <sclhelper.h>
 
 #include "scl_gps.h"
-#include "../../../geometry/earth.h"
 
 
 static gps_data_t gps_data = {FIX_NOT_SEEN, 0, 0, 0, 0};

@@ -27,8 +27,16 @@
 
 typedef struct
 {
+   float max_thrust_n;
+   float mass_kg;
+}
+platform_param_t;
+
+
+typedef struct
+{
    /* parameters: */
-   float thrust;
+   platform_param_t param;
 
    /* sensors: */
    int (*read_marg)(marg_data_t *marg_data);
@@ -42,7 +50,6 @@ typedef struct
    int (*write_motors)(int enabled, float forces[3], float voltage);
 }
 platform_t;
-
 
 
 int platform_init(int (*plat_init)(platform_t *platform));
@@ -69,7 +76,7 @@ int platform_read_voltage(float *voltage);
 int platform_write_motors(int enabled, float forces[4], float voltage);
 
 
-float platform_thrust(void);
+platform_param_t *platform_param(void);
 
 
 #endif /* __PLATFORM_H__ */

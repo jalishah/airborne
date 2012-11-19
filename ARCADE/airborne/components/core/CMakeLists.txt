@@ -16,7 +16,9 @@ ADD_EXECUTABLE(core main.c)
 TARGET_LINK_LIBRARIES(core
 daemon
 command
-control
+basic_control
+speed_control
+position_control
 estimators
 platform
 holger_blmc
