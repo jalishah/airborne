@@ -95,6 +95,7 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
+   convex_opt_run(forces);
    float ground_dist = 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
    {
@@ -173,14 +174,12 @@ int arcade_quadro_init(platform_t *plat)
    holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);
    plat->write_motors = write_motors;
  
-#if 0
    /* set-up gps driver: */
    scl_gps_init();
    plat->read_gps = scl_gps_read;
-#endif
 
    /* set-up dsl reader: */
-   LOG(LL_INFO, "DSL reader");
+   LOG(LL_INFO, "initializing DSL reader");
    if (rc_dsl_reader_init() < 0)
    {
       LOG(LL_ERROR, "could not initialize dsl reader");
@@ -197,7 +196,7 @@ int arcade_quadro_init(platform_t *plat)
    }
    plat->read_voltage = scl_voltage_read;
  
-   LOG(LL_INFO, "arcad_quadro platform initialized");
+   LOG(LL_INFO, "arcade_quadro platform initialized");
    THROW_END();
 }
 

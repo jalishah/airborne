@@ -206,12 +206,12 @@ int ms5611_measure(ms5611_t *ms5611)
 
    /* read temperature: */
    THROW_ON_ERR(ms5611_start_temp_conv(ms5611));
-   msleep(conv_time_ms[ms5611->t_osr]);
+   msleep(conv_time_ms[ms5611->t_osr] + 1); /* 1ms safety */
    THROW_ON_ERR(ms5611_read_adc(&ms5611->raw_t, ms5611));
 
    /* read pressure: */
    THROW_ON_ERR(ms5611_start_pressure_conv(ms5611));
-   msleep(conv_time_ms[ms5611->p_osr]);
+   msleep(conv_time_ms[ms5611->p_osr] + 1); /* 1ms safety */
    THROW_ON_ERR(ms5611_read_adc(&ms5611->raw_p, ms5611));
 
    ms5611_compensate(ms5611);
