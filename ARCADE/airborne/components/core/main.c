@@ -398,38 +398,30 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
        * actuator output: *
        ********************/
  
-      int motors_enabled = 1;
-      if (mode == CM_DISARMED)
-      {
-         motors_enabled = 0;
-      }
-      else
-      {
-         /* requirements specification for take-off: */
-         int common_require = marg_valid && voltage_valid && ultra_valid;
-         int manual_require = common_require && rc_sig_valid && (manual_mode == M_GPS_SPEED ? gps_valid : 1);
-         int full_auto_require = common_require && baro_valid && gps_valid;
-         int safe_auto_require = full_auto_require && rc_sig_valid;
-         
-         int satisfied = 0;
-         if (mode == CM_MANUAL)
-            satisfied = manual_require;
-         else if (mode == CM_FULL_AUTO)
-            satisfied = full_auto_require;
-         else if (mode == CM_SAFE_AUTO)
-            satisfied = safe_auto_require;
+      /* requirements specification for take-off: */
+      int common_require = marg_valid && voltage_valid && ultra_valid;
+      int manual_require = common_require && rc_sig_valid && (manual_mode == M_GPS_SPEED ? gps_valid : 1);
+      int full_auto_require = common_require && baro_valid && gps_valid;
+      int safe_auto_require = full_auto_require && rc_sig_valid;
+      
+      int satisfied = 0; /* initial value applies to CM_DISABLED */
+      if (mode == CM_MANUAL)
+         satisfied = manual_require;
+      else if (mode == CM_FULL_AUTO)
+         satisfied = full_auto_require;
+      else if (mode == CM_SAFE_AUTO)
+         satisfied = safe_auto_require;
 
-         /* NOTE: if rc_sig_valid is 0 in MANUAL/SAFE_AUTO mode, f_local.gas will be lowered automatically */
-         motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt, satisfied);
-         if (!motostate_controllable())
-         {
-            memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-            piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
-         }
-         motors_enabled = motostate_enabled();
+      /* start motors if requirements are met AND conditions apply;
+       * stopping the motors does not depend on requirements: */
+      motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt, satisfied);
+      if (!motostate_controllable())
+      {
+         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         /* TODO: also reset higher-level controllers */
       }
-
-      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));
+      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motostate_enabled(), f_local.vec, voltage));
       
       
       //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
