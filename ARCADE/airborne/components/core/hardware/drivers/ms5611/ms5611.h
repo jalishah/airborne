@@ -52,8 +52,8 @@ typedef struct
    uint16_t prom[8];
 
    /* raw measurements: */
-   int32_t raw_t; /* raw temperature */
-   int32_t raw_p; /* raw pressure */
+   uint32_t raw_t; /* raw temperature */
+   uint32_t raw_p; /* raw pressure */
 
    /* compensated values: */
    double c_t; /* temperature */

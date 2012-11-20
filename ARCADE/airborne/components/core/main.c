@@ -88,8 +88,8 @@ enum
 manual_mode = M_ATT_REL;
 
 
-#define REALTIME_PERIOD (0.007)
-#define CONTROL_RATIO (2)
+#define REALTIME_PERIOD (0.01)
+#define CONTROL_RATIO (1)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f

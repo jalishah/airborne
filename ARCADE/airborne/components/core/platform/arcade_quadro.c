@@ -95,7 +95,7 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
-   convex_opt_run(forces);
+   //convex_opt_run(forces);
    float ground_dist = 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
    {
