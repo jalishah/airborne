@@ -14,7 +14,7 @@ int motostate_enabled(void);
 int motostate_controllable(void);
 
 /* updates the motors state tracker */
-void motostate_update(float ground_z, float gas, float dt);
+void motostate_update(float ground_z, float gas, float dt, int start_allowed);
 
 
 #endif /* __MOTOSTATE_H__ */

@@ -79,6 +79,14 @@ enum
 mode = CM_MANUAL; //SAFE_AUTO;
 
 
+enum
+{
+   M_ATT_REL, /* relative attitude control (aka heading hold, axis lock,...) */
+   M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
+   M_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
+}
+manual_mode = M_ATT_REL;
+
 
 #define REALTIME_PERIOD (0.007)
 #define CONTROL_RATIO (2)
@@ -232,7 +240,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       pos_in_t pos_in;
       pos_in.dt = dt;
 
-      platform_read_marg(&marg_data);
+      int marg_valid = platform_read_marg(&marg_data) == 0;
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
          LOG(LL_ERROR, "gyro moved during calibration, retrying");
@@ -245,17 +253,24 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       
       gps_data_t gps_data;
-      platform_read_gps(&gps_data);
-      gps_util_update(&gps_rel_data, &gps_util, &gps_data);
-      pos_in.dx = gps_rel_data.dx;
-      pos_in.dy = gps_rel_data.dy;
+      int gps_valid = platform_read_gps(&gps_data) == 0;
+      if (gps_data.fix < FIX_2D)
+      {
+         gps_valid = 0;
+      }
+      else
+      {
+         gps_valid = 1;
+         gps_util_update(&gps_rel_data, &gps_util, &gps_data);
+         pos_in.dx = gps_rel_data.dx;
+         pos_in.dy = gps_rel_data.dy;
+      }
       int ultra_valid = platform_read_ultra(&pos_in.ultra_z) == 0;
       int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
       float channels[MAX_CHANNELS];
       int rc_sig_valid = platform_read_rc(channels) == 0;
       float voltage = 16.0f;
-      platform_read_voltage(&voltage);
-
+      int voltage_valid = platform_read_voltage(&voltage) == 0;
 
       /********************************
        * perform sensor data fusion : *
@@ -304,30 +319,37 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
                                    pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
 
-      int xy_speed_control = 1;
-      vec2_t speed_sp;
-      if (xy_speed_control)
-      {
-         /* direct speed control */
-         speed_sp.x = 0.0f;
-         speed_sp.y = 0.0f;
-      }
-      else
-      {
-         /* run xy navigation controller: */
-         vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
-         navi_run(&speed_sp, &pos_vec, dt);
-      }
-      /* run speed vector controller: */
-      vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
       vec2_t pitch_roll_sp;
-      xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
-   
+      if (gps_valid)
+      {
+         /* we have a gps fix; assisted and autonomous modes are supported */
+         vec2_t speed_sp;
+         if (mode == CM_MANUAL && manual_mode == M_GPS_SPEED)
+         {
+            /* direct speed control via stick: */
+            speed_sp.x = 10.0f * channels[CH_PITCH] * cosf(euler.yaw);
+            speed_sp.y = 10.0f * channels[CH_ROLL] * sinf(euler.yaw);
+         }
+         else
+         {
+            /* run xy navigation controller: */
+            vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
+            navi_run(&speed_sp, &pos_vec, dt);
+         }
+         /* run speed vector controller: */
+         vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
+         xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
+      }
+
       /* run attitude controller: */
       vec2_t pitch_roll_ctrl;
       vec2_t pitch_roll = {{euler.pitch, euler.roll}};
-      pitch_roll_sp.x = 0;
-      pitch_roll_sp.y = 0;
+      if (manual_mode == M_ATT_ABS)
+      {
+         /* interpret sticks as pitch and roll setpoints: */
+         pitch_roll_sp.x = 1.0f * channels[CH_PITCH];
+         pitch_roll_sp.y = 1.0f * channels[CH_ROLL];
+      }
       att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
       auto_stick.pitch = -pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
@@ -349,9 +371,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       if (rc_sig_valid && mode != CM_FULL_AUTO)
       {
-         /* mix in rc signals for axis lock mode: */
-         ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
-         ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+         /* mix in rc signals: */
+         if (manual_mode == M_ATT_REL)
+         {
+            ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
+            ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+         }
          ff_piid_sp[2] += RC_YAW_STICK_P * channels[CH_YAW];
 
          /* adjust thrust by gas stick: */
@@ -380,11 +405,22 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       else
       {
-         if (ultra_valid)
-         {
-            /* NOTE: if rc_sig_valid is 0 in MANUAL/SAFE_AUTO mode, f_local.gas will be lowered automatically */
-            motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt);
-         }
+         /* requirements specification for take-off: */
+         int common_require = marg_valid && voltage_valid && ultra_valid;
+         int manual_require = common_require && rc_sig_valid && (manual_mode == M_GPS_SPEED ? gps_valid : 1);
+         int full_auto_require = common_require && baro_valid && gps_valid;
+         int safe_auto_require = full_auto_require && rc_sig_valid;
+         
+         int satisfied = 0;
+         if (mode == CM_MANUAL)
+            satisfied = manual_require;
+         else if (mode == CM_FULL_AUTO)
+            satisfied = full_auto_require;
+         else if (mode == CM_SAFE_AUTO)
+            satisfied = safe_auto_require;
+
+         /* NOTE: if rc_sig_valid is 0 in MANUAL/SAFE_AUTO mode, f_local.gas will be lowered automatically */
+         motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt, satisfied);
          if (!motostate_controllable())
          {
             memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */

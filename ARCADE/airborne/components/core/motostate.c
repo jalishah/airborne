@@ -70,12 +70,12 @@ int motostate_controllable(void)
 }
 
 
-void motostate_update(float ground_z, float gas, float dt)
+void motostate_update(float ground_z, float gas, float dt, int start_allowed)
 {
    switch (state)
    {
       case MOTORS_HALTED:
-         if (motors_start_condition(ground_z, gas))
+         if (motors_start_condition(ground_z, gas) && start_allowed)
          {
             state = MOTORS_STARTING;
             reset_timer();
