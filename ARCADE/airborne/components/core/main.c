@@ -51,6 +51,7 @@
 #include "control/position/z_ctrl.h"
 #include "control/position/yaw_ctrl.h"
 #include "control/speed/xy_speed.h"
+#include "motostate.h"
 
 
 typedef union
@@ -75,7 +76,7 @@ enum
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
    CM_FULL_AUTO  /* remote control interface is unused */
 }
-mode = CM_DISARMED; //SAFE_AUTO;
+mode = CM_MANUAL; //SAFE_AUTO;
 
 
 
@@ -112,60 +113,6 @@ void die(void)
       LOG(LL_INFO, "shutting down");
       sleep(1);
       kill(0, 9);
-   }
-}
-
-
-typedef struct
-{
-   int spinning;
-   int enabled;
-   float timer;
-}
-motors_state_t;
-
-
-void motors_state_init(motors_state_t *state)
-{
-   state->spinning = 0;
-   state->enabled = 0;
-   state->timer = 0.0f;
-}
-
-
-int motors_control_enabled(motors_state_t *state)
-{
-   return state->spinning;
-}
-
-
-void motors_state_update(motors_state_t *state, float ground_z, float gas, float dt)
-{
-   if (state->spinning && ground_z < 0.21f && gas < 1.0f)
-   {
-      if (state->timer < 3.0f)
-      {
-         state->timer += dt;
-         state->enabled = 0;
-      }
-      else
-      {
-         state->spinning = 0;
-         state->timer = 0.0f;
-      }
-   }
-   if (!state->spinning && ground_z < 0.21f && gas >= 2.0f)
-   {
-      if (state->timer < 3.0f)
-      {
-         state->timer += dt;
-         state->enabled = 1;
-      }
-      else
-      {
-         state->spinning = 1;
-         state->timer = 0.0f;
-      }
    }
 }
 
@@ -242,14 +189,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   float channels[MAX_CHANNELS];
+   motostate_init(0.201f, 0.3f, 0.1f);
 
    /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
    fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
    calibration_t gyro_cal;
-   cal_init(&gyro_cal, 3, 1000);
+   cal_init(&gyro_cal, 3, 100);
    
    Filter2 filter_out;
    filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
@@ -271,10 +218,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    gps_util_t gps_util;
    gps_util_init(&gps_util);
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
-
    
-   motors_state_t motors_state;
-   motors_state_init(&motors_state);
    LOG(LL_INFO, "entering main loop");
    interval_t interval;
    interval_init(&interval);
@@ -287,6 +231,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       float dt = interval_measure(&interval);
       pos_in_t pos_in;
       pos_in.dt = dt;
+
       platform_read_marg(&marg_data);
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
@@ -294,15 +239,20 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          sleep(1);
          cal_reset(&gyro_cal);
       }
+      if (!cal_complete(&gyro_cal))
+      {
+         continue;
+      }
       
       gps_data_t gps_data;
       platform_read_gps(&gps_data);
       gps_util_update(&gps_rel_data, &gps_util, &gps_data);
       pos_in.dx = gps_rel_data.dx;
       pos_in.dy = gps_rel_data.dy;
-      platform_read_ultra(&pos_in.ultra_z);
-      platform_read_baro(&pos_in.baro_z);
-      int rc_sig_valid = (platform_read_rc(channels) == 0);
+      int ultra_valid = platform_read_ultra(&pos_in.ultra_z) == 0;
+      int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
+      float channels[MAX_CHANNELS];
+      int rc_sig_valid = platform_read_rc(channels) == 0;
       float voltage = 16.0f;
       platform_read_voltage(&voltage);
 
@@ -337,7 +287,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       pos_t pos_estimate;
       pos_update(&pos_estimate, &pos_in);
 
-      //EVERY_N_TIMES(10, printf("%f %f %f %f\n", pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos));
 
       /******************************************************
        * run higher level controllers including navigation  *
@@ -400,7 +349,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       if (rc_sig_valid && mode != CM_FULL_AUTO)
       {
-         /* mix in rc signals for "emergency takeover": */
+         /* mix in rc signals for axis lock mode: */
          ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
          ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
          ff_piid_sp[2] += RC_YAW_STICK_P * channels[CH_YAW];
@@ -424,21 +373,24 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
        * actuator output: *
        ********************/
  
-      int motors_enabled;
+      int motors_enabled = 1;
       if (mode == CM_DISARMED)
       {
          motors_enabled = 0;
       }
       else
       {
-         motors_state_update(&motors_state, pos_estimate.ultra_z.pos, f_local.gas, dt);
-         motors_enabled = motors_state.enabled;
-         if (!motors_state.spinning)
+         if (ultra_valid)
          {
-            f_local.pitch = 0.0f;
-            f_local.roll = 0.0f;
-            f_local.yaw = 0.0f;
+            /* NOTE: if rc_sig_valid is 0 in MANUAL/SAFE_AUTO mode, f_local.gas will be lowered automatically */
+            motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt);
          }
+         if (!motostate_controllable())
+         {
+            memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+            piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         }
+         motors_enabled = motostate_enabled();
       }
 
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motors_enabled, f_local.vec, voltage));

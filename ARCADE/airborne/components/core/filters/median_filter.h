@@ -9,9 +9,6 @@
 #define MEDIAN_FILTER_H
 
 
-#include <stddef.h>
-
-
 typedef struct
 {
    float *history;
@@ -22,7 +19,7 @@ typedef struct
 median_filter_t;
 
 
-void median_filter_init(median_filter_t *filter, float *history, float *sort, size_t size);
+void median_filter_init(median_filter_t *filter, size_t size);
 
 int median_filter_ready(median_filter_t *filter);
 

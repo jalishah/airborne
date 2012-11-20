@@ -14,7 +14,7 @@
 #define THREAD_NAME       "maxsonar_reader"
 #define THREAD_PRIORITY   0
 
-#undef USE_FILTER
+#define USE_FILTER
 
 
 static simple_thread_t thread;
@@ -29,11 +29,8 @@ static tsfloat_t altitude;
 SIMPLE_THREAD_BEGIN(thread_func)
 {
 #ifdef USE_FILTER
-   const int WINDOW_SIZE = 5;
-   float history[WINDOW_SIZE];
-   float sorted[WINDOW_SIZE];
    median_filter_t filter;
-   median_filter_init(&filter, history, sorted, WINDOW_SIZE);
+   median_filter_init(&filter, 5);
 #endif
    SIMPLE_THREAD_LOOP_BEGIN
    {

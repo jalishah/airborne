@@ -11,7 +11,7 @@ ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 
 
-ADD_EXECUTABLE(core main.c)
+ADD_EXECUTABLE(core motostate.c main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
