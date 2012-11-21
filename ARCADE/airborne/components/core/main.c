@@ -85,7 +85,7 @@ enum
    M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
    M_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
 }
-manual_mode = M_ATT_REL;
+manual_mode = M_ATT_ABS;
 
 
 #define REALTIME_PERIOD (0.005)
@@ -347,8 +347,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       if (manual_mode == M_ATT_ABS)
       {
          /* interpret sticks as pitch and roll setpoints: */
-         pitch_roll_sp.x = 1.0f * channels[CH_PITCH];
-         pitch_roll_sp.y = 1.0f * channels[CH_ROLL];
+         pitch_roll_sp.x = 0.5f * channels[CH_PITCH];
+         pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
       }
       att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
       auto_stick.pitch = -pitch_roll_ctrl.x;
@@ -362,7 +362,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* set up controller inputs: */
       float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
-      if (mode >= CM_SAFE_AUTO)
+      if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = auto_stick.pitch;
