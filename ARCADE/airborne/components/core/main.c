@@ -93,7 +93,7 @@ manual_mode = M_ATT_ABS;
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
-#define RC_YAW_STICK_P 1.0f
+#define RC_YAW_STICK_P 3.0f
 
 
 static periodic_thread_t realtime_thread;
@@ -215,7 +215,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_init(&piid, REALTIME_PERIOD);
 
    ahrs_t ahrs;
-   ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.03f);
+   ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.07f);
    quat_t start_quat;
    
    /* perform initial marg reading to acquire an initial orientation guess: */
@@ -347,11 +347,11 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       if (manual_mode == M_ATT_ABS)
       {
          /* interpret sticks as pitch and roll setpoints: */
-         pitch_roll_sp.x = 0.5f * channels[CH_PITCH];
-         pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
+         pitch_roll_sp.x = -1.0f * channels[CH_PITCH];
+         pitch_roll_sp.y = 1.0f * channels[CH_ROLL];
       }
       att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
-      auto_stick.pitch = -pitch_roll_ctrl.x;
+      auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
 
 
@@ -365,7 +365,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
          ff_piid_sp[0] = auto_stick.roll;
-         ff_piid_sp[1] = auto_stick.pitch;
+         ff_piid_sp[1] = -auto_stick.pitch;
          ff_piid_sp[2] = 0.0f; //auto_stick.yaw;
          f_local.gas = 8.0f; //auto_stick.gas * platform_param()->max_thrust_n;
       }
@@ -377,7 +377,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
             ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
             ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
          }
-         ff_piid_sp[2] += RC_YAW_STICK_P * channels[CH_YAW];
+         ff_piid_sp[2] += -RC_YAW_STICK_P * channels[CH_YAW];
 
          /* adjust thrust by gas stick: */
          if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
@@ -401,9 +401,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
  
       /* requirements specification for take-off: */
       int common_require = marg_valid && voltage_valid && ultra_valid;
-      int manual_require = common_require && (manual_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] < 0.5;
+      int manual_require = common_require && (manual_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       int full_auto_require = common_require && baro_valid && gps_valid;
-      int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] < 0.5;
+      int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       
       int satisfied = 0; /* initial value applies to CM_DISABLED */
       if (mode == CM_MANUAL)
