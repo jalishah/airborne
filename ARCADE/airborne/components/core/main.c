@@ -88,12 +88,12 @@ enum
 manual_mode = M_ATT_REL;
 
 
-#define REALTIME_PERIOD (0.01)
+#define REALTIME_PERIOD (0.005)
 #define CONTROL_RATIO (1)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
-#define RC_YAW_STICK_P 3.0f
+#define RC_YAW_STICK_P 1.0f
 
 
 static periodic_thread_t realtime_thread;
@@ -197,14 +197,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motostate_init(0.201f, 0.3f, 0.1f);
+   motostate_init(0.21f, 0.15f, 0.1f);
 
    /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
    if (fp == NULL) printf("ERROR: could not open File");
    fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
 
    calibration_t gyro_cal;
-   cal_init(&gyro_cal, 3, 100);
+   cal_init(&gyro_cal, 3, 1000);
    
    Filter2 filter_out;
    filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
@@ -389,9 +389,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       /* run feed-forward system and stabilizing PIID controller: */
       float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
+      
       feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
       piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
-      filter2_run(&filter_out, f_local.vec, f_local.vec);
+      //filter2_run(&filter_out, f_local.vec, f_local.vec);
  
  
       /********************
@@ -400,9 +401,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
  
       /* requirements specification for take-off: */
       int common_require = marg_valid && voltage_valid && ultra_valid;
-      int manual_require = common_require && rc_sig_valid && (manual_mode == M_GPS_SPEED ? gps_valid : 1);
+      int manual_require = common_require && (manual_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] < 0.5;
       int full_auto_require = common_require && baro_valid && gps_valid;
-      int safe_auto_require = full_auto_require && rc_sig_valid;
+      int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] < 0.5;
       
       int satisfied = 0; /* initial value applies to CM_DISABLED */
       if (mode == CM_MANUAL)
@@ -421,6 +422,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
+
       EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motostate_enabled(), f_local.vec, voltage));
       
       
