@@ -52,6 +52,16 @@
 #include "control/position/yaw_ctrl.h"
 #include "control/speed/xy_speed.h"
 #include "motostate.h"
+#include "calpub.h"
+
+
+static int calibrate = 0;
+
+
+void main_calibrate(int enabled)
+{
+   calibrate = enabled;   
+}
 
 
 typedef union
@@ -186,6 +196,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       die();
    }
 
+   calpub_init();
+
    LOG(LL_INFO, "initializing model/controller");
    pos_init();
    xy_speed_ctrl_init();
@@ -249,6 +261,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
       if (!cal_complete(&gyro_cal))
       {
+         continue;
+      }
+
+      if (calibrate)
+      {
+         calpub_send(&marg_data);
          continue;
       }
       

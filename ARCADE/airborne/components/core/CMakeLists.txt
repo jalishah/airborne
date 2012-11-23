@@ -10,8 +10,8 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 
+ADD_EXECUTABLE(core motostate.c main.c calpub.c)
 
-ADD_EXECUTABLE(core motostate.c main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
@@ -46,5 +46,5 @@ vec2
 cvxgen
 hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)
-
 INSTALL_TARGETS(/bin core)
+

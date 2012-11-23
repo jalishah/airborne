@@ -1,0 +1,14 @@
+
+message CalData
+{
+   /* accelerometer measurement: */
+   required int32 ax = 1;
+   required int32 ay = 2;
+   required int32 az = 3;
+
+   /* magnetometer measurement: */
+   required int32 mx = 4;
+   required int32 my = 5;
+   required int32 mz = 6;
+}
+
