@@ -282,7 +282,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       if (calibrate)
       {
-         calpub_send(&marg_data);
+         EVERY_N_TIMES(10, calpub_send(&marg_data));
          continue;
       }
       
@@ -389,7 +389,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
 
-      EVERY_N_TIMES(10, printf("%f\n", euler.yaw * 180.0 / M_PI));
       //EVERY_N_TIMES(1, printf("%f %f %f\n", marg_data.mag.x, marg_data.mag.y, marg_data.mag.z); fflush(stdout));
       
       /*************************************

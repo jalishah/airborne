@@ -19,22 +19,23 @@ class CalServer:
       self.cal_tcp_handler_thread = start_daemon_thread(self.cal_tcp_handler)
 
    def cal_reader(self):
+      self.cal_data = CalData()
       while True:
-         self.cal_data = CalData()
          try:
             self.cal_data.ParseFromString(self.cal_socket.recv())
-         except:
+         except Exception, e:
+            print e
             sleep(1)
             continue
-         print cal_data
 
 
    def cal_tcp_handler(self):
       while True:
          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-         s.bind(('', 10000))
+         s.bind(('', 10003))
          s.listen(1)
          conn, addr = s.accept()
+         print 'new connection'
          while True:
             try:
                t = conn.recv(1)
@@ -43,13 +44,13 @@ class CalServer:
                elif t == 'b':
                   count = ord(conn.recv(1))
                   for _ in range(count):
-                     raw = [self.cal_data.ax, self.cal_data.ay, self.cal_data.az,
+                     raw = [self.cal_data.ax * 1000.0, self.cal_data.ay * 1000.0, self.cal_data.az * 1000.0,
                             0,                0,                0, 
-                            self.cal_data.mx, self.cal_data.my, self.cal_data.mz]
+                            self.cal_data.mx * 10.0, self.cal_data.my * 10.0, self.cal_data.mz * 10.0]
                      for r in raw:
-                        conn.send(struct.pack('h', r))
+                        conn.send(struct.pack('h', int(r)))
                      conn.send('\r\n')
-                     sleep(0.05)
+                     sleep(0.01)
             except:
                print 'connection closed'
          conn.close()
@@ -62,7 +63,7 @@ def main(name):
    # configure core to operate in calibration mode:
    core.mode_cal()
    cal_socket = map['cal']
-   CalServer()
+   CalServer(cal_socket)
    await_signal()
    # configure core to operate in normal mode:
    core.mode_normal()
