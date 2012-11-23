@@ -89,7 +89,7 @@ float z_ctrl_step(float *z_err, float ground_z_pos, float z_pos, float speed, fl
    float spd_sp = speed_func(_z_err);
    float spd_err = spd_sp - speed;
    float val;
-   val = z_neutral_gas + pid_control(&controller, spd_err, dt);
+   val = z_neutral_gas + pid_control(&controller, spd_err, speed, dt);
    *z_err = _z_err;
    return val;
 }

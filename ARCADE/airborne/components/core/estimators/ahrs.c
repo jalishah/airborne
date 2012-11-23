@@ -56,7 +56,7 @@ static void ahrs_normalize_4(float *v0, float *v1, float *v2, float *v3)
 
 
 static void ahrs_update_imu(ahrs_t *ahrs, float gx, float gy, float gz,
-                            float ax, float ay, float az, float accelCutoff, float dt)
+                            float ax, float ay, float az, float dt)
 {
    /* get rate of change of quaternion from gyroscope: */
    float qDot0 = 0.5f * (-ahrs->quat.q1 * gx - ahrs->quat.q2 * gy - ahrs->quat.q3 * gz);
@@ -64,10 +64,7 @@ static void ahrs_update_imu(ahrs_t *ahrs, float gx, float gy, float gz,
    float qDot2 = 0.5f * ( ahrs->quat.q0 * gy - ahrs->quat.q1 * gz + ahrs->quat.q3 * gx);
    float qDot3 = 0.5f * ( ahrs->quat.q0 * gz + ahrs->quat.q1 * gy - ahrs->quat.q2 * gx);
 
-   float accelSquareSum = ax * ax + ay * ay + az * az;
-
-   /* compute feedback only if accelerometer abs(vector) less than cutoff value (also avoids NaN in accelerometer normalisation): */
-   if (fabs(sqrt(accelSquareSum) - 9.8065) < accelCutoff)
+   if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
    {
       /* normalize accelerometer measurements: */
       ahrs_normalize_3(&ax, &ay, &az);
@@ -115,7 +112,7 @@ static void ahrs_update_imu(ahrs_t *ahrs, float gx, float gy, float gz,
 
 
 
-int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float dt)
+int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float dt)
 {
    int ret;
    if (ahrs->beta > ahrs->beta_end)
@@ -149,7 +146,7 @@ int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float d
    /* use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation): */
    if ((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))
    {
-      ahrs_update_imu(ahrs, gx, gy, gz, ax, ay, az, accelCutoff, dt);
+      ahrs_update_imu(ahrs, gx, gy, gz, ax, ay, az, dt);
       goto out;
    }
 
@@ -159,10 +156,7 @@ int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float d
    float qDot2 = 0.5f * ( ahrs->quat.q0 * gy - ahrs->quat.q1 * gz + ahrs->quat.q3 * gx);
    float qDot3 = 0.5f * ( ahrs->quat.q0 * gz + ahrs->quat.q1 * gy - ahrs->quat.q2 * gx);
 
-   float accelSquareSum = ax * ax + ay * ay + az * az;
-
-   /* Compute feedback only if len of accelerometer vector less than cutoff value (avoids NaN in accelerometer normalisation): */
-   if (fabs(sqrt(accelSquareSum) - 9.8065) < accelCutoff)
+   if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
    {
       /* normalise accelerometer and magnetometer measurements: */
       ahrs_normalize_3(&ax, &ay, &az);

@@ -28,7 +28,7 @@ aircomm:
 sensors:
    gps:
       priority: 97
-      serial_path: "/dev/ttyACM0"
+      serial_path: "/dev/ttyO2"
       serial_speed: 57600
       min_sats: 4
 
@@ -75,14 +75,12 @@ core:
          p: 0.4
 
       attitude:
-         calibrate: false
-         angle_max: 0.17
-         p: 0.64
-         i: 0.0
-         i_max: 0.0
-         d: 0.003
-         pitch_bias: -0.022
-         roll_bias: 0.03
+         p: 3.0
+         i: 0.0005
+         i_max: 1.0
+         d: 0.1
+         pitch_bias: 0.0
+         roll_bias: 0.0
  
       altitude:
          manual: false
@@ -94,13 +92,11 @@ core:
 
       yaw:
          manual: false
-         speed_min: 0.05
-         speed_std: 0.1
-         speed_max: 0.2
-         speed_slope: 1.0
-         speed_p: 0.24
-         speed_i: 0.7
-         speed_imax: 0.5
+         p: 0.24
+         i: 0.7
+         i_max: 0.5
+         d: 0.0
+         pid_lim: 0.2
 
       navigation:
          speed_min: 0.5
@@ -124,20 +120,7 @@ core:
       y_acc_avg: 0.0
       z_acc_avg: 9.81
 
-   actuators:
-      mk_fc:
-         serial_port: "/dev/ttyUSB2"
-         setting: 4
-
    sensors:
       rc_dsl:
-         serial_port: "/dev/ttyUSB3"
-      chr_6dm:
-         serial_port: "/dev/ttyUSB0"
-         device_conf_file: "config/chr-6dm.conf"
-         process_covar: 1.0e-6
-         mag_covar: 1.0e-3
-         acc_covar: 1000.0
-      voltage:
-         sysfs_path: "/sys/class/hwmon/hwmon0/device/in7_input"
+         serial_port: "/dev/ttyO0"
 

@@ -85,8 +85,7 @@ int set_ctrl_param(CtrlParam param, float value)
 
       case CTRL_PARAM__SPEED_YAW:
       {
-         LOG(LL_DEBUG, "yaw speed update: %f", value);
-         status = yaw_ctrl_set_speed(value);
+         LOG(LL_DEBUG, "[not implemented] yaw speed update: %f", value);
          break;
       }
    }

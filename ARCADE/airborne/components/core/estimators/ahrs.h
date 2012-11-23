@@ -35,7 +35,7 @@ void ahrs_init(ahrs_t *ahrs, float beta_start, float beta_step, float beta_end);
  *          1 if the ahrs became ready
  *          0 on normal operation
  */
-int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float accelCutoff, float dt);
+int ahrs_update(ahrs_t *ahrs, marg_data_t *marg_data, float dt);
 
 
 #endif /* __AHRS_H__ */

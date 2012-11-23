@@ -89,7 +89,7 @@ manual_mode = M_ATT_ABS;
 
 
 #define REALTIME_PERIOD (0.005)
-#define CONTROL_RATIO (1)
+#define CONTROL_RATIO (2)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -199,9 +199,23 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
    motostate_init(0.21f, 0.15f, 0.1f);
 
-   /*FILE *fp = fopen("/root/ARCADE_UAV/components/core/temp/log.dat","w");
-   if (fp == NULL) printf("ERROR: could not open File");
-   fprintf(fp,"gyro_x gyro_y gyro_z motor1 motor2 motor3 motor4 battery_voltage rc_input0 rc_input1 rc_input2 rc_input3 u_ctrl1 u_ctrl2 u_ctrl3\n");*/
+   FILE *fp = fopen("/root/MOBICOM/build/temp/log.dat","w");
+   if (fp == NULL) 
+   {
+      printf("ERROR: could not open File");
+      die();
+   }
+   fprintf(fp, "dt" /* #1 */
+               "gyro_x gyro_y gyro_z " /* #2 */
+               "acc_x acc_y acc_z " /* #3 */
+               "mag_x mag_y mag_z " /* #4 */
+               "q0 q1 q2 q3 " /* #5 */
+               "yaw pitch roll " /* #6 */
+               "acc_e acc_n acc_u " /* #7 */
+               "raw_e raw_n raw_ultra_u raw_baro_u " /* #8 */
+               "pos_e pos_n pos_ultra_u pos_baro_u " /* #9 */
+               "speed_e pos_n speed_ultra_u pos_ultra_u"); /* #10 */
+
 
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 1000);
@@ -215,7 +229,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    piid_init(&piid, REALTIME_PERIOD);
 
    ahrs_t ahrs;
-   ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.07f);
+   ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.02f);
    quat_t start_quat;
    
    /* perform initial marg reading to acquire an initial orientation guess: */
@@ -241,6 +255,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       pos_in.dt = dt;
 
       int marg_valid = platform_read_marg(&marg_data) == 0;
+      if (!marg_valid)
+         die(); /* this is to save our lab equipment! */
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
          LOG(LL_ERROR, "gyro moved during calibration, retrying");
@@ -251,6 +267,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       {
          continue;
       }
+      marg_data.mag.x -= 74.9;
+      marg_data.mag.y -= -109.0;
+      marg_data.mag.z -= 78.55;
       
       gps_data_t gps_data;
       int gps_valid = platform_read_gps(&gps_data) == 0;
@@ -277,7 +296,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
        ********************************/
 
       euler_t euler;
-      int ahrs_state = ahrs_update(&ahrs, &marg_data, 1.0, dt);
+      int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
       if (ahrs_state < 0)
       {
          continue;
@@ -304,7 +323,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
 
       /******************************************************
-       * run higher level controllers including navigation  *
+       * run higher level controllers including navigation; *
        * results are stored in auto_stick:                  *
        ******************************************************/
 
@@ -319,27 +338,26 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
                                    pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
 
-      vec2_t pitch_roll_sp;
-      if (gps_valid)
+      vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
+      /* we have a gps fix; assisted and autonomous modes are supported */
+      vec2_t speed_sp;
+      if (mode == CM_MANUAL && manual_mode == M_GPS_SPEED)
       {
-         /* we have a gps fix; assisted and autonomous modes are supported */
-         vec2_t speed_sp;
-         if (mode == CM_MANUAL && manual_mode == M_GPS_SPEED)
-         {
-            /* direct speed control via stick: */
-            speed_sp.x = 10.0f * channels[CH_PITCH] * cosf(euler.yaw);
-            speed_sp.y = 10.0f * channels[CH_ROLL] * sinf(euler.yaw);
-         }
-         else
-         {
-            /* run xy navigation controller: */
-            vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
-            navi_run(&speed_sp, &pos_vec, dt);
-         }
-         /* run speed vector controller: */
-         vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
-         xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
+         /* direct speed control via stick: */
+         speed_sp.x = 10.0f * channels[CH_PITCH] * cosf(euler.yaw);
+         speed_sp.y = 10.0f * channels[CH_ROLL] * sinf(euler.yaw);
       }
+      else
+      {
+         /* run xy navigation controller: */
+         vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
+         navi_run(&speed_sp, &pos_vec, dt);
+      }
+      /* run speed vector controller: */
+      vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
+      xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
+      /* limit pitch/roll setpoints: */
+      FOR_N(i, 2) pitch_roll_sp.vec[i] = sym_limit(pitch_roll_sp.vec[i], 0.2);
 
       /* run attitude controller: */
       vec2_t pitch_roll_ctrl;
@@ -347,14 +365,18 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       if (manual_mode == M_ATT_ABS)
       {
          /* interpret sticks as pitch and roll setpoints: */
-         pitch_roll_sp.x = -1.0f * channels[CH_PITCH];
-         pitch_roll_sp.y = 1.0f * channels[CH_ROLL];
+         pitch_roll_sp.x = -0.5f * channels[CH_PITCH];
+         pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
       }
-      att_ctrl_step(&pitch_roll_ctrl, dt, &pitch_roll, &pitch_roll_sp);
+      vec2_t att_err;
+      vec2_t pitch_roll_speed = {{marg_data.gyro.y, marg_data.gyro.x}};
+      att_ctrl_step(&pitch_roll_ctrl, &att_err, dt, &pitch_roll, &pitch_roll_speed, &pitch_roll_sp);
       auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
 
-
+      EVERY_N_TIMES(10, printf("%f\n", euler.yaw * 180.0 / M_PI));
+      //EVERY_N_TIMES(1, printf("%f %f %f\n", marg_data.mag.x, marg_data.mag.y, marg_data.mag.z); fflush(stdout));
+      
       /*************************************
        * run basic stabilizing controller: *
        *************************************/
@@ -362,22 +384,23 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* set up controller inputs: */
       float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
+      f_local.gas = 3.0f;
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = -auto_stick.pitch;
-         ff_piid_sp[2] = 0.0f; //auto_stick.yaw;
-         f_local.gas = 8.0f; //auto_stick.gas * platform_param()->max_thrust_n;
+         ff_piid_sp[2] = auto_stick.yaw;
+         //f_local.gas = 8.0f; //auto_stick.gas * platform_param()->max_thrust_n;
       }
       if (rc_sig_valid && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
-         if (manual_mode == M_ATT_REL)
+         /*if (manual_mode == M_ATT_REL)
          {
             ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
             ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
-         }
-         ff_piid_sp[2] += -RC_YAW_STICK_P * channels[CH_YAW];
+         }*/
+         ff_piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
 
          /* adjust thrust by gas stick: */
          if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
@@ -392,7 +415,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       
       feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
       piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
-      //filter2_run(&filter_out, f_local.vec, f_local.vec);
+      filter2_run(&filter_out, f_local.vec, f_local.vec);
  
  
       /********************
@@ -418,16 +441,36 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt, satisfied);
       if (!motostate_controllable())
       {
-         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
 
-      EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(motostate_enabled(), f_local.vec, voltage));
+      //EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage));
       
-      
-      //EVERY_N_TIMES(10, printf("%f\t\t %f\t\t %f\n", piid.f_local[1], piid.f_local[2], piid.f_local[3]));
-      //fprintf(fp,"%10.9f %10.9f %10.9f %d %d %d %d %6.4f %6.4f %6.4f %6.4f %6.4f %10.9f %10.9f %10.9f\n",gyro_vals[0],gyro_vals[1],gyro_vals[2],i2c_buffer[0],i2c_buffer[1],i2c_buffer[2],i2c_buffer[3],voltage,controller.f_local[0],rc_input[0], rc_input[1], rc_input[2], u_ctrl[0], u_ctrl[1], u_ctrl[2]);
+#if 0
+      fprintf(fp, "%f "        /* #1  time step */ 
+              "%f %f %f "      /* #2  gyroscope measurements */
+              "%f %f %f "      /* #3  accelerometer measurements */
+              "%f %f %f "      /* #4  magnetometer sensor measurements */
+              "%f %f %f %f "   /* #5  orientation quaternion estimate (uses #1-4) */
+              "%f %f %f "      /* #6  euler angles estimate (uses #5) */
+              "%f %f %f "      /* #7  global accelerations in NEU frame (uses #1, #3, #5) */
+              "%f %f %f %f"    /* #8  raw values for GPS x, y and ultra_z, baro_z */
+              "%f %f %f %f"    /* #9  position estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
+              "%f %f %f %f\n", /* #10 speed estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
+              dt, /* #1 */
+              marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, /* #2 */
+              marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, /* #3 */
+              marg_data.mag.x, marg_data.mag.y, marg_data.mag.z, /* #4 */
+              ahrs.quat.q0, ahrs.quat.q1, ahrs.quat.q2, ahrs.quat.q3, /* #5 */
+              euler.yaw, euler.pitch, euler.roll, /* #6 */
+              pos_in.acc.x, pos_in.acc.y, pos_in.acc.z, /* #7 */
+              pos_in.dx, pos_in.dy, pos_in.ultra_z, pos_in.baro_z, /* #8 */
+              pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, /* #9 */
+              pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed); /* #10 */
+   
+#endif
    }
    PERIODIC_THREAD_LOOP_END
 }

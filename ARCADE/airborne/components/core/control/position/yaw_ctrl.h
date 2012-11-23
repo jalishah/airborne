@@ -17,12 +17,6 @@ int yaw_ctrl_set_pos(float pos);
 
 float yaw_ctrl_get_pos(void);
 
-int yaw_ctrl_set_speed(float speed);
-
-float yaw_ctrl_get_speed(void);
-
-void yaw_ctrl_std_speed(void);
-
 float yaw_ctrl_step(float *err_out, float yaw, float speed, float dt);
 
 void yaw_ctrl_reset(void);
