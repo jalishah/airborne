@@ -76,9 +76,15 @@ components:
      gates:
       - networks: sub
       - mon: sub
+    
+   - name: cal_server
+     gates:
+      - ctrl: req
+      - cal: sub
    
    - name: core
      gates:
+      - cal: pub
       - log: pub
       - gps: sub
       - ctrl: rep
@@ -144,6 +150,8 @@ components:
 #
 
 connections:
+   - [ core.cal,                 cal_server.cal]
+   - [ core.ctrl,                cal_server.ctrl]
    - [ demo_mission.gps,         gps_sensor.gps]
    - [ demo_mission.net,         wifi_sensor.networks]
    - [ aircomm.in,               aircomm_swarm.aircomm_out]

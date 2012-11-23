@@ -52,6 +52,16 @@
 #include "control/position/yaw_ctrl.h"
 #include "control/speed/xy_speed.h"
 #include "motostate.h"
+#include "calpub.h"
+
+
+static int calibrate = 0;
+
+
+void main_calibrate(int enabled)
+{
+   calibrate = enabled;   
+}
 
 
 typedef union
@@ -186,6 +196,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       die();
    }
 
+   calpub_init();
+
    LOG(LL_INFO, "initializing model/controller");
    pos_init();
    xy_speed_ctrl_init();
@@ -267,9 +279,12 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       {
          continue;
       }
-      marg_data.mag.x -= 74.9;
-      marg_data.mag.y -= -109.0;
-      marg_data.mag.z -= 78.55;
+
+      if (calibrate)
+      {
+         calpub_send(&marg_data);
+         continue;
+      }
       
       gps_data_t gps_data;
       int gps_valid = platform_read_gps(&gps_data) == 0;
