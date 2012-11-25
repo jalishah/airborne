@@ -306,6 +306,9 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       float voltage = 16.0f;
       int voltage_valid = platform_read_voltage(&voltage) == 0;
 
+      /* calibration: */
+      acc_mag_apply_cal(&marg_data.acc, &marg_data.mag);
+
       /********************************
        * perform sensor data fusion : *
        ********************************/

@@ -67,10 +67,24 @@ core:
       level: 3
       details: 2
 
+   cal:
+      acc_bias_x:  0.0
+      acc_bias_y:  0.0
+      acc_bias_z:  0.0
+      acc_scale_x: 1.0
+      acc_scale_y: 1.0
+      acc_scale_z: 1.0
+      mag_bias_x:  0.0
+      mag_bias_y:  0.0
+      mag_bias_z:  0.0
+      mag_scale_x: 1.0
+      mag_scale_y: 1.0
+      mag_scale_z: 1.0
+
    controllers:
       debug_host: "10.0.1.5"
       debug_port: 5555
- 
+
       xy_speed:
          p: 0.4
 
