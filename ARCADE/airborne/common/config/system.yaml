@@ -79,7 +79,8 @@ components:
     
    - name: cal_server
      gates:
-      - ctrl: req
+      - core_ctrl: req
+      - opcd_ctrl: req
       - cal: sub
    
    - name: core
@@ -151,7 +152,8 @@ components:
 
 connections:
    - [ core.cal,                 cal_server.cal]
-   - [ core.ctrl,                cal_server.ctrl]
+   - [ core.ctrl,                cal_server.core_ctrl]
+   - [ opcd.ctrl,                cal_server.opcd_ctrl]
    - [ demo_mission.gps,         gps_sensor.gps]
    - [ demo_mission.net,         wifi_sensor.networks]
    - [ aircomm.in,               aircomm_swarm.aircomm_out]
