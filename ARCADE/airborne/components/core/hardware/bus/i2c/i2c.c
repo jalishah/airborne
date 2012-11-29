@@ -93,7 +93,32 @@ int i2c_write_reg(i2c_dev_t *dev, uint8_t reg, uint8_t val)
 }
 
 
-THROW_DATA i2c_read(i2c_dev_t *dev)
+int i2c_rdwr(i2c_dev_t *dev, uint8_t len_wr, uint8_t *wr_data, uint8_t len_rd, uint8_t *rd_data)
+{
+    THROW_BEGIN();
+    struct i2c_rdwr_ioctl_data  msgset;
+    struct i2c_msg msgs[2];
+
+    msgs[0].addr    =   dev->addr;
+    msgs[0].len     =   len_wr;
+    msgs[0].flags   =   I2C_SMBUS_WRITE;
+    msgs[0].buf     =   wr_data;
+
+    msgs[1].addr    =   dev->addr;
+    msgs[1].flags   =   I2C_SMBUS_READ;
+    msgs[1].len     =   len_rd;
+    msgs[1].buf     =   rd_data;
+
+    msgset.nmsgs    =   2;
+    msgset.msgs     =     msgs;
+
+    i2c_dev_lock_bus(dev);
+    THROW_ON_ERR(ioctl(dev->bus->handle, I2C_RDWR, &msgset));
+    THROW_END_EXEC(i2c_dev_unlock_bus(dev));
+}
+
+
+int i2c_read(i2c_dev_t *dev)
 {
    THROW_BEGIN();
    i2c_dev_lock_bus(dev);
@@ -103,7 +128,7 @@ THROW_DATA i2c_read(i2c_dev_t *dev)
 }
 
 
-THROW_DATA i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
+int i2c_read_reg(i2c_dev_t *dev, uint8_t reg)
 {
    THROW_BEGIN();
    i2c_dev_lock_bus(dev);

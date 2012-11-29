@@ -112,7 +112,8 @@ static int write_motors(int enabled, float forces[4], float voltage)
       memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
       int_enable = 0;
    }
-   holger_blmc_write(motor_setpoints);
+   uint8_t rpm[4];
+   holger_blmc_write_read(motor_setpoints, rpm);
    return int_enable;
 }
 

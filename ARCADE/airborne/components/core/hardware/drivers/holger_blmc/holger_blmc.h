@@ -15,9 +15,9 @@
 #include "../../bus/i2c/i2c.h"
 
 
-#define HOLGER_I2C_OFF   0
-#define HOLGER_I2C_MIN  20
-#define HOLGER_I2C_MAX  255
+#define HOLGER_I2C_OFF    0
+#define HOLGER_I2C_MIN   20
+#define HOLGER_I2C_MAX  200
 
 
 
@@ -25,12 +25,6 @@
  * creates a holger BLMC interface
  */
 void holger_blmc_init(i2c_bus_t *bus, const uint8_t *addrs, const unsigned int n_motors);
-
-
-/*
- * writes holger BLMC setpoints
- */
-void holger_blmc_write(uint8_t *setpoints);
 
 
 /*

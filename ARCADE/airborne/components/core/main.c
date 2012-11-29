@@ -43,7 +43,6 @@
 #include "platform/arcade_quadro.h"
 #include "control/basic/piid.h"
 #include "control/basic/feed_forward.h"
-#include "filters/sliding_avg.h"
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
 #include "control/position/navi.h"
@@ -99,7 +98,7 @@ manual_mode = M_ATT_ABS;
 
 
 #define REALTIME_PERIOD (0.005)
-#define CONTROL_RATIO (2)
+#define CONTROL_RATIO (1)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -232,9 +231,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 1000);
    
-   Filter2 filter_out;
-   filter2_lp_init(&filter_out, 55.0f, 0.95f, REALTIME_PERIOD, 4);
-
    feed_forward_t feed_forward;
    feed_forward_init(&feed_forward, REALTIME_PERIOD);
    piid_t piid;
@@ -268,7 +264,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
 
       int marg_valid = platform_read_marg(&marg_data) == 0;
       if (!marg_valid)
-         die(); /* this is to save our lab equipment! */
+      {
+         die();
+         continue;
+      }
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
          LOG(LL_ERROR, "gyro moved during calibration, retrying");
@@ -303,6 +302,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
       float channels[MAX_CHANNELS];
       int rc_sig_valid = platform_read_rc(channels) == 0;
+
       float voltage = 16.0f;
       int voltage_valid = platform_read_voltage(&voltage) == 0;
 
@@ -401,15 +401,14 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       /* set up controller inputs: */
       float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
-      f_local.gas = 3.0f;
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = -auto_stick.pitch;
-         ff_piid_sp[2] = auto_stick.yaw;
-         //f_local.gas = 8.0f; //auto_stick.gas * platform_param()->max_thrust_n;
+         ff_piid_sp[2] = 0; //auto_stick.yaw;
+         f_local.gas = 15.0f; // auto_stick.gas * platform_param()->max_thrust_n;
       }
-      if (rc_sig_valid && mode != CM_FULL_AUTO)
+      if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
          /*if (manual_mode == M_ATT_REL)
@@ -432,7 +431,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       
       feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
       piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
-      filter2_run(&filter_out, f_local.vec, f_local.vec);
  
  
       /********************
@@ -463,7 +461,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          /* TODO: also reset higher-level controllers */
       }
 
-      //EVERY_N_TIMES(CONTROL_RATIO, piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage));
+      /* write forces to motors: */
+      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 0, f_local.vec, voltage);
       
 #if 0
       fprintf(fp, "%f "        /* #1  time step */ 
