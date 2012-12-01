@@ -46,6 +46,7 @@
 #include "filters/sliding_avg.h"
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
+#include "flight_detect.h"
 
 
 typedef union
@@ -343,5 +344,4 @@ int main(int argc, char *argv[])
    daemonize("/var/run/core.pid", _main, _cleanup, argc, argv);
    return 0;
 }
-
 
