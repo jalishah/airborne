@@ -10,7 +10,7 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 
-ADD_EXECUTABLE(core motostate.c main.c calpub.c)
+ADD_EXECUTABLE(core motostate.c main.c calpub.c flight_detect.c)
 
 
 TARGET_LINK_LIBRARIES(core

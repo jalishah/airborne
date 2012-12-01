@@ -34,7 +34,6 @@
 #include "util/logger/logger.h"
 #include "command/command.h"
 #include "util/time/ltime.h"
-#include "filters/sliding_avg.h"
 #include "estimators/ahrs.h"
 #include "estimators/pos.h"
 #include "control/control.h"
@@ -248,7 +247,9 @@ void _main(int argc, char *argv[])
  
    gps_util_t gps_util;
    gps_util_init(&gps_util);
-   gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
+   gps_rel_data_t gps_rel_data = {0.0f, 0.0f, 0.0f};
+
+   flight_detect_init(9, 10000, 0.0f, NULL);
    
    LOG(LL_INFO, "entering main loop");
    interval_t interval;
@@ -308,6 +309,12 @@ void _main(int argc, char *argv[])
 
       /* calibration: */
       acc_mag_apply_cal(&marg_data.acc, &marg_data.mag);
+
+      float fd_in[9] = {marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z,
+                        marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
+                        marg_data.mag.x, marg_data.mag.y, marg_data.mag.z};
+
+      flight_detect(fd_in);
 
       /********************************
        * perform sensor data fusion : *

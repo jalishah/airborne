@@ -20,6 +20,9 @@
 #define __SLIDING_AVG_H__
 
 
+#include <stddef.h>
+
+
 typedef struct
 {
    float *hist;
