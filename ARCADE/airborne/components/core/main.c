@@ -96,7 +96,7 @@ enum
 manual_mode = M_ATT_ABS;
 
 
-#define REALTIME_PERIOD (0.0056)
+#define REALTIME_PERIOD (0.006683)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -461,12 +461,14 @@ void _main(int argc, char *argv[])
          //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
+      memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
 
       /* write forces to motors: */
       piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage);
-      
+      msleep(1);
+
 #if 1
-      EVERY_N_TIMES(10, fprintf(fp,
+      fprintf(fp,
               "%f "          /* #1  time step */ 
               "%f %f %f "    /* #2  gyroscope measurements */
               "%f %f %f "    /* #3  accelerometer measurements */
@@ -488,7 +490,7 @@ void _main(int argc, char *argv[])
               pos_in.dx, pos_in.dy, pos_in.ultra_z, pos_in.baro_z, /* #8 */
               pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, /* #9 */
               pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed, /* #10 */
-              0.0f, pitch_roll_sp.x, pitch_roll_sp.y)); /* #11 */
+              0.0f, pitch_roll_sp.x, pitch_roll_sp.y); /* #11 */
    
 #endif
    }
