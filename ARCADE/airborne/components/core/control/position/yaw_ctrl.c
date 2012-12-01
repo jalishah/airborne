@@ -21,21 +21,16 @@
 
 static pid_controller_t controller;
 
-/* setpoints: */
-static tsfloat_t pos; /* yaw position */
-static tsfloat_t speed; /* yaw speed */
+/* setpoint: */
+static tsfloat_t pos;
 
 /* configurable parameters: */
-static tsfloat_t speed_slope;
-static tsfloat_t speed_min;
-static tsfloat_t speed_std;
-static tsfloat_t speed_max;
-static tsfloat_t speed_p;
-static tsfloat_t speed_i;
-static tsfloat_t speed_imax;
+static tsfloat_t p;
+static tsfloat_t i;
+static tsfloat_t i_max;
+static tsfloat_t d;
+static tsfloat_t pid_lim;
 static tsint_t manual;
-
-
 
 
 static float circle_err(float pos, float dest)
@@ -65,34 +60,24 @@ static float circle_err(float pos, float dest)
 }
 
 
-static float speed_func(float angle)
-{
-   float _speed = tsfloat_get(&speed);
-   return sym_limit(tsfloat_get(&speed_slope) * angle, _speed);
-}
-
-
 void yaw_ctrl_init(void)
 {
    ASSERT_ONCE();
    opcd_param_t params[] =
    {
-      {"speed_min", &speed_min},
-      {"speed_std", &speed_std},
-      {"speed_max", &speed_max},
-      {"speed_slope", &speed_slope},
-      {"speed_p", &speed_p.value},
-      {"speed_i", &speed_i.value},
-      {"speed_imax", &speed_imax.value},
+      {"p", &p.value},
+      {"i", &i.value},
+      {"i_max", &i_max.value},
+      {"d", &d.value},
+      {"pid_lim", &pid_lim.value},
       {"manual", &manual},
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.yaw.", params);
 
    tsfloat_init(&pos, 0.0f);
-   tsfloat_init(&speed, tsfloat_get(&speed_std));
 
-   pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
+   pid_init(&controller, &p, &i, &d, &i_max);
 }
 
 
@@ -114,33 +99,6 @@ float yaw_ctrl_get_pos(void)
 }
 
 
-int yaw_ctrl_set_speed(float _speed)
-{
-   float _speed_min = tsfloat_get(&speed_min);
-   float _speed_max = tsfloat_get(&speed_max);
-   if ((_speed < _speed_min) || (_speed > _speed_max))
-   {
-      LOG(LL_ERROR, "invalid yaw speed: %f, out of bounds: (%f, %f)",
-          _speed, _speed_min, _speed_max);
-      return -1;
-   }
-   tsfloat_set(&speed, _speed);
-   return 0;
-}
-
-
-float yaw_ctrl_get_speed(void)
-{
-   return tsfloat_get(&speed);
-}
-
-
-void yaw_ctrl_std_speed(void)
-{
-   tsfloat_set(&speed, tsfloat_get(&speed_std));
-}
-
-
 float yaw_ctrl_step(float *err_out, float yaw, float _speed, float dt)
 {
    float err;
@@ -153,12 +111,10 @@ float yaw_ctrl_step(float *err_out, float yaw, float _speed, float dt)
    else
    {
       err = circle_err(yaw, tsfloat_get(&pos));
-      float speed_setpoint = -speed_func(err);
-      float speed_err = speed_setpoint - _speed;
-      yaw_ctrl = pid_control(&controller, speed_err, dt);
+      yaw_ctrl = pid_control(&controller, err, _speed, dt);
    }
    *err_out = err;
-   return yaw_ctrl;
+   return sym_limit(yaw_ctrl, tsfloat_get(&pid_lim));
 }
 
 

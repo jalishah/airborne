@@ -20,7 +20,7 @@ void pid_init(pid_controller_t *controller, tsfloat_t *p, tsfloat_t *i, tsfloat_
 }
 
 
-float pid_control(pid_controller_t *controller, float error, float dt)
+float pid_control(pid_controller_t *controller, float error, float speed, float dt)
 {
    float val = tsfloat_get(controller->p) * error;
    if (controller->i != NULL)
@@ -32,7 +32,7 @@ float pid_control(pid_controller_t *controller, float error, float dt)
    }
    if ((controller->d != NULL) && (dt != 0.0f))
    {
-      val += tsfloat_get(controller->d) * (error - tsfloat_get(&controller->prev_error)) / dt;
+      val += tsfloat_get(controller->d) * speed;
    }
    tsfloat_set(&controller->prev_error, error);
    return val;

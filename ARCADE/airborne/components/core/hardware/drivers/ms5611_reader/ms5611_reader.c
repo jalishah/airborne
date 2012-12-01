@@ -4,16 +4,16 @@
 #include <simple_thread.h>
 #include <threadsafe_types.h>
 
-#include "i2cxl_reader.h"
-#include "../i2cxl/i2cxl.h"
+#include "ms5611_reader.h"
+#include "../ms5611/ms5611.h"
 
 
-#define THREAD_NAME       "i2cxl_reader"
+#define THREAD_NAME       "ms5611_reader"
 #define THREAD_PRIORITY   0
 
 
 static simple_thread_t thread;
-static i2cxl_t i2cxl;
+static ms5611_t ms5611;
 static tsfloat_t altitude;
 static int status;
 
@@ -22,11 +22,10 @@ SIMPLE_THREAD_BEGIN(thread_func)
 {
    SIMPLE_THREAD_LOOP_BEGIN
    {
-      float alt;
-      status = i2cxl_read(&i2cxl, &alt);
+      status = ms5611_measure(&ms5611);
       if (status == 0)
       {
-         tsfloat_set(&altitude, alt);
+         tsfloat_set(&altitude, ms5611.c_a);
       }
       msleep(50);
    }
@@ -35,17 +34,17 @@ SIMPLE_THREAD_BEGIN(thread_func)
 SIMPLE_THREAD_END
 
 
-int i2cxl_reader_init(i2c_bus_t *bus)
+int ms5611_reader_init(i2c_bus_t *bus)
 {
    ASSERT_ONCE();
-   tsfloat_init(&altitude, 0.2);
-   i2cxl_init(&i2cxl, bus);
+   tsfloat_init(&altitude, 0.0);
+   ms5611_init(&ms5611, bus, MS5611_OSR4096, MS5611_OSR4096);
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
    return 0;
 }
 
 
-int i2cxl_reader_get_alt(float *alt)
+int ms5611_reader_get_alt(float *alt)
 {
    if (status == 0)
    {

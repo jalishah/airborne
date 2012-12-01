@@ -28,6 +28,16 @@ class CoreInterface:
          raise CoreError(rep.status, rep.err_msg)
       return rep
 
+   def mode_normal(self):
+      req = CoreReq()
+      req.type = MODE_NORMAL
+      self._exec(req)
+
+   def mode_cal(self):
+      req = CoreReq()
+      req.type = MODE_CAL
+      self._exec(req)
+
    def spin_up(self):
       req = CoreReq()
       req.type = SPIN_UP

@@ -10,13 +10,15 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 
+ADD_EXECUTABLE(core motostate.c main.c calpub.c)
 
-ADD_EXECUTABLE(core main.c)
 
 TARGET_LINK_LIBRARIES(core
 daemon
 command
-control
+basic_control
+speed_control
+position_control
 estimators
 platform
 holger_blmc
@@ -33,6 +35,7 @@ hmc5883
 itg3200
 mpu6050
 ms5611
+ms5611_reader
 geometry
 i2c serial logger opcd_params threads ltime scl
 glib-2.0
@@ -43,5 +46,5 @@ vec2
 cvxgen
 hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)
-
 INSTALL_TARGETS(/bin core)
+

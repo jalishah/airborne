@@ -59,6 +59,8 @@ piid_t;
 
 void piid_init(piid_t *ctrl, float sample_time);
 
+void piid_reset(piid_t *piid);
+
 void piid_run(piid_t *ctrl, float u_ctrl[3], float gyro[3], float rc[3]);
 
 

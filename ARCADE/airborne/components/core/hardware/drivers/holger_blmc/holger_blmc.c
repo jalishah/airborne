@@ -31,23 +31,12 @@ void holger_blmc_init(i2c_bus_t *bus, const uint8_t *addrs, const unsigned int _
 }
 
 
-void holger_blmc_write(uint8_t *setpoints)
-{
-   ASSERT_NOT_NULL(devices);
-   FOR_N(i, n_motors)
-   {
-      i2c_write(&devices[i], setpoints[i]);
-   }
-}
-
-
 void holger_blmc_write_read(uint8_t *setpoints, uint8_t *rpm)
 {
    ASSERT_NOT_NULL(devices);
    FOR_N(i, n_motors)
    {
-      i2c_write(&devices[i], setpoints[i]);
-      rpm[i] = i2c_read(&devices[i]);
+      i2c_rdwr(&devices[i], 1, &setpoints[i], 1, &rpm[i]);
    }
 }
 

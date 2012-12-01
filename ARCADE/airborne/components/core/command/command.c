@@ -17,7 +17,7 @@
 #include "../control/position/z_ctrl.h"
 #include "../control/position/navi.h"
 #include "../control/position/yaw_ctrl.h"
-
+#include "../main.h"
 
 #define THREAD_NAME     "cmd_interface"
 #define THREAD_PRIORITY 1
@@ -85,8 +85,7 @@ int set_ctrl_param(CtrlParam param, float value)
 
       case CTRL_PARAM__SPEED_YAW:
       {
-         LOG(LL_DEBUG, "yaw speed update: %f", value);
-         status = yaw_ctrl_set_speed(value);
+         LOG(LL_DEBUG, "[not implemented] yaw speed update: %f", value);
          break;
       }
    }
@@ -162,6 +161,14 @@ SIMPLE_THREAD_BEGIN(thread_func)
       {
          switch (request->type)
          {
+            case REQUEST_TYPE__MODE_CAL:
+               main_calibrate(1);
+               break;
+
+            case REQUEST_TYPE__MODE_NORMAL:
+               main_calibrate(0);
+               break;
+            
             case REQUEST_TYPE__SPIN_UP:
                LOG(LL_DEBUG, "SPIN_UP");
                //if (platform_start_motors() < 0)
@@ -178,7 +185,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
 
             case REQUEST_TYPE__RESET_CTRL:
                LOG(LL_DEBUG, "RESET_CTRL");
-               ctrl_reset();
+               //ctrl_reset();
                break;
 
             case REQUEST_TYPE__SET_CTRL_PARAM:

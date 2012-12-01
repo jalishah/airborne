@@ -10,7 +10,7 @@ void att_ctrl_init(void);
 
 void att_ctrl_reset(void);
 
-void att_ctrl_step(vec2_t *ctrl, const float dt, const vec2_t *pos, const vec2_t *setp);
+void att_ctrl_step(vec2_t *ctrl, vec2_t *err, const float dt, const vec2_t *pos, const vec2_t *speed, const vec2_t *setp);
  
 
 #endif /* __ATT_CTRL_H__ */

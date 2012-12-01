@@ -57,7 +57,7 @@ static void rot2_calc(rot2_t *rot2, vec2_t *out, vec2_t *in, float angle)
 
 
 static rot2_t rot2;
-static tsfloat_t speed_p;
+static tsfloat_t p;
 
 
 void xy_speed_ctrl_init(void)
@@ -65,7 +65,7 @@ void xy_speed_ctrl_init(void)
    ASSERT_ONCE();
    opcd_param_t params[] =
    {
-      {"speed_p", &speed_p},
+      {"p", &p},
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.xy_speed.", params);
@@ -81,7 +81,7 @@ void xy_speed_ctrl_run(vec2_t *control, vec2_t *speed_setpoint, vec2_t *speed, f
    
    /* calculate 2d speed feedback: */
    vec2_t world_thrust;
-   vec2_scale(&world_thrust, &speed_err, tsfloat_get(&speed_p));
+   vec2_scale(&world_thrust, &speed_err, tsfloat_get(&p));
 
    /* rotate global speed feedback into local control primitives: */
    rot2_calc(&rot2, control, &world_thrust, yaw);

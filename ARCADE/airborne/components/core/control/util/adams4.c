@@ -13,14 +13,20 @@ int adams4_init(adams4_t *a, const size_t dim)
    a->f2 = malloc(dim * sizeof(float));
    a->f3 = malloc(dim * sizeof(float));
 
-   for (size_t i = 0; i < dim; i++)
-   {   
+   adams4_reset(a);
+   return 1;
+}
+
+
+void adams4_reset(adams4_t *a)
+{
+   for (size_t i = 0; i < a->dim; i++)
+   {  
       a->f0[i] = 0.0;
       a->f1[i] = 0.0;
       a->f2[i] = 0.0;
       a->f3[i] = 0.0;
    }
-   return 1;
 }
 
 

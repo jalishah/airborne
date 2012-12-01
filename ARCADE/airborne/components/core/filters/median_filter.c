@@ -8,16 +8,19 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <malloc.h>
 
 #include "median_filter.h"
 #include "../util/util.h"
 
 
 
-void median_filter_init(median_filter_t *filter, float *history, float *sort, size_t size)
+void median_filter_init(median_filter_t *filter, size_t size)
 {
-   filter->history = history;
-   filter->sort = sort;
+   filter->history = malloc(size * sizeof(float));
+   memset(filter->history, 0, size * sizeof(float));
+   filter->sort = malloc(size * sizeof(float));
+   memset(filter->sort, 0, size * sizeof(float));
    filter->size = size;
    filter->count = 0;
 }

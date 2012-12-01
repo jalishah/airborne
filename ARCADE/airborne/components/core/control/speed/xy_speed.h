@@ -4,7 +4,7 @@
 #define __XY_SPEED_H__
 
 
-#include "../util/math/vec2.h"
+#include "../../util/math/vec2.h"
 
 
 void xy_speed_ctrl_init(void);

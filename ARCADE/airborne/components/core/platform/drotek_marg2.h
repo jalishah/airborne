@@ -20,10 +20,7 @@
 #define __DROTEK_MARG2_H__
 
 
-#include <util.h>
-
-#include "platform.h"
-
+#include "../hardware/util/marg_data.h"
 #include "../hardware/drivers/mpu6050/mpu6050.h"
 #include "../hardware/drivers/hmc5883/hmc5883.h"
 

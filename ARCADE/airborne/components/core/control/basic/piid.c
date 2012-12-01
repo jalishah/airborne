@@ -75,6 +75,13 @@ void piid_init(piid_t *piid, float Ts)
 }
 
 
+void piid_reset(piid_t *piid)
+{
+   adams4_reset(&piid->int_err1);
+   adams4_reset(&piid->int_err2);
+}
+
+
 void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
 {
    float error[3];

@@ -52,21 +52,21 @@ typedef struct
    uint16_t prom[8];
 
    /* raw measurements: */
-   int32_t raw_t; /* raw temperature */
-   int32_t raw_p; /* raw pressure */
+   uint32_t raw_t; /* raw temperature */
+   uint32_t raw_p; /* raw pressure */
 
    /* compensated values: */
    double c_t; /* temperature */
    double c_p; /* pressure */
    double c_a; /* altitude */
 }
-ms5611_dev_t;
+ms5611_t;
 
 
-int ms5611_init(ms5611_dev_t *dev, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr);
+int ms5611_init(ms5611_t *ms5611, i2c_bus_t *bus, ms5611_osr_t p_osr, ms5611_osr_t t_osr);
 
 
-int ms5611_measure(ms5611_dev_t *dev);
+int ms5611_measure(ms5611_t *ms5611);
 
 
 #endif /* __MS5611_H__ */

@@ -18,6 +18,8 @@ void cal_init(calibration_t *cal, const size_t dim, const size_t max_samples);
 
 void cal_reset(calibration_t *cal);
 
+int cal_complete(calibration_t *cal);
+
 int cal_sample_apply(calibration_t *cal, float *vec);
 
 

@@ -25,13 +25,16 @@
 
 static pid_controller_t controller;
 
+
+/* initialized by "init" parameter: */
+static float z_neutral_gas;
+
 /* following thread-safe variables are initialized by pid_init: */
 static tsfloat_t speed_p;
 static tsfloat_t speed_i;
 static tsfloat_t speed_imax;
 
 /* following thread-safe variables are initialized by OPCD: */
-static tsint_t manual;
 static tsfloat_t init_setpoint;
 static tsint_t init_mode_is_ground;
 
@@ -86,22 +89,13 @@ float z_ctrl_step(float *z_err, float ground_z_pos, float z_pos, float speed, fl
    float spd_sp = speed_func(_z_err);
    float spd_err = spd_sp - speed;
    float val;
-   if (tsint_get(&manual))
-   {
-      val = 1.0f; /* the controller always yields the maximum,
-                     has to be limited by remote control */
-   }
-   else
-   {
-      /* TODO: figure out hovering gas value */
-      val = 0.55f + pid_control(&controller, spd_err, dt);
-   }
+   val = z_neutral_gas + pid_control(&controller, spd_err, speed, dt);
    *z_err = _z_err;
    return val;
 }
 
 
-void z_ctrl_init(void)
+void z_ctrl_init(float neutral_gas)
 {
    ASSERT_ONCE();
    
@@ -112,7 +106,6 @@ void z_ctrl_init(void)
       {"speed_imax", &speed_imax},
       {"init_setpoint", &init_setpoint},
       {"init_mode_is_ground", &init_mode_is_ground},
-      {"manual", &manual},
       OPCD_PARAMS_END
    };
    opcd_params_apply("controllers.altitude.", params);
@@ -120,6 +113,7 @@ void z_ctrl_init(void)
    tsfloat_init(&setpoint, tsfloat_get(&init_setpoint));
    tsint_init(&mode_is_ground, tsint_get(&init_mode_is_ground));
    pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
+   z_neutral_gas = neutral_gas;
 }
 
 

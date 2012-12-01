@@ -21,6 +21,7 @@ icarus:
 
 gps_sensor:
   binary: 'sensors/gps/gps_sensor'
+  depends: [opcd]
 
 imms_sensor:
   binary: 'sensors/imms/imms_sensor'

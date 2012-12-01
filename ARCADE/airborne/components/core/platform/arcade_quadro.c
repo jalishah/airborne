@@ -31,6 +31,7 @@
 #include "../hardware/bus/i2c/i2c.h"
 #include "../hardware/drivers/scl_gps/scl_gps.h"
 #include "../hardware/drivers/i2cxl_reader/i2cxl_reader.h"
+#include "../hardware/drivers/ms5611_reader/ms5611_reader.h"
 #include "../hardware/drivers/rc_dsl_reader/rc_dsl_reader.h"
 #include "../hardware/drivers/holger_blmc/holger_blmc.h"
 #include "../hardware/drivers/holger_blmc/force2twi.h"
@@ -94,12 +95,13 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
+   //convex_opt_run(forces);
    float ground_dist = 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
    {
       if (ground_dist > CONVEXOPT_MIN_GROUND_DIST)
       {
-         convex_opt_run(forces);
+         //convex_opt_run(forces);
       }
    }
    /* computation of rpm ^ 2 out of the desired forces */
@@ -110,7 +112,8 @@ static int write_motors(int enabled, float forces[4], float voltage)
       memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
       int_enable = 0;
    }
-   holger_blmc_write(motor_setpoints);
+   uint8_t rpm[4];
+   holger_blmc_write_read(motor_setpoints, rpm);
    return int_enable;
 }
 
@@ -142,43 +145,48 @@ int arcade_quadro_init(platform_t *plat)
    /* local initializations: */
    convex_opt_init();
    
-   /* init parameters: */
-   plat->thrust = 30.0f; /* N */
+   LOG(LL_INFO, "setting platform parameters");
+   plat->param.max_thrust_n = 20.0f;
+   plat->param.mass_kg = 1.1f;
 
-   /* initialize buses: */
+   LOG(LL_INFO, "initializing i2c bus");
    THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));
 
-   /* set-up MARG sensor cluster: */
+   LOG(LL_INFO, "initializing MARG sensor cluster");
    THROW_ON_ERR(drotek_marg2_init(&marg, &i2c_3));
    plat->read_marg = read_marg;
 
-   /* initialize i2cxl sonar sensor: */
+   LOG(LL_INFO, "initializing i2cxl sonar sensor");
    THROW_ON_ERR(i2cxl_reader_init(&i2c_3));
    plat->read_ultra = i2cxl_reader_get_alt;
+   
+   LOG(LL_INFO, "initializing ms5611 barometric pressure sensor");
+   THROW_ON_ERR(ms5611_reader_init(&i2c_3));
+   plat->read_baro = ms5611_reader_get_alt;
 
-   /* initialize inverse coupling matrix: */
+   LOG(LL_INFO, "initializing inverse coupling matrix");
    inv_coupling_init(&inv_coupling, N_MOTORS, inv_coupling_matrix);
 
    /* set-up motors driver: */
+   LOG(LL_INFO, "initializing motor drivers");
    rpm_square = malloc(N_MOTORS * sizeof(float));
    motor_setpoints = malloc(sizeof(uint8_t) * N_MOTORS);
    memset(motor_setpoints, 0, sizeof(uint8_t) * N_MOTORS);
    holger_blmc_init(&i2c_3, motor_addrs, N_MOTORS);
    plat->write_motors = write_motors;
  
-#if 0
    /* set-up gps driver: */
    scl_gps_init();
    plat->read_gps = scl_gps_read;
-#endif
 
    /* set-up dsl reader: */
+   LOG(LL_INFO, "initializing DSL reader");
    if (rc_dsl_reader_init() < 0)
    {
       LOG(LL_ERROR, "could not initialize dsl reader");
       exit(1);
    }
-   deadzone_init(&deadzone, 0.05, 1.0, 1.0);
+   deadzone_init(&deadzone, 0.02f, 1.0f, 1.0f);
    rc_channels_init(&rc_channels, channel_mapping, channel_scale, &deadzone);
    plat->read_rc = read_rc;
 
@@ -189,7 +197,7 @@ int arcade_quadro_init(platform_t *plat)
    }
    plat->read_voltage = scl_voltage_read;
  
-   LOG(LL_INFO, "arcad_quadro platform initialized");
+   LOG(LL_INFO, "arcade_quadro platform initialized");
    THROW_END();
 }
 

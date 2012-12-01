@@ -28,7 +28,7 @@ z_setpoint_t;
 
 
 
-void z_ctrl_init(void);
+void z_ctrl_init(float neutral_gas);
 
 void z_ctrl_set_setpoint(z_setpoint_t z_setpoint);
 

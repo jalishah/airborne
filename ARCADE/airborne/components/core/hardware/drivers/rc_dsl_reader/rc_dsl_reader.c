@@ -4,7 +4,6 @@
 #include <string.h>
 
 
-#include <stdbool.h>
 #include <util.h>
 #include <serial.h>
 #include <simple_thread.h>
@@ -13,6 +12,7 @@
 
 #include "rc_dsl_reader.h"
 #include "../../../util/logger/logger.h"
+#include "../../../filters/median_filter.h"
 
 
 #define THREAD_NAME       "rc_dsl_reader"
@@ -28,7 +28,8 @@ static rc_dsl_t rc_dsl;
 static char *dev_path = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static float channels[RC_DSL_CHANNELS];
-static int sig_valid = false;
+static int sig_valid = 0;
+static median_filter_t sig_valid_filter;
 
 
 SIMPLE_THREAD_BEGIN(thread_func)
@@ -38,7 +39,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       int b = serial_read_char(&port);
       if (b < 0)
       {
-         msleep(10);
+         msleep(1);
       }
       int status = rc_dsl_parse_dsl_data(&rc_dsl, (uint8_t)b);
       if (status < 0)
@@ -57,6 +58,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
          {
             sig_valid = 0;
          }
+         sig_valid = median_filter_run(&sig_valid_filter, (float)sig_valid) > 0.5 ? 1 : 0;
          pthread_mutex_unlock(&mutex);
       }
    }
@@ -79,6 +81,7 @@ int rc_dsl_reader_init(void)
    opcd_params_apply("sensors.rc_dsl.", params);
    THROW_ON_ERR(serial_open(&port, dev_path, 38400, 0, 0, 0));
    rc_dsl_init(&rc_dsl);
+   median_filter_init(&sig_valid_filter, 30);
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 
    THROW_END();
