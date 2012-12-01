@@ -146,7 +146,7 @@ int arcade_quadro_init(platform_t *plat)
    convex_opt_init();
    
    LOG(LL_INFO, "setting platform parameters");
-   plat->param.max_thrust_n = 15.0f;
+   plat->param.max_thrust_n = 20.0f;
    plat->param.mass_kg = 1.1f;
 
    LOG(LL_INFO, "initializing i2c bus");

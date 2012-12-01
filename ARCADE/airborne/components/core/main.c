@@ -28,7 +28,6 @@
 #include <util.h>
 #include <daemon.h>
 #include <threadsafe_types.h>
-#include <periodic_thread.h>
 #include <sclhelper.h>
 
 #include "util/time/interval.h"
@@ -97,15 +96,12 @@ enum
 manual_mode = M_ATT_ABS;
 
 
-#define REALTIME_PERIOD (0.005)
-#define CONTROL_RATIO (1)
+#define REALTIME_PERIOD (0.0056)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
 #define RC_YAW_STICK_P 3.0f
 
-
-static periodic_thread_t realtime_thread;
 
 
 static int gyro_moved(vec3_t *gyro)
@@ -134,8 +130,11 @@ void die(void)
 }
 
 
-PERIODIC_THREAD_BEGIN(realtime_thread_func)
-{ 
+
+void _main(int argc, char *argv[])
+{
+   (void)argc;
+   (void)argv;
    syslog(LOG_INFO, "initializing core");
    
    /* init SCL subsystem: */
@@ -216,7 +215,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       printf("ERROR: could not open File");
       die();
    }
-   fprintf(fp, "dt" /* #1 */
+   fprintf(fp, "dt " /* #1 */
                "gyro_x gyro_y gyro_z " /* #2 */
                "acc_x acc_y acc_z " /* #3 */
                "mag_x mag_y mag_z " /* #4 */
@@ -225,7 +224,8 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
                "acc_e acc_n acc_u " /* #7 */
                "raw_e raw_n raw_ultra_u raw_baro_u " /* #8 */
                "pos_e pos_n pos_ultra_u pos_baro_u " /* #9 */
-               "speed_e pos_n speed_ultra_u pos_ultra_u"); /* #10 */
+               "speed_e pos_n speed_ultra_u pos_ultra_u " /* #10 */
+               "yaw_sp pitch_sp roll_sp\n"); /* #11 */
 
 
    calibration_t gyro_cal;
@@ -252,7 +252,7 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
    LOG(LL_INFO, "entering main loop");
    interval_t interval;
    interval_init(&interval);
-   PERIODIC_THREAD_LOOP_BEGIN
+   while (1)
    {
       /*******************************************
        * read sensor data and calibrate sensors: *
@@ -265,7 +265,6 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       int marg_valid = platform_read_marg(&marg_data) == 0;
       if (!marg_valid)
       {
-         die();
          continue;
       }
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
@@ -406,24 +405,26 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = -auto_stick.pitch;
          ff_piid_sp[2] = 0; //auto_stick.yaw;
-         f_local.gas = 15.0f; // auto_stick.gas * platform_param()->max_thrust_n;
+         //f_local.gas = 0.0f; // auto_stick.gas * platform_param()->max_thrust_n;
       }
       if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
-         /*if (manual_mode == M_ATT_REL)
+         if (manual_mode == M_ATT_REL)
          {
             ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
             ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
-         }*/
+         }
          ff_piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
+         f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
+         //EVERY_N_TIMES(10, printf("%f %f %f %f\n", channels[CH_GAS], channels[CH_YAW], channels[CH_PITCH], channels[CH_ROLL]));
 
          /* adjust thrust by gas stick: */
-         if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+         /*if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
              || (mode == CM_MANUAL))
          {
             f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
-         }
+         }*/
       }
 
       /* run feed-forward system and stabilizing PIID controller: */
@@ -462,19 +463,21 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
       }
 
       /* write forces to motors: */
-      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 0, f_local.vec, voltage);
+      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage);
       
-#if 0
-      fprintf(fp, "%f "        /* #1  time step */ 
-              "%f %f %f "      /* #2  gyroscope measurements */
-              "%f %f %f "      /* #3  accelerometer measurements */
-              "%f %f %f "      /* #4  magnetometer sensor measurements */
-              "%f %f %f %f "   /* #5  orientation quaternion estimate (uses #1-4) */
-              "%f %f %f "      /* #6  euler angles estimate (uses #5) */
-              "%f %f %f "      /* #7  global accelerations in NEU frame (uses #1, #3, #5) */
-              "%f %f %f %f"    /* #8  raw values for GPS x, y and ultra_z, baro_z */
-              "%f %f %f %f"    /* #9  position estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
-              "%f %f %f %f\n", /* #10 speed estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
+#if 1
+      EVERY_N_TIMES(10, fprintf(fp,
+              "%f "          /* #1  time step */ 
+              "%f %f %f "    /* #2  gyroscope measurements */
+              "%f %f %f "    /* #3  accelerometer measurements */
+              "%f %f %f "    /* #4  magnetometer sensor measurements */
+              "%f %f %f %f " /* #5  orientation quaternion estimate (uses #1-4) */
+              "%f %f %f "    /* #6  euler angles estimate (uses #5) */
+              "%f %f %f "    /* #7  global accelerations in NEU frame (uses #1, #3, #5) */
+              "%f %f %f %f " /* #8  raw values for GPS x, y and ultra_z, baro_z */
+              "%f %f %f %f " /* #9  position estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
+              "%f %f %f %f " /* #10 speed estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
+              "%f %f %f\n",  /* #11 setpoints for yaw, pitch, roll */
               dt, /* #1 */
               marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, /* #2 */
               marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, /* #3 */
@@ -484,24 +487,10 @@ PERIODIC_THREAD_BEGIN(realtime_thread_func)
               pos_in.acc.x, pos_in.acc.y, pos_in.acc.z, /* #7 */
               pos_in.dx, pos_in.dy, pos_in.ultra_z, pos_in.baro_z, /* #8 */
               pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, /* #9 */
-              pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed); /* #10 */
+              pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed, /* #10 */
+              0.0f, pitch_roll_sp.x, pitch_roll_sp.y)); /* #11 */
    
 #endif
-   }
-   PERIODIC_THREAD_LOOP_END
-}
-PERIODIC_THREAD_END
-
-
-void _main(int argc, char *argv[])
-{
-   (void)argc;
-   (void)argv;
-   const struct timespec realtime_period = {0, REALTIME_PERIOD * 1000 * NSEC_PER_MSEC};
-   periodic_thread_start(&realtime_thread, realtime_thread_func, "realtime_thread", 99, realtime_period, NULL);
-   while (1)
-   {
-      sleep(10000);   
    }
 }
 

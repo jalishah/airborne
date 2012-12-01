@@ -17,7 +17,7 @@
 
 #define HOLGER_I2C_OFF    0
 #define HOLGER_I2C_MIN   20
-#define HOLGER_I2C_MAX  200
+#define HOLGER_I2C_MAX  255
 
 
 
