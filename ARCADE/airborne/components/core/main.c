@@ -261,14 +261,8 @@ void _main(int argc, char *argv[])
    ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.02f);
    quat_t start_quat;
    
-   /* perform initial marg reading to acquire an initial orientation guess: */
-   marg_data_t marg_data;
-   /*platform_read_marg(&marg_data);
-     quaternion_init(&ahrs.quat, &marg_data.acc, &marg_data.mag);*/
- 
    gps_util_t gps_util;
    gps_util_init(&gps_util);
-   gps_rel_data_t gps_rel_data = {0.0f, 0.0f, 0.0f};
 
    flight_detect_init(9, 10000, 0.0f, NULL);
    
@@ -285,6 +279,7 @@ void _main(int argc, char *argv[])
       pos_in_t pos_in;
       pos_in.dt = dt;
       gps_data_t gps_data;
+      marg_data_t marg_data;
       float channels[MAX_CHANNELS];
       float voltage = 16.0f;
       uint16_t sensor_status = platform_read_sensors(&marg_data, &gps_data, &pos_in.ultra_z, &pos_in.baro_z, &voltage, channels);
@@ -292,9 +287,10 @@ void _main(int argc, char *argv[])
       int gps_valid = sensor_status & GPS_VALID;
       if (sensor_status & GPS_VALID)
       {
-         gps_util_update(&gps_rel_data, &gps_util, &gps_data);
-         pos_in.dx = gps_rel_data.dx;
-         pos_in.dy = gps_rel_data.dy;
+         gps_rel_data_t gps_rel = {0.0f, 0.0f, 0.0f};
+         gps_util_update(&gps_rel, &gps_util, &gps_data);
+         pos_in.dx = gps_rel.dx;
+         pos_in.dy = gps_rel.dy;
       }
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
@@ -303,9 +299,7 @@ void _main(int argc, char *argv[])
          cal_reset(&gyro_cal);
       }
       if (!cal_complete(&gyro_cal))
-      {
          continue;
-      }
       if (calibrate)
       {
          EVERY_N_TIMES(10, calpub_send(&marg_data));
@@ -320,7 +314,7 @@ void _main(int argc, char *argv[])
                         marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
                         marg_data.mag.x, marg_data.mag.y, marg_data.mag.z};
 
-      flight_detect(fd_in);
+      int flying = flight_detect(fd_in);
 
       /********************************
        * perform sensor data fusion : *
