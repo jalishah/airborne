@@ -82,7 +82,7 @@ enum
   MS_ZERO, /* motors are always written with 0, thus disabled (bus errors might start them, careful when working on bus drivers!) */
   MS_ENABLED /* motors are armed */
 }
-motor_safety = MS_DISARMED;
+motor_safety = MS_EXCLUDED;
 
 
 enum
@@ -277,18 +277,24 @@ void _main(int argc, char *argv[])
    interval_init(&interval);
    while (1)
    {
+      
       /*******************************************
        * read sensor data and calibrate sensors: *
        *******************************************/
-
       float dt = interval_measure(&interval);
       pos_in_t pos_in;
       pos_in.dt = dt;
-
-      int marg_valid = platform_read_marg(&marg_data) == 0;
-      if (!marg_valid)
+      gps_data_t gps_data;
+      float channels[MAX_CHANNELS];
+      float voltage = 16.0f;
+      uint16_t sensor_status = platform_read_sensors(&marg_data, &gps_data, &pos_in.ultra_z, &pos_in.baro_z, &voltage, channels);
+      int signal_valid = sensor_status & RC_VALID;
+      int gps_valid = sensor_status & GPS_VALID;
+      if (sensor_status & GPS_VALID)
       {
-         continue;
+         gps_util_update(&gps_rel_data, &gps_util, &gps_data);
+         pos_in.dx = gps_rel_data.dx;
+         pos_in.dy = gps_rel_data.dy;
       }
       if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
       {
@@ -300,33 +306,12 @@ void _main(int argc, char *argv[])
       {
          continue;
       }
-
       if (calibrate)
       {
          EVERY_N_TIMES(10, calpub_send(&marg_data));
          continue;
       }
-      
-      gps_data_t gps_data;
-      int gps_valid = platform_read_gps(&gps_data) == 0;
-      if (gps_data.fix < FIX_2D)
-      {
-         gps_valid = 0;
-      }
-      else
-      {
-         gps_valid = 1;
-         gps_util_update(&gps_rel_data, &gps_util, &gps_data);
-         pos_in.dx = gps_rel_data.dx;
-         pos_in.dy = gps_rel_data.dy;
-      }
-      int ultra_valid = platform_read_ultra(&pos_in.ultra_z) == 0;
-      int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
-      float channels[MAX_CHANNELS];
-      int rc_sig_valid = platform_read_rc(channels) == 0;
 
-      float voltage = 16.0f;
-      int voltage_valid = platform_read_voltage(&voltage) == 0;
 
       /* calibration: */
       acc_mag_apply_cal(&marg_data.acc, &marg_data.mag);
@@ -380,7 +365,7 @@ void _main(int argc, char *argv[])
                                                                        roll pos = 0
                                                                        yaw speed = 0
                                                                        z speed = -1 m/s */
-      int nav_sensors_valid = gps_valid && mag_valid && acc_valid;
+      int nav_sensors_valid =  (sensor_status & GPS_VALID) && (sensor_status & MAG_VALID) && (sensor_status & ACC_VALID);
       if (mode == CM_FULL_AUTO)
       {
          /* we do not try to use the remote control as the operator is probably too far away */
