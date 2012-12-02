@@ -78,7 +78,15 @@ f_local_t;
 
 enum
 {
-   CM_DISARMED,  /* motors are completely disabled for safety */
+  MS_EXCLUDED, /* writing the motor controllers is not performed; this might result in a reduced loop time, but is completely safe */
+  MS_ZERO, /* motors are always written with 0, thus disabled (bus errors might start them, careful when working on bus drivers!) */
+  MS_ENABLED /* motors are armed */
+}
+motor_safety = MS_DISARMED;
+
+
+enum
+{
    CM_MANUAL,    /* direct remote control without any position control
                     if the RC signal is lost, altitude stabilization is enabled and the GPS setpoint is reset */
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
@@ -87,13 +95,19 @@ enum
 mode = CM_MANUAL; //SAFE_AUTO;
 
 
+
+int auto_xy = 0;
+int auto_yaw = 0;
+int auto_z = 0;
+
+
 enum
 {
    M_ATT_REL, /* relative attitude control (aka heading hold, axis lock,...) */
    M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
-   M_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
+   M_ATT_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
 }
-manual_mode = M_ATT_ABS;
+m_att_mode = M_ATT_ABS;
 
 
 #define REALTIME_PERIOD (0.006683)
@@ -102,6 +116,7 @@ manual_mode = M_ATT_ABS;
 #define RC_PITCH_ROLL_STICK_P 2.0f
 #define RC_YAW_STICK_P 3.0f
 
+#define STICK_GPS_SPEED_MAX 5.0
 
 
 static int gyro_moved(vec3_t *gyro)
@@ -129,6 +144,12 @@ void die(void)
    }
 }
 
+
+
+static void gps_lost_warning(void)
+{
+   /* TODO */
+}
 
 
 void _main(int argc, char *argv[])
@@ -347,99 +368,169 @@ void _main(int argc, char *argv[])
       pos_update(&pos_estimate, &pos_in);
 
 
-      /******************************************************
-       * run higher level controllers including navigation; *
-       * results are stored in auto_stick:                  *
-       ******************************************************/
+      /**********************
+       * run safety checks: *
+       **********************/
 
-      ctrl_out_t auto_stick;
-   
-      /* run yaw controller: */
-      float yaw_err;
-      auto_stick.yaw = yaw_ctrl_step(&yaw_err, euler.yaw, marg_data.gyro.z, dt);
+      int emergency_stabilize = 0; /* if 1: navigation setpoint set to current position
+                                            yaw speed = 0
+                                            z position is current */
 
-      /* run z controller: */
-      float z_err;
-      auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
-                                   pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
-
-      vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
-      /* we have a gps fix; assisted and autonomous modes are supported */
-      vec2_t speed_sp;
-      if (mode == CM_MANUAL && manual_mode == M_GPS_SPEED)
+      int emergency_landing = 0; /* if 1: absolute attitude mode with: pitch pos = 0
+                                                                       roll pos = 0
+                                                                       yaw speed = 0
+                                                                       z speed = -1 m/s */
+      int nav_sensors_valid = gps_valid && mag_valid && acc_valid;
+      if (mode == CM_FULL_AUTO)
       {
-         /* direct speed control via stick: */
-         speed_sp.x = 10.0f * channels[CH_PITCH] * cosf(euler.yaw);
-         speed_sp.y = 10.0f * channels[CH_ROLL] * sinf(euler.yaw);
-      }
-      else
-      {
-         /* run xy navigation controller: */
-         vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
-         navi_run(&speed_sp, &pos_vec, dt);
-      }
-      /* run speed vector controller: */
-      vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
-      xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
-      /* limit pitch/roll setpoints: */
-      FOR_N(i, 2) pitch_roll_sp.vec[i] = sym_limit(pitch_roll_sp.vec[i], 0.2);
-
-      /* run attitude controller: */
-      vec2_t pitch_roll_ctrl;
-      vec2_t pitch_roll = {{euler.pitch, euler.roll}};
-      if (manual_mode == M_ATT_ABS)
-      {
-         /* interpret sticks as pitch and roll setpoints: */
-         pitch_roll_sp.x = -0.5f * channels[CH_PITCH];
-         pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
-      }
-      vec2_t att_err;
-      vec2_t pitch_roll_speed = {{marg_data.gyro.y, marg_data.gyro.x}};
-      att_ctrl_step(&pitch_roll_ctrl, &att_err, dt, &pitch_roll, &pitch_roll_speed, &pitch_roll_sp);
-      auto_stick.pitch = pitch_roll_ctrl.x;
-      auto_stick.roll = pitch_roll_ctrl.y;
-
-      //EVERY_N_TIMES(1, printf("%f %f %f\n", marg_data.mag.x, marg_data.mag.y, marg_data.mag.z); fflush(stdout));
-      
-      /*************************************
-       * run basic stabilizing controller: *
-       *************************************/
-      
-      /* set up controller inputs: */
-      float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
-      f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
-      if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
-      {
-         ff_piid_sp[0] = auto_stick.roll;
-         ff_piid_sp[1] = -auto_stick.pitch;
-         ff_piid_sp[2] = 0; //auto_stick.yaw;
-         //f_local.gas = 0.0f; // auto_stick.gas * platform_param()->max_thrust_n;
-      }
-      if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
-      {
-         /* mix in rc signals: */
-         if (manual_mode == M_ATT_REL)
+         /* we do not try to use the remote control as the operator is probably too far away */
+         if (!nav_sensors_valid)
          {
-            ff_piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
-            ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+            no_pos_control_warning();
+            emergency_landing = 1;
          }
-         ff_piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
-         f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
-         //EVERY_N_TIMES(10, printf("%f %f %f %f\n", channels[CH_GAS], channels[CH_YAW], channels[CH_PITCH], channels[CH_ROLL]));
-
-         /* adjust thrust by gas stick: */
-         /*if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
-             || (mode == CM_MANUAL))
-         {
-            f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
-         }*/
       }
+      else if (mode == CM_SAFE_AUTO)
+      {
+         if (nav_sensors_valid && !signal_valid)
+         {
+            /* we execute our mission, but warn the user: */
+            rc_lost_warning();
+         }
+         else
+         {
+            no_pos_control_warning();
+            emergency_landing = 1;
+         }
+      }
+      else /* CM_MANUAL */
+      {
+         /* manual check attitude modes: */
+         if (m_att_mode == M_ATT_GPS_SPEED && !gps_valid)
+         {
+            /* we are in ATT_GPS_SPEED and lost GPS: switch to absolute attitude mode */
+            gps_lost_warning();
+            m_att_mode = M_ATT_ABS;
+         }
+         if (m_att_mode >= M_ATT_ABS && !acc_valid)
+         {
+            /* we are in ATT_ABS or ATT_GPS_SPEED and lost ACC: switch back to ATT_REL */
+            acc_lost_warning();
+            m_att_mode = M_ATT_REL;
+         }
 
-      /* run feed-forward system and stabilizing PIID controller: */
-      float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
+         if (!signal_valid)
+         {
+            /* we lost the remote control link: try to stabilize via GPS */
+            sig_lost_warning();
+
+            if (!nav_sensors_valid)
+            {
+               /* we lost an important sensor for navigation */
+               emergency_landing = 1;
+               if (acc_valid)
+               {
+                  no_pos_control_warning();
+               }
+               else
+               {
+                  /* hope that the gyro drift is not getting too strong until we are down */
+                  no_att_control_warning();
+               }
+            }
+            else
+            {
+               /* we still have a GPS fix to stabilize */
+               rc_lost_warning();
+               emergency_stabilize = 1;
+            }
+         }
+      }
       
-      feed_forward_run(&feed_forward, &f_local.vec[1], ff_piid_sp);
-      piid_run(&piid, &f_local.vec[1], gyro_vals, ff_piid_sp);
+
+      /*****************************************************
+       * run higher level controllers including navigation *
+       *****************************************************/
+
+      /* set up controller inputs: */
+      float piid_sp[3] = {0.0f, 0.0f, 0.0f};
+      #define PIID_SP_ROLL  0
+      #define PIID_SP_PITCH 1
+      #define PIID_SP_YAW   2
+      f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};      
+      
+      /* set-up high-level pitch and roll inputs: */
+      vec2_t att_err = {{0.0f, 0.0f}};
+      if (auto_xy || m_att_mode == M_ATT_GPS_SPEED)
+      {
+         vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
+         vec2_t speed_sp;
+         if (m_att_mode == M_ATT_GPS_SPEED)
+         {
+            /* direct speed control via pitch/roll stick: */
+            speed_sp.x = STICK_GPS_SPEED_MAX * channels[CH_PITCH] * cosf(euler.yaw);
+            speed_sp.y = STICK_GPS_SPEED_MAX * channels[CH_ROLL] * sinf(euler.yaw);
+         }
+         else
+         {
+            /* run xy navigation controller: */
+            vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
+            navi_run(&speed_sp, &pos_vec, dt);
+         }
+         
+         /* run speed vector controller: */
+         vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
+         xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
+         
+         /* limit pitch/roll setpoints: */
+         FOR_N(i, 2) pitch_roll_sp.vec[i] = sym_limit(pitch_roll_sp.vec[i], 0.2);
+
+         /* run attitude controller: */
+         vec2_t pitch_roll_ctrl;
+         vec2_t pitch_roll = {{euler.pitch, euler.roll}};
+         if (m_att_mode == M_ATT_ABS)
+         {
+            /* interpret sticks as pitch and roll setpoints: */
+            pitch_roll_sp.x = -0.5f * channels[CH_PITCH];
+            pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
+         }
+         
+         /* run attitude control: */
+         vec2_t pitch_roll_speed = {{marg_data.gyro.y, marg_data.gyro.x}};
+         att_ctrl_step(&pitch_roll_ctrl, &att_err, dt, &pitch_roll, &pitch_roll_speed, &pitch_roll_sp);
+         piid_sp[PIID_SP_PITCH] = -pitch_roll_ctrl.x;
+         piid_sp[PIID_SP_ROLL]  = pitch_roll_ctrl.y;
+      }
+      if (rc_sig_valid && (safety || !auto_xy))
+      {
+         piid_sp[PIID_SP_PITCH] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+         piid_sp[PIID_SP_ROLL]  += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
+      }
+      
+      /* set-up high-level yaw input: */
+      float yaw_err = 0.0f;
+      if (auto_yaw)
+         piid_sp[PIID_SP_YAW] = yaw_ctrl_step(&yaw_err, euler.yaw, marg_data.gyro.z, dt);
+      if (rc_sig_valid && (safety || !auto_yaw))
+         piid_sp[PIID_SP_YAW] -= RC_YAW_STICK_P * channels[CH_YAW];    
+
+      /* set-up high-level gas input: */
+      float z_err = 0.0f;
+      if (auto_gas)
+         f_local.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
+      if (rc_sig_valid && (safety || !auto_gas))
+         if (channels[CH_GAS] < f_local.gas || !auto_gas)
+            f_local.gas = channels[CH_GAS];
+      f_local.gas *= platform_param()->max_thrust_n;
+
+ 
+      /************************************************************
+       * run feed-forward system and stabilizing PIID controller: *
+       ************************************************************/
+ 
+      float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
+      feed_forward_run(&feed_forward, &f_local.vec[1], piid_sp);
+      piid_run(&piid, &f_local.vec[1], gyro_vals, piid_sp);
  
  
       /********************
@@ -448,7 +539,7 @@ void _main(int argc, char *argv[])
  
       /* requirements specification for take-off: */
       int common_require = marg_valid && voltage_valid && ultra_valid;
-      int manual_require = common_require && (manual_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
+      int manual_require = common_require && (m_att_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       int full_auto_require = common_require && baro_valid && gps_valid;
       int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       
@@ -472,7 +563,14 @@ void _main(int argc, char *argv[])
       memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
 
       /* write forces to motors: */
-      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage);
+      if (motor_safety != MS_EXCLUDED)
+      {
+         piid.int_enable = platform_write_motors(/*motostate_enabled()*/ (motor_safety == MS_ENABLED), f_local.vec, voltage);
+      }
+      else
+      {
+         piid.int_enable = 0; /* disable integrator */
+      }
       msleep(1);
 
 #if 1
