@@ -15,7 +15,7 @@ static float tresh;
 static float *wghts;
 
 
-int flight_detect_init(size_t dimension, size_t window, float treshold, float *weights)
+void flight_detect_init(size_t dimension, size_t window, float treshold, float *weights)
 {
    ASSERT_ONCE();
    wghts = weights;

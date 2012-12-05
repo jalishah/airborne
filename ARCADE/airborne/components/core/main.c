@@ -109,7 +109,7 @@ enum
    M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
    M_ATT_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
 }
-m_att_mode = M_ATT_ABS;
+manual_mode = M_ATT_ABS;
 
 
 #define REALTIME_PERIOD (0.01)
@@ -259,6 +259,7 @@ static void _main(int argc, char *argv[])
    
    gps_util_t gps_util;
    gps_util_init(&gps_util);
+   gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
 
    flight_detect_init(9, 10000, 0.0f, NULL);
    
@@ -286,9 +287,11 @@ static void _main(int argc, char *argv[])
       pos_in_t pos_in;
       pos_in.dt = dt;
       
+      marg_data_t marg_data;
       int marg_valid = platform_read_marg(&marg_data) == 0;
       if (!marg_valid)
          continue;
+      
       if (cal_sample_apply(&gyro_cal, &marg_data.gyro.vec[0]) == 0 && gyro_moved(&marg_data.gyro))
       {
          if (interval_measure(&gyro_move_interval) > 1.0)
@@ -330,13 +333,77 @@ static void _main(int argc, char *argv[])
 
       int flying = flight_detect(fd_in);
 
+      float voltage = 16.0f;
+      int voltage_valid = platform_read_voltage(&voltage) == 0;
+
+      /* calibration: */
+      acc_mag_apply_cal(&marg_data.acc, &marg_data.mag);
+
+ 
+      /********************************
+       * perform sensor data fusion : *
+       ********************************/
+
+      int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
+      
+      /* global z orientation calibration: */
+      quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};
+      quat_mul(&ahrs.quat, &zrot_quat, &ahrs.quat);
+      
+      /* compute euler angles from quaternion: */
+      euler_t euler;
+      quat_to_euler(&euler, &ahrs.quat);
+
+      if (ahrs_state == 1)
+      {
+         start_quat = ahrs.quat;
+         LOG(LL_DEBUG, "initial orientation - yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
+      }
+      if (ahrs_state < 0 || !cal_complete(&gyro_cal))
+         continue;
+
+      ONCE(LOG(LL_INFO, "system initialized"));
+      
+      /* compute NEU accelerations using quaternion: */
+      quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
+      pos_in.acc.z *= -1.0f; /* <-- transform from NED to NEU frame */
+      
+      /* compute next 3d position estimate: */
+      pos_t pos_estimate;
+      pos_update(&pos_estimate, &pos_in);
+
+
+      /*******************************
+       * run high-level controllers: *
+       *******************************/
+
+      ctrl_out_t auto_stick;
+      float yaw_err, z_err;
+      auto_stick.yaw = yaw_ctrl_step(&yaw_err, euler.yaw, marg_data.gyro.z, dt);
+      auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
+                                   pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
+      
+      vec2_t speed_sp;
+      if (mode == CM_MANUAL && manual_mode == M_ATT_GPS_SPEED)
+      {
+         /* direct speed control via stick: */
+         speed_sp.x = 10.0f * channels[CH_PITCH] * cosf(euler.yaw);
+         speed_sp.y = 10.0f * channels[CH_ROLL] * sinf(euler.yaw);
+      }
+      else
+      {
+         /* run xy navigation controller: */
+         vec2_t pos_vec = {{pos_estimate.x.pos, pos_estimate.y.pos}};
+         navi_run(&speed_sp, &pos_vec, dt);
+      }
+
       /* run speed vector controller: */
+      vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
       vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
       xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
       FOR_N(i, 2) pitch_roll_sp.vec[i] = sym_limit(pitch_roll_sp.vec[i], 0.2);
 
       /* run attitude controller: */
-      vec2_t pitch_roll_ctrl;
       vec2_t pitch_roll = {{euler.pitch, euler.roll}};
       if (manual_mode == M_ATT_ABS)
       {
@@ -346,6 +413,7 @@ static void _main(int argc, char *argv[])
       }
       vec2_t att_err;
       vec2_t pitch_roll_speed = {{marg_data.gyro.y, marg_data.gyro.x}};
+      vec2_t pitch_roll_ctrl;
       att_ctrl_step(&pitch_roll_ctrl, &att_err, dt, &pitch_roll, &pitch_roll_speed, &pitch_roll_sp);
       auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
@@ -354,28 +422,26 @@ static void _main(int argc, char *argv[])
        * run basic stabilizing controller: *
        *************************************/
 
-      float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
+      float piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
       float norm_gas = 0.0f; /* interval: [0.0 ... 1.0] */
 
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
-         ff_piid_sp[0] = auto_stick.roll;
-         ff_piid_sp[1] = -auto_stick.pitch;
-         ff_piid_sp[2] = 0; //auto_stick.yaw;
+         piid_sp[0] = auto_stick.roll;
+         piid_sp[1] = -auto_stick.pitch;
+         piid_sp[2] = 0; //auto_stick.yaw;
          norm_gas = auto_stick.gas;
       }
       if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
-         vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
-         vec2_t speed_sp;
-         if (m_att_mode == M_ATT_GPS_SPEED)
+         /* mix in rc signals: */
+         if (manual_mode == M_ATT_REL)
          {
-            /* direct speed control via pitch/roll stick: */
-            speed_sp.x = STICK_GPS_SPEED_MAX * channels[CH_PITCH] * cosf(euler.yaw);
-            speed_sp.y = STICK_GPS_SPEED_MAX * channels[CH_ROLL] * sinf(euler.yaw);
+            piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
+            piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
          }
-         ff_piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
+         piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
 
          /* limit thrust using "gas" stick: */
          float stick_gas = channels[CH_GAS];
@@ -404,7 +470,7 @@ static void _main(int argc, char *argv[])
  
       /* requirements specification for take-off: */
       int common_require = marg_valid && voltage_valid && ultra_valid;
-      int manual_require = common_require && (m_att_mode == M_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
+      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       int full_auto_require = common_require && baro_valid && gps_valid;
       int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] > 0.5;
       
