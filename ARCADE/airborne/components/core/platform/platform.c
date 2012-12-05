@@ -88,6 +88,48 @@ int platform_write_motors(int enabled, float forces[4], float voltage)
 }
 
 
+uint16_t platform_read_sensors(marg_data_t *marg_data, gps_data_t *gps_data, float *ultra, float *baro, float *voltage, float channels[MAX_CHANNELS])
+{
+   uint16_t status = 0;
+   int marg_valid = platform_read_marg(marg_data) == 0;
+   if (marg_valid)
+   {
+      /* TODO: check absolute values */
+      status |= MARG_VALID;
+   }
+   
+   if (platform_read_gps(gps_data) == 0)
+   {
+      if (gps_data->fix >= FIX_2D)
+      {
+         status |= GPS_VALID;
+      }
+   }
+   
+   if (platform_read_ultra(ultra) == 0)
+   {
+      status |= ULTRA_VALID;
+   }
+    
+   if (platform_read_baro(baro) == 0)
+   {
+      status |= BARO_VALID;
+   }
+   
+   if (platform_read_voltage(voltage) == 0)
+   {
+      status |= VOLTAGE_VALID;
+   }
+   
+   if (platform_read_rc(channels) == 0)
+   {
+      status |= RC_VALID;
+   }
+   
+   return status;
+}
+
+
 platform_param_t *platform_param(void)
 {
    return &platform.param;

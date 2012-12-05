@@ -73,6 +73,21 @@ int platform_read_baro(float *baro);
 int platform_read_voltage(float *voltage);
 
 
+#define GYRO_VALID    0x01
+#define ACC_VALID     0x02
+#define MAG_VALID     0x04
+#define GPS_VALID     0x08
+#define ULTRA_VALID   0x10
+#define BARO_VALID    0x20
+#define VOLTAGE_VALID 0x40
+#define RC_VALID      0x80
+#define MARG_VALID    (GYRO_VALID | ACC_VALID | MAG_VALID)
+#define SENSORS_VALID (MARG_VALID | GPS_VALID | ULTRA_VALID | BARO_VALID | VOLTAGE_VALID | RC_VALID)
+
+
+uint16_t platform_read_sensors(marg_data_t *marg_data, gps_data_t *gps_data, float *ultra, float *baro, float *voltage, float channels[MAX_CHANNELS]);
+
+
 int platform_write_motors(int enabled, float forces[4], float voltage);
 
 

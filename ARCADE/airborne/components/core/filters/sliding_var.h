@@ -1,6 +1,6 @@
 
 /*
-   Sliding Average Interface
+   Sliding Variance Interface
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 
@@ -16,27 +16,28 @@
  */
 
 
-#ifndef __SLIDING_AVG_H__
-#define __SLIDING_AVG_H__
+#ifndef __SLIDING_VAR_H__
+#define __SLIDING_VAR_H__
 
 
-#include <stddef.h>
+#include "sliding_avg.h"
 
 
 typedef struct
 {
+   sliding_avg_t avg;
    float *hist;
    size_t wnd_size;
-   float sum;
+   float square_sum;
    size_t pos;
 } 
-sliding_avg_t;
+sliding_var_t;
 
 
-void sliding_avg_init(sliding_avg_t *sliding_avg, size_t wnd_size, float init);
+void sliding_var_init(sliding_var_t *sliding_var, size_t wnd_size, float init);
 
-float sliding_avg_calc(sliding_avg_t *sliding_avg, float val);
+float sliding_var_calc(sliding_var_t *sliding_var, float val);
 
 
-#endif /* __SLIDING_AVG_H__ */
+#endif /* __SLIDING_VAR_H__ */
 
