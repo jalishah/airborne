@@ -99,6 +99,7 @@ core:
       altitude:
          manual: false
          speed_p: 0.1
+         speed_d: 0.1
          speed_i: 0.05
          speed_imax: 1.0
          init_setpoint: 2.0

@@ -27,6 +27,7 @@
 #include <opcd_params.h>
 #include <util.h>
 #include <daemon.h>
+#include <threads/periodic_thread.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
 
@@ -44,6 +45,7 @@
 #include "control/basic/feed_forward.h"
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
+#include "hardware/util/mag_decl.h"
 #include "control/position/navi.h"
 #include "control/position/att_ctrl.h"
 #include "control/position/z_ctrl.h"
@@ -96,7 +98,7 @@ enum
 manual_mode = M_ATT_ABS;
 
 
-#define REALTIME_PERIOD (0.006683)
+#define REALTIME_PERIOD (0.01)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -131,7 +133,7 @@ void die(void)
 
 
 
-void _main(int argc, char *argv[])
+static void _main(int argc, char *argv[])
 {
    (void)argc;
    (void)argv;
@@ -229,7 +231,7 @@ void _main(int argc, char *argv[])
 
 
    calibration_t gyro_cal;
-   cal_init(&gyro_cal, 3, 1000);
+   cal_init(&gyro_cal, 3, 500);
    
    feed_forward_t feed_forward;
    feed_forward_init(&feed_forward, REALTIME_PERIOD);
@@ -250,9 +252,20 @@ void _main(int argc, char *argv[])
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
    
    LOG(LL_INFO, "entering main loop");
-   interval_t interval;
+   interval_t interval, gyro_move_interval;
    interval_init(&interval);
-   while (1)
+   interval_init(&gyro_move_interval);
+   //Filter1 dt_filter;
+   //filter1_lp_init(&dt_filter, 0.01, REALTIME_PERIOD, 1);
+   //dt_filter.z[0] = REALTIME_PERIOD;
+
+   periodic_thread_t _thread; periodic_thread_t *thread = &_thread;
+   _thread.name = "mainloop"; _thread.running = 1;
+   _thread.periodic_data.period.tv_sec = 0;
+   _thread.periodic_data.period.tv_nsec = NSEC_PER_SEC * REALTIME_PERIOD;
+   float mag_bias = 0.0f;
+   float mag_decl = 0.0f;
+   PERIODIC_THREAD_LOOP_BEGIN
    {
       /*******************************************
        * read sensor data and calibrate sensors: *
@@ -261,21 +274,15 @@ void _main(int argc, char *argv[])
       float dt = interval_measure(&interval);
       pos_in_t pos_in;
       pos_in.dt = dt;
-
+      
       int marg_valid = platform_read_marg(&marg_data) == 0;
       if (!marg_valid)
-      {
          continue;
-      }
-      if (cal_sample_apply(&gyro_cal, (float *)&marg_data.gyro.vec) == 0 && gyro_moved(&marg_data.gyro))
+      if (cal_sample_apply(&gyro_cal, &marg_data.gyro.vec[0]) == 0 && gyro_moved(&marg_data.gyro))
       {
-         LOG(LL_ERROR, "gyro moved during calibration, retrying");
-         sleep(1);
+         if (interval_measure(&gyro_move_interval) > 1.0)
+            LOG(LL_ERROR, "gyro moved during calibration, retrying");
          cal_reset(&gyro_cal);
-      }
-      if (!cal_complete(&gyro_cal))
-      {
-         continue;
       }
 
       if (calibrate)
@@ -297,6 +304,10 @@ void _main(int argc, char *argv[])
          pos_in.dx = gps_rel_data.dx;
          pos_in.dy = gps_rel_data.dy;
       }
+      if (gps_valid)
+         ONCE(LOG(LL_ERROR, "declination lookup yields: %f", mag_decl);
+              mag_decl = mag_decl_lookup(gps_data.lat, gps_data.lon));
+      
       int ultra_valid = platform_read_ultra(&pos_in.ultra_z) == 0;
       int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
       float channels[MAX_CHANNELS];
@@ -312,24 +323,26 @@ void _main(int argc, char *argv[])
        * perform sensor data fusion : *
        ********************************/
 
-      euler_t euler;
       int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
-      if (ahrs_state < 0)
-      {
-         continue;
-      }
-      else
-      {
-         /* compute euler angles from quaternion: */
-         quat_to_euler(&euler, &ahrs.quat);
-         if (ahrs_state == 1)
-         {
-            start_quat = ahrs.quat;
-            LOG(LL_INFO, "system initialized");
-            LOG(LL_DEBUG, "initial orientation estimate; yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
-         }
-      }
+      
+      /* global z orientation calibration: */
+      quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};
+      quat_mul(&ahrs.quat, &zrot_quat, &ahrs.quat);
+      
+      /* compute euler angles from quaternion: */
+      euler_t euler;
+      quat_to_euler(&euler, &ahrs.quat);
 
+      if (ahrs_state == 1)
+      {
+         start_quat = ahrs.quat;
+         LOG(LL_DEBUG, "initial orientation - yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
+      }
+      if (ahrs_state < 0 || !cal_complete(&gyro_cal))
+         continue;
+
+      ONCE(LOG(LL_INFO, "system initialized"));
+      
       /* compute NEU accelerations using quaternion: */
       quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
       pos_in.acc.z *= -1.0f; /* <-- transform from NED to NEU frame */
@@ -354,7 +367,6 @@ void _main(int argc, char *argv[])
       float z_err;
       auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
                                    pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
-      EVERY_N_TIMES(10, printf("%f %f %f\n", pos_estimate.ultra_z.pos, z_err, auto_stick.gas); fflush(stdout));
 
       vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
       /* we have a gps fix; assisted and autonomous modes are supported */
@@ -374,7 +386,6 @@ void _main(int argc, char *argv[])
       /* run speed vector controller: */
       vec2_t speed_vec = {{pos_estimate.x.speed, pos_estimate.y.speed}};
       xy_speed_ctrl_run(&pitch_roll_sp, &speed_sp, &speed_vec, euler.yaw);
-      /* limit pitch/roll setpoints: */
       FOR_N(i, 2) pitch_roll_sp.vec[i] = sym_limit(pitch_roll_sp.vec[i], 0.2);
 
       /* run attitude controller: */
@@ -420,13 +431,15 @@ void _main(int argc, char *argv[])
 
          /* limit thrust using "gas" stick: */
          float stick_gas = channels[CH_GAS];
-         if (   (mode == CM_SAFE_AUTO && stick_gas < norm_gas)
-             || (mode == CM_MANUAL))
+         if (   (/*mode == CM_SAFE_AUTO && */stick_gas < norm_gas)
+             /*|| (mode == CM_MANUAL)*/)
          {
-            norm_gas = channels[CH_GAS];
+            norm_gas = stick_gas;
          }
       }
+      /* scale relative gas value to absolute newtons: */
       f_local.gas = norm_gas * platform_param()->max_thrust_n;
+      //EVERY_N_TIMES(10, printf("%f %f %f\n", pos_estimate.ultra_z.pos, z_err, f_local.gas); fflush(stdout));
 
       /* run feed-forward system and stabilizing PIID controller: */
       float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
@@ -466,7 +479,9 @@ void _main(int argc, char *argv[])
 
       /* write forces to motors: */
       piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 0, f_local.vec, voltage);
-      msleep(1);
+ 
+      //float fdt; filter1_run(&dt_filter, &dt, &fdt);
+
 
 #if 0
       fprintf(fp,
@@ -495,6 +510,7 @@ void _main(int argc, char *argv[])
    
 #endif
    }
+   PERIODIC_THREAD_LOOP_END
 }
 
 

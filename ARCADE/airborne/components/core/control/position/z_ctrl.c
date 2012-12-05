@@ -33,6 +33,7 @@ static float z_neutral_gas;
 static tsfloat_t speed_p;
 static tsfloat_t speed_i;
 static tsfloat_t speed_imax;
+static tsfloat_t speed_d;
 
 /* following thread-safe variables are initialized by OPCD: */
 static tsfloat_t init_setpoint;
@@ -89,7 +90,7 @@ float z_ctrl_step(float *z_err, float ground_z_pos, float z_pos, float speed, fl
    float spd_sp = speed_func(_z_err);
    float spd_err = spd_sp - speed;
    float val;
-   val = z_neutral_gas + pid_control(&controller, /*spd_err*/ _z_err, speed, dt);
+   val = z_neutral_gas + pid_control(&controller, /*spd_err*/ _z_err, -speed, dt);
    *z_err = _z_err;
    return val;
 }
@@ -103,6 +104,7 @@ void z_ctrl_init(float neutral_gas)
    {
       {"speed_p", &speed_p},
       {"speed_i", &speed_i},
+      {"speed_d", &speed_d},
       {"speed_imax", &speed_imax},
       {"init_setpoint", &init_setpoint},
       {"init_mode_is_ground", &init_mode_is_ground},
@@ -112,7 +114,7 @@ void z_ctrl_init(float neutral_gas)
 
    tsfloat_init(&setpoint, tsfloat_get(&init_setpoint));
    tsint_init(&mode_is_ground, tsint_get(&init_mode_is_ground));
-   pid_init(&controller, &speed_p, &speed_i, NULL, &speed_imax);
+   pid_init(&controller, &speed_p, &speed_i, &speed_d, &speed_imax);
    z_neutral_gas = neutral_gas;
 }
 

@@ -195,7 +195,7 @@ static int16_t get_lookup_value(uint8_t x, uint8_t y)
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 
-float get_declination(float lat, float lon)
+float mag_decl_lookup(float lat, float lon)
 {
     int16_t decSW, decSE, decNW, decNE, lonmin, latmin;
     uint8_t latmin_index,lonmin_index;
@@ -219,6 +219,7 @@ float get_declination(float lat, float lon)
     /* approximate declination within the grid using bilinear interpolation */
     decmin = (lon - lonmin) / 5 * (decSE - decSW) + decSW;
     decmax = (lon - lonmin) / 5 * (decNE - decNW) + decNW;
-    return (lat - latmin) / 5 * (decmax - decmin) + decmin;
+    float decl_deg = (lat - latmin) / 5 * (decmax - decmin) + decmin;
+    return decl_deg * M_PI / 180.0f;
 }
 

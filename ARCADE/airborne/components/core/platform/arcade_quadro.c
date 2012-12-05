@@ -66,6 +66,7 @@
 #define IMTX3 (1.0f / (4.0f * F_D))
 
 
+/* inverse coupling matrix for ARCADE quadrotor: */
 static float inv_coupling_matrix[4 * N_MOTORS] =
 {         /* gas    pitch    roll   yaw */
    /* m0 */ IMTX1,   0.0f, -IMTX2,  IMTX3,
@@ -95,13 +96,16 @@ static void convex_opt_run(float forces[4]);
 
 static int write_motors(int enabled, float forces[4], float voltage)
 {
-   //convex_opt_run(forces);
+   float opt_forces[4];
+   memcpy(opt_forces, forces, sizeof(float) * 4);
+   convex_opt_run(opt_forces);
+
    float ground_dist = 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
    {
       if (ground_dist > CONVEXOPT_MIN_GROUND_DIST)
       {
-         //convex_opt_run(forces);
+         memcpy(forces, opt_forces, sizeof(float) * 4);
       }
    }
    /* computation of rpm ^ 2 out of the desired forces */
@@ -146,7 +150,7 @@ int arcade_quadro_init(platform_t *plat)
    convex_opt_init();
    
    LOG(LL_INFO, "setting platform parameters");
-   plat->param.max_thrust_n = 20.0f;
+   plat->param.max_thrust_n = 28.0f;
    plat->param.mass_kg = 0.95f;
 
    LOG(LL_INFO, "initializing i2c bus");

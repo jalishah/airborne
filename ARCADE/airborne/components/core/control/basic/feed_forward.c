@@ -41,12 +41,13 @@ void feed_forward_init(feed_forward_t *ff, float Ts)
       (2.0f * Ts * Ts - 8.0f * T * T) / a0,
       (4.0f * T * T   - 4.0f * FILT_FF_D * T * Ts + Ts * Ts) / a0
    };
-   float b[3];
 
-#define __FF_B_SETUP(j) \
-   b[0] =  (2.0f * j * (2.0f * CTRL_TMC + Ts)) / a0; \
-   b[1] = -(8.0f * j * CTRL_TMC) / a0; \
-   b[2] =  (2.0f * j * (2.0f * CTRL_TMC - Ts)) / a0;
+   float b[3];
+   /* "lazyness macro" for setting up the b array: */
+   #define __FF_B_SETUP(j) \
+      b[0] =  (2.0f * j * (2.0f * CTRL_TMC + Ts)) / a0; \
+      b[1] = -(8.0f * j * CTRL_TMC) / a0; \
+      b[2] =  (2.0f * j * (2.0f * CTRL_TMC - Ts)) / a0;
 
    /* x-axis: */
    __FF_B_SETUP(CTRL_JXX_JYY);

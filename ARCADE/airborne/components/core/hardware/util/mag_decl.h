@@ -25,9 +25,11 @@
 #ifndef __MAG_DECL_H__
 #define __MAG_DECL_H__
 
-/* returns magnetic declination in degrees
+
+/* returns magnetic declination in radians
    for a given latitude/longitude in degrees */
-float get_declination(float lat, float lon);
+float mag_decl_lookup(float lat, float lon);
 
 
 #endif // __MAG_DECL_H__
+

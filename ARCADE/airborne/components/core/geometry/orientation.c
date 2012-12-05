@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <util.h>
 
 #include "orientation.h"
 
@@ -81,6 +82,29 @@ void quat_to_euler(euler_t *euler, const quat_t *quat)
    euler->yaw = normalize_euler_0_2pi(atan2f(2.f * (x * y + z * s), sqx - sqy - sqz + sqw));
    euler->pitch = asinf(-2.f * (x * z - y * s));
    euler->roll = atan2f(2.f * (y * z + x * s), -sqx - sqy + sqz + sqw);
+}
+
+
+void quat_mul(quat_t *t, const quat_t *q, const quat_t *r)
+{
+   quat_t _t;
+   _t.vec[0] = r->vec[0] * q->vec[0] - r->vec[1] * q->vec[1] - r->vec[2] * q->vec[2] - r->vec[3] * q->vec[3];
+   _t.vec[1] = r->vec[0] * q->vec[1] + r->vec[1] * q->vec[0] - r->vec[2] * q->vec[3] + r->vec[3] * q->vec[2];
+   _t.vec[2] = r->vec[0] * q->vec[2] + r->vec[1] * q->vec[3] + r->vec[2] * q->vec[0] - r->vec[3] * q->vec[1];
+   _t.vec[3] = r->vec[0] * q->vec[3] - r->vec[1] * q->vec[2] + r->vec[2] * q->vec[1] + r->vec[3] * q->vec[0];
+   quat_normalize(&_t);
+   *t = _t;
+}
+
+
+void quat_normalize(quat_t *q)
+{
+   float norm = 0.0f;
+   FOR_N(i, 4)
+      norm += q->vec[i] * q->vec[i];
+   norm = 1.0f / sqrt(norm);
+   FOR_N(i, 4)
+      q->vec[i] *= norm;
 }
 
 

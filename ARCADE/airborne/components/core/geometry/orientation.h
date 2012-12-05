@@ -80,6 +80,14 @@ void quat_copy(quat_t *q_out, const quat_t *q_in);
 void quat_inv(quat_t *q_out, const quat_t *q_in);
 
 
+/* t = q x r */
+void quat_mul(quat_t *t, const quat_t *q, const quat_t *r);
+
+
+/* normalizes quaternion q */
+void quat_normalize(quat_t *q);
+
+
 /* convert quaternion to euler angles: */
 void quat_to_euler(euler_t *euler, const quat_t *quat);
 

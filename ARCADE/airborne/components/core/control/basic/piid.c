@@ -126,6 +126,6 @@ void piid_run(piid_t *piid, float u_ctrl[4], float gyro[3], float rc[3])
    {
       u_ctrl[i] += PIID_KP * error[i] + PIID_KI * piid->xi_err[i] + PIID_KII * piid->xii_err[i] + PIID_KD * derror[i];
    }
-   u_ctrl[2] += PIID_Y_KP * error[2] +  PIID_Y_KI * piid->xi_err[2] + PIID_Y_KII * piid->xii_err[2] +  PIID_Y_KD * derror[2];
+   u_ctrl[2] += PIID_Y_KP * error[2] + PIID_Y_KI * piid->xi_err[2] + PIID_Y_KII * piid->xii_err[2] + PIID_Y_KD * derror[2];
 }
 
