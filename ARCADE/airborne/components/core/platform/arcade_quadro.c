@@ -147,7 +147,7 @@ int arcade_quadro_init(platform_t *plat)
    
    LOG(LL_INFO, "setting platform parameters");
    plat->param.max_thrust_n = 20.0f;
-   plat->param.mass_kg = 1.1f;
+   plat->param.mass_kg = 0.95f;
 
    LOG(LL_INFO, "initializing i2c bus");
    THROW_ON_ERR(i2c_bus_open(&i2c_3, "/dev/i2c-3"));

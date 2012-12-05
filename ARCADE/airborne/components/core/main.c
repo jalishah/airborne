@@ -201,7 +201,7 @@ void _main(int argc, char *argv[])
    xy_speed_ctrl_init();
    att_ctrl_init();
    yaw_ctrl_init();
-   z_ctrl_init(platform_param()->mass_kg * 10.0f);
+   z_ctrl_init(platform_param()->mass_kg * 10.0f / platform_param()->max_thrust_n);
    navi_init();
 
    LOG(LL_INFO, "initializing command interface");
@@ -354,6 +354,7 @@ void _main(int argc, char *argv[])
       float z_err;
       auto_stick.gas = z_ctrl_step(&z_err, pos_estimate.ultra_z.pos,
                                    pos_estimate.baro_z.pos, pos_estimate.baro_z.speed, dt);
+      EVERY_N_TIMES(10, printf("%f %f %f\n", pos_estimate.ultra_z.pos, z_err, auto_stick.gas); fflush(stdout));
 
       vec2_t pitch_roll_sp = {{0.0f, 0.0f}};
       /* we have a gps fix; assisted and autonomous modes are supported */
@@ -382,8 +383,8 @@ void _main(int argc, char *argv[])
       if (manual_mode == M_ATT_ABS)
       {
          /* interpret sticks as pitch and roll setpoints: */
-         pitch_roll_sp.x = -0.5f * channels[CH_PITCH];
-         pitch_roll_sp.y = 0.5f * channels[CH_ROLL];
+         pitch_roll_sp.x = -1.0f * channels[CH_PITCH];
+         pitch_roll_sp.y = 1.0f * channels[CH_ROLL];
       }
       vec2_t att_err;
       vec2_t pitch_roll_speed = {{marg_data.gyro.y, marg_data.gyro.x}};
@@ -391,8 +392,6 @@ void _main(int argc, char *argv[])
       auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
 
-      //EVERY_N_TIMES(1, printf("%f %f %f\n", marg_data.mag.x, marg_data.mag.y, marg_data.mag.z); fflush(stdout));
-      
       /*************************************
        * run basic stabilizing controller: *
        *************************************/
@@ -400,12 +399,14 @@ void _main(int argc, char *argv[])
       /* set up controller inputs: */
       float ff_piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
+      float norm_gas = 0.0f; /* interval: [0.0 ... 1.0] */
+
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
          ff_piid_sp[0] = auto_stick.roll;
          ff_piid_sp[1] = -auto_stick.pitch;
          ff_piid_sp[2] = 0; //auto_stick.yaw;
-         //f_local.gas = 0.0f; // auto_stick.gas * platform_param()->max_thrust_n;
+         norm_gas = auto_stick.gas;
       }
       if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
@@ -416,16 +417,16 @@ void _main(int argc, char *argv[])
             ff_piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
          }
          ff_piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
-         f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
-         //EVERY_N_TIMES(10, printf("%f %f %f %f\n", channels[CH_GAS], channels[CH_YAW], channels[CH_PITCH], channels[CH_ROLL]));
 
-         /* adjust thrust by gas stick: */
-         /*if (   (mode == CM_SAFE_AUTO && channels[CH_GAS] < f_local.gas)
+         /* limit thrust using "gas" stick: */
+         float stick_gas = channels[CH_GAS];
+         if (   (mode == CM_SAFE_AUTO && stick_gas < norm_gas)
              || (mode == CM_MANUAL))
          {
-            f_local.gas = channels[CH_GAS] * platform_param()->max_thrust_n;
-         }*/
+            norm_gas = channels[CH_GAS];
+         }
       }
+      f_local.gas = norm_gas * platform_param()->max_thrust_n;
 
       /* run feed-forward system and stabilizing PIID controller: */
       float gyro_vals[3] = {marg_data.gyro.x, -marg_data.gyro.y, -marg_data.gyro.z};
@@ -461,13 +462,13 @@ void _main(int argc, char *argv[])
          //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
-      memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+      //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
 
       /* write forces to motors: */
-      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 1, f_local.vec, voltage);
+      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 0, f_local.vec, voltage);
       msleep(1);
 
-#if 1
+#if 0
       fprintf(fp,
               "%f "          /* #1  time step */ 
               "%f %f %f "    /* #2  gyroscope measurements */
