@@ -43,7 +43,6 @@ core:
 
 core_debug_writer:
   binary: 'logging/core_debug_writer/core_debug_writer.py'
-  depends: [core]
 
 opcd:
   binary: 'opcd/opcd.py'
