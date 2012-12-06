@@ -226,24 +226,22 @@ static void _main(int argc, char *argv[])
 
    motostate_init(0.21f, 0.15f, 0.1f);
 
-   FILE *fp = fopen("/root/MOBICOM/build/temp/log.dat","w");
-   if (fp == NULL) 
-   {
-      printf("ERROR: could not open File");
-      die();
-   }
-   fprintf(fp, "dt " /* #1 */
-               "gyro_x gyro_y gyro_z " /* #2 */
-               "acc_x acc_y acc_z " /* #3 */
-               "mag_x mag_y mag_z " /* #4 */
-               "q0 q1 q2 q3 " /* #5 */
-               "yaw pitch roll " /* #6 */
-               "acc_e acc_n acc_u " /* #7 */
-               "raw_e raw_n raw_ultra_u raw_baro_u " /* #8 */
-               "pos_e pos_n pos_ultra_u pos_baro_u " /* #9 */
-               "speed_e pos_n speed_ultra_u pos_ultra_u " /* #10 */
-               "yaw_sp pitch_sp roll_sp\n"); /* #11 */
+   void *debug_socket = scl_get_socket("debug");
+   char buffer[4096];
 
+   int buf_len = sprintf(buffer, "dt " /* #1 */
+           "gyro_x gyro_y gyro_z " /* #2 */
+           "acc_x acc_y acc_z " /* #3 */
+           "mag_x mag_y mag_z " /* #4 */
+           "q0 q1 q2 q3 " /* #5 */
+           "yaw pitch roll " /* #6 */
+           "acc_e acc_n acc_u " /* #7 */
+           "raw_e raw_n raw_ultra_u raw_baro_u " /* #8 */
+           "pos_e pos_n pos_ultra_u pos_baro_u " /* #9 */
+           "speed_e pos_n speed_ultra_u pos_ultra_u " /* #10 */
+           "yaw_sp pitch_sp roll_sp"); /* #11 */
+ 
+   scl_copy_send_dynamic(debug_socket, buffer, buf_len);
 
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 500);
@@ -498,8 +496,7 @@ static void _main(int argc, char *argv[])
  
       //float fdt; filter1_run(&dt_filter, &dt, &fdt);
 
-#if 0
-      fprintf(fp,
+      buf_len = sprintf(buffer,
               "%f "          /* #1  time step */ 
               "%f %f %f "    /* #2  gyroscope measurements */
               "%f %f %f "    /* #3  accelerometer measurements */
@@ -510,7 +507,7 @@ static void _main(int argc, char *argv[])
               "%f %f %f %f " /* #8  raw values for GPS x, y and ultra_z, baro_z */
               "%f %f %f %f " /* #9  position estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
               "%f %f %f %f " /* #10 speed estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
-              "%f %f %f\n",  /* #11 setpoints for yaw, pitch, roll */
+              "%f %f %f",    /* #11 setpoints for yaw, pitch, roll */
               dt, /* #1 */
               marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, /* #2 */
               marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, /* #3 */
@@ -522,8 +519,8 @@ static void _main(int argc, char *argv[])
               pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, /* #9 */
               pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed, /* #10 */
               0.0f, pitch_roll_sp.x, pitch_roll_sp.y); /* #11 */
+      scl_copy_send_dynamic(debug_socket, buffer, buf_len);
    
-#endif
    }
    PERIODIC_THREAD_LOOP_END
 }
