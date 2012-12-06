@@ -8,7 +8,7 @@
 #include <sclhelper.h>
 
 #include "scl_voltage.h"
-#include "../../../filters/lowhi.h"
+#include "../../../filters/filter.h"
 #include "../../../util/logger/logger.h"
 
 
@@ -45,10 +45,9 @@ SIMPLE_THREAD_BEGIN(thread_func)
    voltage = scl_read_voltage();
    
    /* filter set-up: */
-   filt2nd_t filter;
-   filter_lp_init(&filter, 0.1f, 0.95f, 1.0f, 1.0f);
-   filter.z2[0] =       filter.b * voltage - filter.a2 * voltage;
-   filter.z1[0] = 2.0 * filter.b * voltage - filter.a1 * voltage + filter.z2[0];
+   Filter1 filter;
+   filter1_lp_init(&filter, 0.1f, 1.0f, 1);
+   filter.z[0] = voltage;
 
    /* battery reading loop: */
    SIMPLE_THREAD_LOOP_BEGIN
@@ -57,7 +56,7 @@ SIMPLE_THREAD_BEGIN(thread_func)
       pthread_mutex_lock(&mutex);
       if (voltage_raw < 17.0 && voltage_raw > 10.0)
       {
-         filter_lp_run(&filter, &voltage_raw, &voltage);
+         filter1_run(&filter, &voltage_raw, &voltage);
          status = 0;
       }
       else
