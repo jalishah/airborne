@@ -82,11 +82,16 @@ components:
       - core_ctrl: req
       - opcd_ctrl: req
       - cal: sub
-   
+
+   - name: core_debug_writer
+     gates:
+      - debug: sub
+
    - name: core
      gates:
       - cal: pub
       - log: pub
+      - debug: pub
       - gps: sub
       - ctrl: rep
       - mon: pub
@@ -151,6 +156,7 @@ components:
 #
 
 connections:
+   - [ core.debug,               core_debug_writer.debug]
    - [ core.cal,                 cal_server.cal]
    - [ core.ctrl,                cal_server.core_ctrl]
    - [ opcd.ctrl,                cal_server.opcd_ctrl]
