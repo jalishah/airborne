@@ -11,17 +11,21 @@ static sliding_var_t *vars;
 static size_t dim;
 static size_t init_cnt;
 static size_t wnd;
-static float tresh;
-static float *wghts;
+static float fly_tresh;
+static float crash_tresh;
+static float hyst;
+static int hyst_cnt = 0;
+static flight_state_t state = FS_STANDING;
 
 
-void flight_detect_init(size_t dimension, size_t window, float treshold, float *weights)
+void flight_detect_init(size_t window, size_t hysteresis, float fly_treshold, float crash_treshold)
 {
    ASSERT_ONCE();
-   wghts = weights;
-   tresh = treshold;
+   hyst = hysteresis;
+   fly_tresh = fly_treshold;
+   crash_tresh = crash_treshold;
    wnd = window;
-   dim = dimension;
+   dim = 3;
    vars = malloc(dim * sizeof(sliding_var_t));
    ASSERT_NOT_NULL(vars);
    FOR_N(i, dim)
@@ -31,23 +35,43 @@ void flight_detect_init(size_t dimension, size_t window, float treshold, float *
 }
 
 
-int flight_detect(float *in)
+flight_state_t flight_detect(float acc[3])
 {
-   init_cnt++;
-   if (init_cnt < wnd)
-   {
-      return 0;
-   }
-   init_cnt = wnd;
-   float sum = 0.0f;
+   /* perfom signal processing: */
+   float sum = 0;
    FOR_N(i, dim)
    {
-      if (wghts)
-         sum += wghts[i] * sliding_var_calc(&vars[i], in[i]);
-      else
-         sum += sliding_var_calc(&vars[i], in[i]);
+      float var = sliding_var_calc(&vars[i], acc[i]);
+      sum += var;
    }
-   printf("%f\n", sum);
-   return sum > tresh;
+   sum /= dim;
+
+   printf("%f ", sum);
+   /* signal/hysteresis-based state identification: */
+   
+   if (sum > crash_tresh)
+      state = FS_CRASHED;
+
+   if (state != FS_CRASHED)
+   {
+      if (sum > fly_tresh)
+      {
+         /* flying -> flying / standing -> flying */
+         state = 1;
+         hyst_cnt = 0;
+      }
+      else
+      {
+         if (state == 1)
+         {
+            /* flying -> standing */
+            if (hyst_cnt++ == hyst)
+            {
+               state = 0;
+            }
+         }
+      }
+   }
+   return state;
 }
 

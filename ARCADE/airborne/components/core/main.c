@@ -259,7 +259,7 @@ static void _main(int argc, char *argv[])
    gps_util_init(&gps_util);
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
 
-   flight_detect_init(9, 10000, 0.0f, NULL);
+   flight_detect_init(50, 20, 2.0, 150.0);
    
    LOG(LL_INFO, "entering main loop");
    interval_t interval, gyro_move_interval;
@@ -324,13 +324,6 @@ static void _main(int argc, char *argv[])
       int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
       float channels[MAX_CHANNELS];
       int rc_sig_valid = platform_read_rc(channels) == 0;
-
-      float fd_in[9] = {marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z,
-                        marg_data.acc.x, marg_data.acc.y, marg_data.acc.z,
-                        marg_data.mag.x, marg_data.mag.y, marg_data.mag.z};
-
-      int flying = flight_detect(fd_in);
-
       float voltage = 16.0f;
       int voltage_valid = platform_read_voltage(&voltage) == 0;
 
@@ -343,6 +336,7 @@ static void _main(int argc, char *argv[])
        ********************************/
 
       int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
+      int flying = flight_detect(&marg_data.acc.vec[0]);
       
       /* global z orientation calibration: */
       quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};

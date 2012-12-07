@@ -3,10 +3,19 @@
 #define __FLIGHT_DETECT_H__
 
 
-void flight_detect_init(size_t dimension, size_t window, float treshold, float *weights);
+typedef enum
+{
+   FS_STANDING,
+   FS_FLYING,
+   FS_CRASHED
+}
+flight_state_t;
 
 
-int flight_detect(float *in);
+void flight_detect_init(size_t window, size_t hysteresis, float fly_tresh, float crash_tresh);
+
+
+flight_state_t flight_detect(float acc[3]);
 
 
 #endif /* __FLIGHT_DETECT_H__ */
