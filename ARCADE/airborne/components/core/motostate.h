@@ -4,6 +4,9 @@
 #define __MOTOSTATE_H__
 
 
+#include "flight_detect.h"
+
+
 /* initializes motors state tracker */
 void motostate_init(float _ground_max, float _gas_start, float _gas_stop);
 
@@ -14,7 +17,7 @@ int motostate_enabled(void);
 int motostate_controllable(void);
 
 /* updates the motors state tracker */
-void motostate_update(float ground_z, float gas, float dt, int start_allowed);
+void motostate_update(float ground_z, flight_state_t flight_state, float gas, float dt, int start_allowed);
 
 
 #endif /* __MOTOSTATE_H__ */

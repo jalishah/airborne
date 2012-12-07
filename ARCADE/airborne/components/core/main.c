@@ -224,7 +224,7 @@ static void _main(int argc, char *argv[])
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motostate_init(0.21f, 0.15f, 0.1f);
+   motostate_init(1.0f, 0.15f, 0.1f);
 
    void *debug_socket = scl_get_socket("debug");
    char buffer[4096];
@@ -336,7 +336,7 @@ static void _main(int argc, char *argv[])
        ********************************/
 
       int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
-      int flying = flight_detect(&marg_data.acc.vec[0]);
+      flight_state_t flight_state = flight_detect(&marg_data.acc.vec[0]);
       
       /* global z orientation calibration: */
       quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};
@@ -476,17 +476,16 @@ static void _main(int argc, char *argv[])
 
       /* start motors if requirements are met AND conditions apply;
        * stopping the motors does not depend on requirements: */
-      motostate_update(pos_in.ultra_z, f_local.gas / platform_param()->max_thrust_n, dt, satisfied);
+      motostate_update(pos_in.ultra_z, flight_state, norm_gas, dt, satisfied);
       if (!motostate_controllable())
       {
-         //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-         //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
-      //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
 
       /* write forces to motors: */
-      piid.int_enable = platform_write_motors(/*motostate_enabled()*/ 0, f_local.vec, voltage);
+      piid.int_enable = platform_write_motors(motostate_enabled(), f_local.vec, voltage);
  
       //float fdt; filter1_run(&dt_filter, &dt, &fdt);
 

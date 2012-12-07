@@ -2,6 +2,7 @@
 
 #include "motostate.h"
 
+
 /* motors state representation */
 static enum 
 {
@@ -18,15 +19,19 @@ static float gas_stop;
 static float ground_max;
 
 
-static int motors_start_condition(float ground_z, float gas)
+static int motors_start_condition(float ground_z, flight_state_t flight_state, float gas)
 {
-   return ground_z <= ground_max && gas >= gas_start;
+   return    ground_z <= ground_max 
+          && gas >= gas_start 
+          && flight_state == FS_STANDING;
 }
 
 
-static int motors_stop_condition(float ground_z, float gas)
+static int motors_stop_condition(float ground_z, flight_state_t flight_state, float gas)
 {
-   return ground_z <= ground_max && gas <= gas_stop;
+   return ground_z <= ground_max
+          && gas <= gas_stop
+          && flight_state != FS_FLYING;
 }
 
 
@@ -70,12 +75,12 @@ int motostate_controllable(void)
 }
 
 
-void motostate_update(float ground_z, float gas, float dt, int start_allowed)
+void motostate_update(float ground_z, flight_state_t flight_state, float gas, float dt, int start_allowed)
 {
    switch (state)
    {
       case MOTORS_HALTED:
-         if (motors_start_condition(ground_z, gas) && start_allowed)
+         if (motors_start_condition(ground_z, flight_state, gas) && start_allowed)
          {
             state = MOTORS_STARTING;
             reset_timer();
@@ -83,7 +88,7 @@ void motostate_update(float ground_z, float gas, float dt, int start_allowed)
          break;
       
       case MOTORS_STARTING:
-         if (motors_stop_condition(ground_z, gas))
+         if (motors_stop_condition(ground_z, flight_state, gas))
          {
             state = MOTORS_STOPPING;
             reset_timer();
@@ -95,7 +100,7 @@ void motostate_update(float ground_z, float gas, float dt, int start_allowed)
          break;
       
       case MOTORS_SPINNING:
-         if (motors_stop_condition(ground_z, gas))
+         if (motors_stop_condition(ground_z, flight_state, gas))
          {
             state = MOTORS_STOPPING;
             reset_timer();
@@ -103,7 +108,7 @@ void motostate_update(float ground_z, float gas, float dt, int start_allowed)
          break;
       
       case MOTORS_STOPPING:
-         if (motors_start_condition(ground_z, gas))
+         if (motors_start_condition(ground_z, flight_state, gas))
          {
             state = MOTORS_STARTING;
             reset_timer();

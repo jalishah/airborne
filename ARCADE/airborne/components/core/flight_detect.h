@@ -3,6 +3,9 @@
 #define __FLIGHT_DETECT_H__
 
 
+#include <stddef.h>
+
+
 typedef enum
 {
    FS_STANDING,
