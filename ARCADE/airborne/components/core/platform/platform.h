@@ -88,6 +88,10 @@ int platform_read_voltage(float *voltage);
 uint16_t platform_read_sensors(marg_data_t *marg_data, gps_data_t *gps_data, float *ultra, float *baro, float *voltage, float channels[MAX_CHANNELS]);
 
 
+
+#define MOTORS_INT_ENABLE 0x01
+#define MOTORS_RPM_STABLE 0x02
+
 int platform_write_motors(int enabled, float forces[4], float voltage);
 
 

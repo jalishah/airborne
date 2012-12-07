@@ -485,7 +485,8 @@ static void _main(int argc, char *argv[])
       }
 
       /* write forces to motors: */
-      piid.int_enable = platform_write_motors(motostate_enabled(), f_local.vec, voltage);
+      int mot_status = platform_write_motors(motostate_enabled(), f_local.vec, voltage);
+      piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
       //float fdt; filter1_run(&dt_filter, &dt, &fdt);
 

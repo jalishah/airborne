@@ -91,6 +91,9 @@ static float *rpm_square;
 static void convex_opt_init(void);
 static void convex_opt_run(float forces[4]);
 
+static int rpm_stable_count = 0;
+static int rpm_stable = 100;
+static float rpm_inval_epsilon = 10;
 
 
 
@@ -100,7 +103,7 @@ static int write_motors(int enabled, float forces[4], float voltage)
    memcpy(opt_forces, forces, sizeof(float) * 4);
    convex_opt_run(opt_forces);
 
-   float ground_dist = 1.0f;
+   float ground_dist = CONVEXOPT_MIN_GROUND_DIST - 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
    {
       if (ground_dist > CONVEXOPT_MIN_GROUND_DIST)
@@ -110,15 +113,34 @@ static int write_motors(int enabled, float forces[4], float voltage)
    }
    /* computation of rpm ^ 2 out of the desired forces */
    inv_coupling_calc(&inv_coupling, rpm_square, forces);
-   int int_enable = force2twi_calc(motor_setpoints, voltage, rpm_square, N_MOTORS);
-   if (!enabled)
+   int status = 0;
+   if (enabled)
    {
-      memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
-      int_enable = 0;
+      if (force2twi_calc(motor_setpoints, voltage, rpm_square, N_MOTORS))
+         status |= MOTORS_INT_ENABLE;
    }
+   else
+      memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
+   
+   /* write motors and read rpm: */
    uint8_t rpm[4];
    holger_blmc_write_read(motor_setpoints, rpm);
-   return int_enable;
+   
+   /* check if rpm readings match our expectations: */
+   FOR_N(i, N_MOTORS)
+   {
+      if (motor_setpoints[i] < HOLGER_I2C_MIN)
+         rpm_stable_count = 0;
+      else if (fabs(1000.0f * rpm[i] - sqrtf(rpm_square[i])) > rpm_inval_epsilon)
+         rpm_stable_count = 0;
+   }
+   if (rpm_stable_count++ == rpm_stable)
+   {
+      rpm_stable_count = rpm_stable;
+      status |= MOTORS_RPM_STABLE;
+   }
+
+   return status;
 }
 
 
