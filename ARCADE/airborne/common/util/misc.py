@@ -36,7 +36,7 @@ def user_data_dir():
    path = getenv('HOME') + sep + '.ARCADE'
    try:
       makedirs(path)
-   except OSError, e:
+   except OSError as e:
       if e.errno != errno.EEXIST:
          raise
    return path
@@ -76,7 +76,7 @@ def daemonize(name, main):
       pidf.release()
       with DaemonContext(pidfile = pidf):
          _main_wrapper(name, main)
-   except Exception, e:
+   except Exception as e:
       print 'Could not daemonize:', str(e)
       exit(1)
 
