@@ -45,7 +45,6 @@
 #include "hardware/util/calibration.h"
 #include "hardware/util/gps_util.h"
 #include "hardware/util/mag_decl.h"
-#include "flight_detect.h"
 #include "control/position/navi.h"
 #include "control/position/att_ctrl.h"
 #include "control/position/z_ctrl.h"
@@ -97,12 +96,6 @@ enum
 mode = CM_MANUAL; //SAFE_AUTO;
 
 
-
-int auto_xy = 0;
-int auto_yaw = 0;
-int auto_z = 0;
-
-
 enum
 {
    M_ATT_REL, /* relative attitude control (aka heading hold, axis lock,...) */
@@ -147,6 +140,35 @@ void die(void)
 }
 
 
+static void realtime_init(void)
+{
+   ASSERT_ONCE();
+
+   LOG(LL_INFO, "setting maximum CPU clock");
+   if (system("echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") != 0)
+   {
+      LOG(LL_ERROR, "failed");
+      die();
+   }
+ 
+   LOG(LL_INFO, "setting up real-time scheduling");
+   static struct sched_param sp;
+   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
+   sched_setscheduler(getpid(), SCHED_FIFO, &sp);
+
+   if (nice(-20) == -1)
+   {
+      LOG(LL_ERROR, "could not renice process");
+      die();
+   }
+
+   if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
+   {
+      LOG(LL_ERROR, "mlockall() failed");
+      die();
+   }
+}
+
 
 static void _main(int argc, char *argv[])
 {
@@ -179,30 +201,7 @@ static void _main(int argc, char *argv[])
 
    LOG(LL_INFO, "core initializing");
 
-   
-   LOG(LL_INFO, "setting maximum CPU clock");
-   if (system("echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") != 0)
-   {
-      LOG(LL_ERROR, "failed");
-      die();
-   }
-   
-   LOG(LL_INFO, "setting up real-time scheduling");
-   struct sched_param sp;
-   sp.sched_priority = sched_get_priority_max(SCHED_FIFO);
-   sched_setscheduler(getpid(), SCHED_FIFO, &sp);
-
-   if (nice(-20) == -1)
-   {
-      LOG(LL_ERROR, "could not renice process");
-      die();
-   }
-
-   if (mlockall(MCL_CURRENT | MCL_FUTURE) != 0)
-   {
-      LOG(LL_ERROR, "mlockall() failed");
-      die();
-   }
+   realtime_init();
 
    LOG(LL_INFO, "initializing platform");
    if (platform_init(arcade_quadro_init) < 0)
@@ -265,9 +264,6 @@ static void _main(int argc, char *argv[])
    interval_t interval, gyro_move_interval;
    interval_init(&interval);
    interval_init(&gyro_move_interval);
-   //Filter1 dt_filter;
-   //filter1_lp_init(&dt_filter, 0.01, REALTIME_PERIOD, 1);
-   //dt_filter.z[0] = REALTIME_PERIOD;
 
    periodic_thread_t _thread; periodic_thread_t *thread = &_thread;
    _thread.name = "mainloop"; _thread.running = 1;
@@ -285,9 +281,13 @@ static void _main(int argc, char *argv[])
       pos_in_t pos_in;
       pos_in.dt = dt;
       
+      float voltage = 16.0f;
+      float channels[MAX_CHANNELS];
       marg_data_t marg_data;
+      gps_data_t gps_data;
+      uint16_t sensor_status = platform_read_sensors(&marg_data, &gps_data, &pos_in.ultra_z, &pos_in.baro_z, &voltage, channels);
       int marg_valid = platform_read_marg(&marg_data) == 0;
-      if (!marg_valid)
+      if (!(sensor_status & MARG_VALID))
          continue;
       
       if (cal_sample_apply(&gyro_cal, &marg_data.gyro.vec[0]) == 0 && gyro_moved(&marg_data.gyro))
@@ -303,29 +303,14 @@ static void _main(int argc, char *argv[])
          continue;
       }
       
-      gps_data_t gps_data;
-      int gps_valid = platform_read_gps(&gps_data) == 0;
-      if (gps_data.fix < FIX_2D)
+      if (sensor_status & GPS_VALID)
       {
-         gps_valid = 0;
-      }
-      else
-      {
-         gps_valid = 1;
          gps_util_update(&gps_rel_data, &gps_util, &gps_data);
          pos_in.dx = gps_rel_data.dx;
          pos_in.dy = gps_rel_data.dy;
-      }
-      if (gps_valid)
          ONCE(LOG(LL_ERROR, "declination lookup yields: %f", mag_decl);
               mag_decl = mag_decl_lookup(gps_data.lat, gps_data.lon));
-      
-      int ultra_valid = platform_read_ultra(&pos_in.ultra_z) == 0;
-      int baro_valid = platform_read_baro(&pos_in.baro_z) == 0;
-      float channels[MAX_CHANNELS];
-      int rc_sig_valid = platform_read_rc(channels) == 0;
-      float voltage = 16.0f;
-      int voltage_valid = platform_read_voltage(&voltage) == 0;
+      }
 
       /* calibration: */
       acc_mag_apply_cal(&marg_data.acc, &marg_data.mag);
@@ -420,25 +405,30 @@ static void _main(int argc, char *argv[])
 
       if (mode >= CM_SAFE_AUTO || (mode == CM_MANUAL && manual_mode == M_ATT_ABS))
       {
-         piid_sp[0] = auto_stick.roll;
-         piid_sp[1] = -auto_stick.pitch;
-         piid_sp[2] = 0; //auto_stick.yaw;
+         piid_sp[PIID_PITCH] = -auto_stick.pitch;
+         piid_sp[PIID_ROLL] = auto_stick.roll;
+      }
+
+      if (mode >= CM_SAFE_AUTO)
+      {
+         piid_sp[PIID_YAW] = auto_stick.yaw;
          norm_gas = auto_stick.gas;
       }
+
       if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
          if (manual_mode == M_ATT_REL)
          {
-            piid_sp[0] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
-            piid_sp[1] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+            piid_sp[PIID_PITCH] += RC_PITCH_ROLL_STICK_P * channels[CH_PITCH];
+            piid_sp[PIID_ROLL] += RC_PITCH_ROLL_STICK_P * channels[CH_ROLL];
          }
-         piid_sp[2] -= RC_YAW_STICK_P * channels[CH_YAW];
+         piid_sp[PIID_YAW] -= RC_YAW_STICK_P * channels[CH_YAW];
 
          /* limit thrust using "gas" stick: */
          float stick_gas = channels[CH_GAS];
-         if (   (/*mode == CM_SAFE_AUTO && */stick_gas < norm_gas)
-             /*|| (mode == CM_MANUAL)*/)
+         if (   (mode == CM_SAFE_AUTO && stick_gas < norm_gas)
+             || (mode == CM_MANUAL))
          {
             norm_gas = stick_gas;
          }
@@ -488,8 +478,6 @@ static void _main(int argc, char *argv[])
       int mot_status = platform_write_motors(motostate_enabled(), f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
-      //float fdt; filter1_run(&dt_filter, &dt, &fdt);
-
       buf_len = sprintf(buffer,
               "%f "          /* #1  time step */ 
               "%f %f %f "    /* #2  gyroscope measurements */

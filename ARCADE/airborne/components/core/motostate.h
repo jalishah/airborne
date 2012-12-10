@@ -4,7 +4,7 @@
 #define __MOTOSTATE_H__
 
 
-#include "flight_detect.h"
+#include "sigproc/flight_detect.h"
 
 
 /* initializes motors state tracker */

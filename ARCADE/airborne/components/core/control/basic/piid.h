@@ -61,6 +61,12 @@ void piid_init(piid_t *ctrl, float sample_time);
 
 void piid_reset(piid_t *piid);
 
+
+
+#define PIID_PITCH 1
+#define PIID_ROLL  0
+#define PIID_YAW   2
+
 void piid_run(piid_t *ctrl, float u_ctrl[3], float gyro[3], float rc[3]);
 
 
