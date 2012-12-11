@@ -227,34 +227,30 @@ static void _main(int argc, char *argv[])
    motostate_init(1.0f, 0.15f, 0.1f);
 
    void *debug_socket = scl_get_socket("debug");
-   char buffer[4096];
-
-   char *s = "";
-   msgpack_pack_raw_body(pk, s, strlen(s));
 
    /* initialize msgpack helpers: */
-   msgpack_sbuffer *buffer = msgpack_sbuffer_new();
-   msgpack_packer *pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
-   char *dbg_spec = {"dt ", /* #1 */
-      "gyro_x", "gyro_y", "gyro_z", /* #2 */
-      "acc_x", "acc_y", "acc_z", /* #3 */
-      "mag_x", "mag_y", "mag_z", /* #4 */
-      "q0", "q1", "q2", "q3", /* #5 */
-      "yaw", "pitch", "roll", /* #6 */
-      "acc_e", "acc_n", "acc_u", /* #7 */
-      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u", /* #8 */
-      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u", /* #9 */
-      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u", /* #10 */
-      "yaw_sp", "pitch_sp", "roll_sp"}; /* #11 */
+   msgpack_sbuffer *msgpack_buf = msgpack_sbuffer_new();
+   msgpack_packer *pk = msgpack_packer_new(msgpack_buf, msgpack_sbuffer_write);
+   char *dbg_spec[] = {"dt ",                              /*  1 */
+      "gyro_x", "gyro_y", "gyro_z",                        /*  2 -  4 */
+      "acc_x", "acc_y", "acc_z",                           /*  5 -  9 */
+      "mag_x", "mag_y", "mag_z",                           /*  8 - 10 */
+      "q0", "q1", "q2", "q3",                              /* 11 - 14 */
+      "yaw", "pitch", "roll",                              /* 15 - 17 */
+      "acc_e", "acc_n", "acc_u",                           /* 18 - 20 */
+      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u",       /* 21 - 24 */
+      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u",       /* 25 - 28 */
+      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u", /* 29 - 32 */
+      "yaw_sp", "pitch_sp", "roll_sp"};                    /* 33 - 35 */
    /* send header: */
-   msgpack_array(ARRAY_SIZE(dbg_spec)):
-   FOR_N(i, ARRAY_SIZE(dbg_spec))
+   msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
+   FOR_EACH(i, dbg_spec)
    {
       size_t len = strlen(dbg_spec[i]);
       msgpack_pack_raw(pk, len);
       msgpack_pack_raw_body(pk, dbg_spec[i], len);
    }
-   scl_copy_send_dynamic(debug_socket, buffer->data, buffer->size);
+   scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
 
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 500);
@@ -491,31 +487,44 @@ static void _main(int argc, char *argv[])
       int mot_status = platform_write_motors(/*motostate_enabled()*/0, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
-      buf_len = sprintf(buffer,
-              "%f "          /* #1  time step */ 
-              "%f %f %f "    /* #2  gyroscope measurements */
-              "%f %f %f "    /* #3  accelerometer measurements */
-              "%f %f %f "    /* #4  magnetometer sensor measurements */
-              "%f %f %f %f " /* #5  orientation quaternion estimate (uses #1-4) */
-              "%f %f %f "    /* #6  euler angles estimate (uses #5) */
-              "%f %f %f "    /* #7  global accelerations in NEU frame (uses #1, #3, #5) */
-              "%f %f %f %f " /* #8  raw values for GPS x, y and ultra_z, baro_z */
-              "%f %f %f %f " /* #9  position estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
-              "%f %f %f %f " /* #10 speed estimates for GPS x, y and ultra_z, baro_z (uses #1, #7, #8) */
-              "%f %f %f",    /* #11 setpoints for yaw, pitch, roll */
-              dt, /* #1 */
-              marg_data.gyro.x, marg_data.gyro.y, marg_data.gyro.z, /* #2 */
-              marg_data.acc.x, marg_data.acc.y, marg_data.acc.z, /* #3 */
-              marg_data.mag.x, marg_data.mag.y, marg_data.mag.z, /* #4 */
-              ahrs.quat.q0, ahrs.quat.q1, ahrs.quat.q2, ahrs.quat.q3, /* #5 */
-              euler.yaw, euler.pitch, euler.roll, /* #6 */
-              pos_in.acc.x, pos_in.acc.y, pos_in.acc.z, /* #7 */
-              pos_in.dx, pos_in.dy, pos_in.ultra_z, pos_in.baro_z, /* #8 */
-              pos_estimate.x.pos, pos_estimate.y.pos, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, /* #9 */
-              pos_estimate.x.speed, pos_estimate.y.speed, pos_estimate.ultra_z.speed, pos_estimate.baro_z.speed, /* #10 */
-              0.0f, pitch_roll_sp.x, pitch_roll_sp.y); /* #11 */
-      scl_copy_send_dynamic(debug_socket, buffer, buf_len);
-   
+      msgpack_sbuffer_clear(msgpack_buf);
+      msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
+      msgpack_pack_float(pk, dt);                         /*  1 */
+      msgpack_pack_float(pk, marg_data.gyro.x);           /*  2 */
+      msgpack_pack_float(pk, marg_data.gyro.y);           /*  3 */
+      msgpack_pack_float(pk, marg_data.gyro.z);           /*  4 */
+      msgpack_pack_float(pk, marg_data.acc.x);            /*  5 */
+      msgpack_pack_float(pk, marg_data.acc.y);            /*  6 */
+      msgpack_pack_float(pk, marg_data.acc.z);            /*  7 */
+      msgpack_pack_float(pk, marg_data.mag.x);            /*  8 */
+      msgpack_pack_float(pk, marg_data.mag.y);            /*  9 */
+      msgpack_pack_float(pk, marg_data.mag.z);            /* 10 */
+      msgpack_pack_float(pk, ahrs.quat.q0);               /* 11 */
+      msgpack_pack_float(pk, ahrs.quat.q1);               /* 12 */
+      msgpack_pack_float(pk, ahrs.quat.q2);               /* 13 */
+      msgpack_pack_float(pk, ahrs.quat.q3);               /* 14 */
+      msgpack_pack_float(pk, euler.yaw);                  /* 15 */
+      msgpack_pack_float(pk, euler.pitch);                /* 16 */
+      msgpack_pack_float(pk, euler.roll);                 /* 17 */
+      msgpack_pack_float(pk, pos_in.acc.x);               /* 18 */
+      msgpack_pack_float(pk, pos_in.acc.y);               /* 19 */
+      msgpack_pack_float(pk, pos_in.acc.z);               /* 20 */
+      msgpack_pack_float(pk, pos_in.dx);                  /* 21 */
+      msgpack_pack_float(pk, pos_in.dy);                  /* 22 */
+      msgpack_pack_float(pk, pos_in.ultra_z);             /* 23 */
+      msgpack_pack_float(pk, pos_in.baro_z);              /* 24 */
+      msgpack_pack_float(pk, pos_estimate.x.pos);         /* 25 */
+      msgpack_pack_float(pk, pos_estimate.y.pos);         /* 26 */
+      msgpack_pack_float(pk, pos_estimate.ultra_z.pos);   /* 27 */
+      msgpack_pack_float(pk, pos_estimate.baro_z.pos);    /* 28 */
+      msgpack_pack_float(pk, pos_estimate.x.speed);       /* 29 */
+      msgpack_pack_float(pk, pos_estimate.y.speed);       /* 30 */
+      msgpack_pack_float(pk, pos_estimate.ultra_z.speed); /* 31 */
+      msgpack_pack_float(pk, pos_estimate.baro_z.speed);  /* 32 */
+      msgpack_pack_float(pk, 0.0f);                       /* 33 */
+      msgpack_pack_float(pk, pitch_roll_sp.x);            /* 34 */
+      msgpack_pack_float(pk, pitch_roll_sp.y);            /* 35 */
+      scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
    }
    PERIODIC_THREAD_LOOP_END
 }
