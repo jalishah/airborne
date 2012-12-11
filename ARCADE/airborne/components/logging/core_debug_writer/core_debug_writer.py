@@ -12,12 +12,10 @@ def main(name):
       now = datetime.today().isoformat().replace(':', '')
       f = open(user_data_dir() + sep + 'core_debug_%s.log' % now, "wb")
       while True:
-         line = socket.recv()
-         f.write(line + '\n')
+         f.write(socket.recv())
    finally:
       f.close()
 
 
-main('core_debug_writer')
-#daemonize('core_debug_writer', main)
+daemonize('core_debug_writer', main)
 
