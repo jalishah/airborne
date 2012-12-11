@@ -46,7 +46,6 @@ flight_state_t flight_detect(float acc[3])
    }
    sum /= dim;
 
-   printf("%f ", sum);
    /* signal/hysteresis-based state identification: */
    
    if (sum > crash_tresh)

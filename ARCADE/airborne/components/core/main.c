@@ -300,7 +300,6 @@ static void _main(int argc, char *argv[])
       marg_data_t marg_data;
       gps_data_t gps_data;
       uint16_t sensor_status = platform_read_sensors(&marg_data, &gps_data, &pos_in.ultra_z, &pos_in.baro_z, &voltage, channels);
-      int marg_valid = platform_read_marg(&marg_data) == 0;
       if (!(sensor_status & MARG_VALID))
          continue;
       
@@ -429,7 +428,7 @@ static void _main(int argc, char *argv[])
          norm_gas = auto_stick.gas;
       }
 
-      if (rc_sig_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
+      if ((sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
          if (manual_mode == M_ATT_REL)
@@ -465,10 +464,10 @@ static void _main(int argc, char *argv[])
        ********************/
  
       /* requirements specification for take-off: */
-      int common_require = marg_valid && voltage_valid && ultra_valid;
-      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? gps_valid : 1) && rc_sig_valid && channels[CH_SWITCH] > 0.5;
-      int full_auto_require = common_require && baro_valid && gps_valid;
-      int safe_auto_require = full_auto_require && rc_sig_valid && channels[CH_SWITCH] > 0.5;
+      int common_require = sensor_status & (VOLTAGE_VALID | ULTRA_VALID);
+      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? (sensor_status & GPS_VALID) : 1) && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
+      int full_auto_require = common_require && (sensor_status & (BARO_VALID | GPS_VALID));
+      int safe_auto_require = full_auto_require && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
       
       int satisfied = 0; /* initial value applies to CM_DISABLED */
       if (mode == CM_MANUAL)
@@ -489,7 +488,7 @@ static void _main(int argc, char *argv[])
       }
 
       /* write forces to motors: */
-      int mot_status = platform_write_motors(motostate_enabled(), f_local.vec, voltage);
+      int mot_status = platform_write_motors(/*motostate_enabled()*/0, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
       buf_len = sprintf(buffer,
