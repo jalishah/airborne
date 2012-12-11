@@ -30,6 +30,7 @@
 #include <threads/periodic_thread.h>
 #include <threadsafe_types.h>
 #include <sclhelper.h>
+#include <msgpack.h>
 
 #include "util/time/interval.h"
 #include "util/logger/logger.h"
@@ -228,19 +229,32 @@ static void _main(int argc, char *argv[])
    void *debug_socket = scl_get_socket("debug");
    char buffer[4096];
 
-   int buf_len = sprintf(buffer, "dt " /* #1 */
-           "gyro_x gyro_y gyro_z " /* #2 */
-           "acc_x acc_y acc_z " /* #3 */
-           "mag_x mag_y mag_z " /* #4 */
-           "q0 q1 q2 q3 " /* #5 */
-           "yaw pitch roll " /* #6 */
-           "acc_e acc_n acc_u " /* #7 */
-           "raw_e raw_n raw_ultra_u raw_baro_u " /* #8 */
-           "pos_e pos_n pos_ultra_u pos_baro_u " /* #9 */
-           "speed_e pos_n speed_ultra_u pos_ultra_u " /* #10 */
-           "yaw_sp pitch_sp roll_sp"); /* #11 */
- 
-   scl_copy_send_dynamic(debug_socket, buffer, buf_len);
+   char *s = "";
+   msgpack_pack_raw_body(pk, s, strlen(s));
+
+   /* initialize msgpack helpers: */
+   msgpack_sbuffer *buffer = msgpack_sbuffer_new();
+   msgpack_packer *pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
+   char *dbg_spec = {"dt ", /* #1 */
+      "gyro_x", "gyro_y", "gyro_z", /* #2 */
+      "acc_x", "acc_y", "acc_z", /* #3 */
+      "mag_x", "mag_y", "mag_z", /* #4 */
+      "q0", "q1", "q2", "q3", /* #5 */
+      "yaw", "pitch", "roll", /* #6 */
+      "acc_e", "acc_n", "acc_u", /* #7 */
+      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u", /* #8 */
+      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u", /* #9 */
+      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u", /* #10 */
+      "yaw_sp", "pitch_sp", "roll_sp"}; /* #11 */
+   /* send header: */
+   msgpack_array(ARRAY_SIZE(dbg_spec)):
+   FOR_N(i, ARRAY_SIZE(dbg_spec))
+   {
+      size_t len = strlen(dbg_spec[i]);
+      msgpack_pack_raw(pk, len);
+      msgpack_pack_raw_body(pk, dbg_spec[i], len);
+   }
+   scl_copy_send_dynamic(debug_socket, buffer->data, buffer->size);
 
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 500);
