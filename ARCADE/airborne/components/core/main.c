@@ -281,6 +281,8 @@ static void _main(int argc, char *argv[])
    _thread.periodic_data.period.tv_nsec = NSEC_PER_SEC * REALTIME_PERIOD;
    float mag_bias = 0.0f;
    float mag_decl = 0.0f;
+   gps_data_t gps_data;
+   memset(&gps_data, 0, sizeof(gps_data));
    PERIODIC_THREAD_LOOP_BEGIN
    {
       
@@ -294,7 +296,6 @@ static void _main(int argc, char *argv[])
       float voltage = 16.0f;
       float channels[MAX_CHANNELS];
       marg_data_t marg_data;
-      gps_data_t gps_data;
       uint16_t sensor_status = platform_read_sensors(&marg_data, &gps_data, &pos_in.ultra_z, &pos_in.baro_z, &voltage, channels);
       if (!(sensor_status & MARG_VALID))
          continue;
