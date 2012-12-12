@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os import sep
+from os import sep, symlink, unlink
 from scl import generate_map
 from misc import daemonize, user_data_dir
 from datetime import datetime
@@ -10,12 +10,18 @@ def main(name):
    socket = generate_map(name)['debug']
    try:
       now = datetime.today().isoformat().replace(':', '')
-      f = open(user_data_dir() + sep + 'core_debug_%s.log' % now, "wb")
+      symlink_file = user_data_dir() + sep + 'core_debug.msgpack'
+      unlink(symlink_file)
+      new_file = user_data_dir() + sep + 'core_debug_%s.msgpack' % now
+      symlink(new_file, symlink_file)
+      f = open(new_file, "wb")
       while True:
          f.write(socket.recv())
    finally:
-      f.close()
-
+      try:
+         f.close()
+      except:
+         pass
 
 daemonize('core_debug_writer', main)
 

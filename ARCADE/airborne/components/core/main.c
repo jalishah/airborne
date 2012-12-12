@@ -231,9 +231,9 @@ static void _main(int argc, char *argv[])
    /* initialize msgpack helpers: */
    msgpack_sbuffer *msgpack_buf = msgpack_sbuffer_new();
    msgpack_packer *pk = msgpack_packer_new(msgpack_buf, msgpack_sbuffer_write);
-   char *dbg_spec[] = {"dt ",                              /*  1 */
+   char *dbg_spec[] = {"dt",                               /*  1 */
       "gyro_x", "gyro_y", "gyro_z",                        /*  2 -  4 */
-      "acc_x", "acc_y", "acc_z",                           /*  5 -  9 */
+      "acc_x", "acc_y", "acc_z",                           /*  5 -  7 */
       "mag_x", "mag_y", "mag_z",                           /*  8 - 10 */
       "q0", "q1", "q2", "q3",                              /* 11 - 14 */
       "yaw", "pitch", "roll",                              /* 15 - 17 */
