@@ -487,43 +487,26 @@ static void _main(int argc, char *argv[])
       int mot_status = platform_write_motors(/*motostate_enabled()*/0, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
+      /* publish debug data: */
       msgpack_sbuffer_clear(msgpack_buf);
       msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
-      msgpack_pack_float(pk, dt);                         /*  1 */
-      msgpack_pack_float(pk, marg_data.gyro.x);           /*  2 */
-      msgpack_pack_float(pk, marg_data.gyro.y);           /*  3 */
-      msgpack_pack_float(pk, marg_data.gyro.z);           /*  4 */
-      msgpack_pack_float(pk, marg_data.acc.x);            /*  5 */
-      msgpack_pack_float(pk, marg_data.acc.y);            /*  6 */
-      msgpack_pack_float(pk, marg_data.acc.z);            /*  7 */
-      msgpack_pack_float(pk, marg_data.mag.x);            /*  8 */
-      msgpack_pack_float(pk, marg_data.mag.y);            /*  9 */
-      msgpack_pack_float(pk, marg_data.mag.z);            /* 10 */
-      msgpack_pack_float(pk, ahrs.quat.q0);               /* 11 */
-      msgpack_pack_float(pk, ahrs.quat.q1);               /* 12 */
-      msgpack_pack_float(pk, ahrs.quat.q2);               /* 13 */
-      msgpack_pack_float(pk, ahrs.quat.q3);               /* 14 */
-      msgpack_pack_float(pk, euler.yaw);                  /* 15 */
-      msgpack_pack_float(pk, euler.pitch);                /* 16 */
-      msgpack_pack_float(pk, euler.roll);                 /* 17 */
-      msgpack_pack_float(pk, pos_in.acc.x);               /* 18 */
-      msgpack_pack_float(pk, pos_in.acc.y);               /* 19 */
-      msgpack_pack_float(pk, pos_in.acc.z);               /* 20 */
-      msgpack_pack_float(pk, pos_in.dx);                  /* 21 */
-      msgpack_pack_float(pk, pos_in.dy);                  /* 22 */
-      msgpack_pack_float(pk, pos_in.ultra_z);             /* 23 */
-      msgpack_pack_float(pk, pos_in.baro_z);              /* 24 */
-      msgpack_pack_float(pk, pos_estimate.x.pos);         /* 25 */
-      msgpack_pack_float(pk, pos_estimate.y.pos);         /* 26 */
-      msgpack_pack_float(pk, pos_estimate.ultra_z.pos);   /* 27 */
-      msgpack_pack_float(pk, pos_estimate.baro_z.pos);    /* 28 */
-      msgpack_pack_float(pk, pos_estimate.x.speed);       /* 29 */
-      msgpack_pack_float(pk, pos_estimate.y.speed);       /* 30 */
-      msgpack_pack_float(pk, pos_estimate.ultra_z.speed); /* 31 */
-      msgpack_pack_float(pk, pos_estimate.baro_z.speed);  /* 32 */
-      msgpack_pack_float(pk, 0.0f);                       /* 33 */
-      msgpack_pack_float(pk, pitch_roll_sp.x);            /* 34 */
-      msgpack_pack_float(pk, pitch_roll_sp.y);            /* 35 */
+      #define PACKF(val) msgpack_pack_float(pk, val) /* pack float */
+      #define PACKFV(ptr, n) FOR_N(i, n) PACKF(ptr[i]) /* pack float vector */
+      PACKF(dt);
+      PACKFV(marg_data.gyro.vec, 3);
+      PACKFV(marg_data.acc.vec, 3);
+      PACKFV(marg_data.mag.vec, 3);
+      PACKFV(ahrs.quat.vec, 4);
+      PACKFV(euler.vec, 3);
+      PACKFV(pos_in.acc.vec, 3);
+      PACKF(pos_in.dx); PACKF(pos_in.dy);
+      PACKF(pos_in.ultra_z); PACKF(pos_in.baro_z);
+      PACKF(pos_estimate.x.pos); PACKF(pos_estimate.y.pos);
+      PACKF(pos_estimate.ultra_z.pos); PACKF(pos_estimate.baro_z.pos);
+      PACKF(pos_estimate.x.speed); PACKF(pos_estimate.y.speed);
+      PACKF(pos_estimate.ultra_z.speed); PACKF(pos_estimate.baro_z.speed);
+      PACKF(0.0f);
+      PACKFV(pitch_roll_sp.vec, 2);
       scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
    }
    PERIODIC_THREAD_LOOP_END

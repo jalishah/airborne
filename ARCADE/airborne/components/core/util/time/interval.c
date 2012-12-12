@@ -38,7 +38,7 @@ static int64_t ts_diff(struct timespec *timeA_p, struct timespec *timeB_p)
 float interval_measure(interval_t *interval)
 {
    clock_gettime(CLOCK_MONOTONIC, &interval->curr);
-   float dt = (float)ts_diff(&interval->curr, &interval->prev) / 1000000000.0;
+   double dt = (double)ts_diff(&interval->curr, &interval->prev) / 1000000000.0;
    interval->prev = interval->curr;
    return dt;
 }

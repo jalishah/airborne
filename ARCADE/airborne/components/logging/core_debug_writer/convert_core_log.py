@@ -17,7 +17,7 @@ unpacker = Unpacker(stdin)
 header = unpacker.next()
 print ' '.join(header)
 
-#print data:
+# print data:
 for msg in unpacker:
    print ' '.join(map(str, msg))
 
