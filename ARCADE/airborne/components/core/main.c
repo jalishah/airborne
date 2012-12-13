@@ -231,17 +231,19 @@ static void _main(int argc, char *argv[])
    /* initialize msgpack helpers: */
    msgpack_sbuffer *msgpack_buf = msgpack_sbuffer_new();
    msgpack_packer *pk = msgpack_packer_new(msgpack_buf, msgpack_sbuffer_write);
-   char *dbg_spec[] = {"dt",                               /*  1 */
-      "gyro_x", "gyro_y", "gyro_z",                        /*  2 -  4 */
-      "acc_x", "acc_y", "acc_z",                           /*  5 -  7 */
-      "mag_x", "mag_y", "mag_z",                           /*  8 - 10 */
-      "q0", "q1", "q2", "q3",                              /* 11 - 14 */
-      "yaw", "pitch", "roll",                              /* 15 - 17 */
-      "acc_e", "acc_n", "acc_u",                           /* 18 - 20 */
-      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u",       /* 21 - 24 */
-      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u",       /* 25 - 28 */
-      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u", /* 29 - 32 */
-      "yaw_sp", "pitch_sp", "roll_sp"};                    /* 33 - 35 */
+   char *dbg_spec[] = {"dt",                                   /*  1 */
+      "gyro_x", "gyro_y", "gyro_z",                            /*  2 -  4 */
+      "acc_x", "acc_y", "acc_z",                               /*  5 -  7 */
+      "mag_x", "mag_y", "mag_z",                               /*  8 - 10 */
+      "q0", "q1", "q2", "q3",                                  /* 11 - 14 */
+      "yaw", "pitch", "roll",                                  /* 15 - 17 */
+      "acc_e", "acc_n", "acc_u",                               /* 18 - 20 */
+      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u",           /* 21 - 24 */
+      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u",           /* 25 - 28 */
+      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u",     /* 29 - 32 */
+      "yaw_sp", "pitch_sp", "roll_sp",                         /* 33 - 35 */
+      "flight_state", "rc_valid",                              /* 36 - 37 */
+      "rc_pitch", "rc_roll", "rc_yaw", "rc_gas", "rc_switch"}; /* 38 - 42 */
    /* send header: */
    msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
    FOR_EACH(i, dbg_spec)
@@ -491,6 +493,7 @@ static void _main(int argc, char *argv[])
       /* publish debug data: */
       msgpack_sbuffer_clear(msgpack_buf);
       msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
+      #define PACKI(val) msgpack_pack_int(pk, val) /* pack integer */
       #define PACKF(val) msgpack_pack_float(pk, val) /* pack float */
       #define PACKFV(ptr, n) FOR_N(i, n) PACKF(ptr[i]) /* pack float vector */
       PACKF(dt);
@@ -508,6 +511,9 @@ static void _main(int argc, char *argv[])
       PACKF(pos_estimate.ultra_z.speed); PACKF(pos_estimate.baro_z.speed);
       PACKF(0.0f);
       PACKFV(pitch_roll_sp.vec, 2);
+      PACKI(flight_state);
+      PACKI(sensor_status & RC_VALID ? 1 : 0);
+      PACKFV(channels, 5);
       scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
    }
    PERIODIC_THREAD_LOOP_END

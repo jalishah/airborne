@@ -49,16 +49,17 @@ SIMPLE_THREAD_BEGIN(thread_func)
       else if (status == 1)
       {
          pthread_mutex_lock(&mutex);
-         if (rc_dsl.RSSI > RSSI_MIN)
+         sig_valid = rc_dsl.RSSI > RSSI_MIN;
+         if (!sig_valid)
          {
-            sig_valid = 1;
-            memcpy(channels, rc_dsl.channels, sizeof(channels));
+            memset(channels, 0, sizeof(channels));
+            channels[4] = -1024;
          }
          else
          {
-            sig_valid = 0;
+            memcpy(channels, rc_dsl.channels, sizeof(channels));   
          }
-         sig_valid = median_filter_run(&sig_valid_filter, (float)sig_valid) > 0.5 ? 1 : 0;
+         //sig_valid = median_filter_run(&sig_valid_filter, (float)sig_valid) > 0.5 ? 1 : 0;
          pthread_mutex_unlock(&mutex);
       }
    }
@@ -81,7 +82,7 @@ int rc_dsl_reader_init(void)
    opcd_params_apply("sensors.rc_dsl.", params);
    THROW_ON_ERR(serial_open(&port, dev_path, 38400, 0, 0, 0));
    rc_dsl_init(&rc_dsl);
-   median_filter_init(&sig_valid_filter, 30);
+   median_filter_init(&sig_valid_filter, 100);
    simple_thread_start(&thread, thread_func, THREAD_NAME, THREAD_PRIORITY, NULL);
 
    THROW_END();

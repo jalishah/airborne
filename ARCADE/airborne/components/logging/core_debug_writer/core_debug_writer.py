@@ -11,7 +11,10 @@ def main(name):
    try:
       now = datetime.today().isoformat().replace(':', '')
       symlink_file = user_data_dir() + sep + 'core_debug.msgpack'
-      unlink(symlink_file)
+      try:
+         unlink(symlink_file)
+      except:
+         pass
       new_file = user_data_dir() + sep + 'core_debug_%s.msgpack' % now
       symlink(new_file, symlink_file)
       f = open(new_file, "wb")
