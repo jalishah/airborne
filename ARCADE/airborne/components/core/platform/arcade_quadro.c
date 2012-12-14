@@ -101,7 +101,7 @@ static int write_motors(int enabled, float forces[4], float voltage)
 {
    float opt_forces[4];
    memcpy(opt_forces, forces, sizeof(float) * 4);
-   convex_opt_run(opt_forces);
+   //convex_opt_run(opt_forces);
 
    float ground_dist = CONVEXOPT_MIN_GROUND_DIST - 1.0f;
    if (i2cxl_reader_get_alt(&ground_dist) == 0)
@@ -120,8 +120,10 @@ static int write_motors(int enabled, float forces[4], float voltage)
          status |= MOTORS_INT_ENABLE;
    }
    else
+   {
       memset(motor_setpoints, HOLGER_I2C_OFF, N_MOTORS);
-   
+   }
+
    /* write motors and read rpm: */
    uint8_t rpm[4];
    holger_blmc_write_read(motor_setpoints, rpm);
@@ -212,7 +214,7 @@ int arcade_quadro_init(platform_t *plat)
       LOG(LL_ERROR, "could not initialize dsl reader");
       exit(1);
    }
-   deadzone_init(&deadzone, 0.02f, 1.0f, 1.0f);
+   deadzone_init(&deadzone, 0.01f, 1.0f, 1.0f);
    rc_channels_init(&rc_channels, channel_mapping, channel_scale, &deadzone);
    plat->read_rc = read_rc;
 

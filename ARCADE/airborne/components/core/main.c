@@ -53,6 +53,7 @@
 #include "control/speed/xy_speed.h"
 #include "motostate.h"
 #include "calpub.h"
+#include "filters/sliding_var.h"
 
 
 static int calibrate = 0;
@@ -103,10 +104,10 @@ enum
    M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
    M_ATT_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
 }
-manual_mode = M_ATT_ABS;
+manual_mode = M_ATT_REL;
 
 
-#define REALTIME_PERIOD (0.01)
+#define REALTIME_PERIOD (0.007)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -224,7 +225,7 @@ static void _main(int argc, char *argv[])
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motostate_init(1.0f, 0.15f, 0.1f);
+   motostate_init(1.3f, 0.12f, 0.8f);
 
    void *debug_socket = scl_get_socket("debug");
 
@@ -257,6 +258,9 @@ static void _main(int argc, char *argv[])
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 500);
    
+   calibration_t rc_cal;
+   cal_init(&rc_cal, 3, 500);
+   
    feed_forward_t feed_forward;
    feed_forward_init(&feed_forward, REALTIME_PERIOD);
    piid_t piid;
@@ -285,9 +289,12 @@ static void _main(int argc, char *argv[])
    float mag_decl = 0.0f;
    gps_data_t gps_data;
    memset(&gps_data, 0, sizeof(gps_data));
+   
+   Filter1 rc_valid_filter;
+   filter1_lp_init(&rc_valid_filter, 0.5, REALTIME_PERIOD, 1);
+   
    PERIODIC_THREAD_LOOP_BEGIN
    {
-      
       /*******************************************
        * read sensor data and calibrate sensors: *
        *******************************************/
@@ -302,6 +309,22 @@ static void _main(int argc, char *argv[])
       if (!(sensor_status & MARG_VALID))
          continue;
       
+      float rc_valid_f = (sensor_status & RC_VALID) ? 1.0f : 0.0f;
+      filter1_run(&rc_valid_filter, &rc_valid_f, &rc_valid_f);
+      int rc_valid = rc_valid_f > 0.5f;
+      if (!rc_valid)
+      {
+         memset(channels, 0, sizeof(channels));   
+      }
+      else
+      {
+         float cal_channels[3] = {channels[CH_PITCH], channels[CH_ROLL], channels[CH_YAW]};
+         cal_sample_apply(&rc_cal, cal_channels);
+         channels[CH_PITCH] = cal_channels[0];
+         channels[CH_ROLL] = cal_channels[1];
+         channels[CH_YAW] = cal_channels[2];
+      }
+
       if (cal_sample_apply(&gyro_cal, &marg_data.gyro.vec[0]) == 0 && gyro_moved(&marg_data.gyro))
       {
          if (interval_measure(&gyro_move_interval) > 1.0)
@@ -343,15 +366,10 @@ static void _main(int argc, char *argv[])
       euler_t euler;
       quat_to_euler(&euler, &ahrs.quat);
 
-      if (ahrs_state == 1)
-      {
-         start_quat = ahrs.quat;
-         LOG(LL_DEBUG, "initial orientation - yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
-      }
       if (ahrs_state < 0 || !cal_complete(&gyro_cal))
          continue;
 
-      ONCE(LOG(LL_INFO, "system initialized"));
+      ONCE(start_quat = ahrs.quat; LOG(LL_DEBUG, "system initialized; orientation = yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll));
       
       /* compute NEU accelerations using quaternion: */
       quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
@@ -427,7 +445,7 @@ static void _main(int argc, char *argv[])
          norm_gas = auto_stick.gas;
       }
 
-      if ((sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
+      if (rc_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
          if (manual_mode == M_ATT_REL)
@@ -464,9 +482,9 @@ static void _main(int argc, char *argv[])
  
       /* requirements specification for take-off: */
       int common_require = sensor_status & (VOLTAGE_VALID | ULTRA_VALID);
-      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? (sensor_status & GPS_VALID) : 1) && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
+      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? (sensor_status & GPS_VALID) : 1) && rc_valid && channels[CH_SWITCH] > 0.5;
       int full_auto_require = common_require && (sensor_status & (BARO_VALID | GPS_VALID));
-      int safe_auto_require = full_auto_require && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
+      int safe_auto_require = full_auto_require && rc_valid && channels[CH_SWITCH] > 0.5;
       
       int satisfied = 0; /* initial value applies to CM_DISABLED */
       if (mode == CM_MANUAL)
@@ -481,13 +499,19 @@ static void _main(int argc, char *argv[])
       motostate_update(pos_in.ultra_z, flight_state, norm_gas, dt, satisfied);
       if (!motostate_controllable())
       {
-         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
 
+      int motors_enabled = 0; //motostate_enabled();
+      if (rc_valid)
+      {
+         motors_enabled = mode == CM_MANUAL && channels[CH_SWITCH] > 0.5;
+      }
+      
       /* write forces to motors: */
-      int mot_status = platform_write_motors(/*motostate_enabled()*/0, f_local.vec, voltage);
+      int mot_status = platform_write_motors(motors_enabled, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
       /* publish debug data: */
@@ -512,7 +536,7 @@ static void _main(int argc, char *argv[])
       PACKF(0.0f);
       PACKFV(pitch_roll_sp.vec, 2);
       PACKI(flight_state);
-      PACKI(sensor_status & RC_VALID ? 1 : 0);
+      PACKI(rc_valid);
       PACKFV(channels, 5);
       scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
    }

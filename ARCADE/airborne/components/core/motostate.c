@@ -23,15 +23,15 @@ static int motors_start_condition(float ground_z, flight_state_t flight_state, f
 {
    return    ground_z <= ground_max 
           && gas >= gas_start 
-          && flight_state == FS_STANDING;
+          /*&& flight_state == FS_STANDING*/;
 }
 
 
 static int motors_stop_condition(float ground_z, flight_state_t flight_state, float gas)
 {
-   return ground_z <= ground_max
+   return    ground_z <= ground_max
           && gas <= gas_stop
-          && flight_state != FS_FLYING;
+          /*&& flight_state != FS_FLYING*/;
 }
 
 
