@@ -1,1 +1,1 @@
-ADD_LIBRARY(vec2 STATIC vec2.c)
+ADD_LIBRARY(math_util STATIC vec2.c linfunc.c)

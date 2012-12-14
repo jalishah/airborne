@@ -54,6 +54,7 @@
 #include "motostate.h"
 #include "calpub.h"
 #include "filters/sliding_var.h"
+#include "behaviors/landing.h"
 
 
 static int calibrate = 0;
@@ -508,6 +509,12 @@ static void _main(int argc, char *argv[])
       if (rc_valid)
       {
          motors_enabled = mode == CM_MANUAL && channels[CH_SWITCH] > 0.5;
+      }
+      
+      /* emergency landing: */
+      if (!rc_valid || landing_started())
+      {
+         motors_enabled = landing_run(&f_local.gas, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, dt);
       }
       
       /* write forces to motors: */
