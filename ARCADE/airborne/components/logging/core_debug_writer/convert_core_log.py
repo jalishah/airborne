@@ -14,10 +14,18 @@ from sys import stdin
 unpacker = Unpacker(stdin)
 
 # print header:
-header = unpacker.next()
-print ' '.join(header)
+try:
+   header = unpacker.next()
+   print ' '.join(header)
+except:
+   # if we don't have a header, don't care..
+   pass
 
 #print data:
 for msg in unpacker:
-   print ' '.join(map(str, msg))
+   try:
+      print ' '.join(map(str, msg))
+   except:
+      # corrupt data (maybe last line incomplete), don't care...
+      pass
 
