@@ -35,7 +35,12 @@ interval_t;
 
 void interval_init(interval_t *interval);
 
+
 float interval_measure(interval_t *interval);
+
+
+float interval_measure_ms(interval_t *interval);
+
 
 void sleep_ms(uint32_t msec);
 

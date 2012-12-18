@@ -10,6 +10,7 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 ADD_SUBDIRECTORY(sigproc)
+ADD_SUBDIRECTORY(behaviors)
 
 ADD_EXECUTABLE(core motostate.c main.c calpub.c)
 
@@ -44,7 +45,8 @@ glib-2.0
 util network_messages
 scl_messages
 filters
-vec2
+behaviors
+math_util
 cvxgen
 hardware_util
 meschach zmq yaml-cpp rt pthread m protobuf-c)

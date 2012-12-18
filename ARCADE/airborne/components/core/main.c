@@ -53,6 +53,8 @@
 #include "control/speed/xy_speed.h"
 #include "motostate.h"
 #include "calpub.h"
+#include "filters/sliding_var.h"
+#include "behaviors/landing.h"
 
 
 static int calibrate = 0;
@@ -103,10 +105,10 @@ enum
    M_ATT_ABS, /* absolute attitude control (aka acc-mode) */
    M_ATT_GPS_SPEED /* stick defines GPS speed for local coordinate frame */
 }
-manual_mode = M_ATT_ABS;
+manual_mode = M_ATT_REL;
 
 
-#define REALTIME_PERIOD (0.01)
+#define REALTIME_PERIOD (0.007)
 
 
 #define RC_PITCH_ROLL_STICK_P 2.0f
@@ -224,24 +226,26 @@ static void _main(int argc, char *argv[])
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motostate_init(1.0f, 0.15f, 0.1f);
+   motostate_init(1.3f, 0.12f, 0.8f);
 
    void *debug_socket = scl_get_socket("debug");
 
    /* initialize msgpack helpers: */
    msgpack_sbuffer *msgpack_buf = msgpack_sbuffer_new();
    msgpack_packer *pk = msgpack_packer_new(msgpack_buf, msgpack_sbuffer_write);
-   char *dbg_spec[] = {"dt ",                              /*  1 */
-      "gyro_x", "gyro_y", "gyro_z",                        /*  2 -  4 */
-      "acc_x", "acc_y", "acc_z",                           /*  5 -  9 */
-      "mag_x", "mag_y", "mag_z",                           /*  8 - 10 */
-      "q0", "q1", "q2", "q3",                              /* 11 - 14 */
-      "yaw", "pitch", "roll",                              /* 15 - 17 */
-      "acc_e", "acc_n", "acc_u",                           /* 18 - 20 */
-      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u",       /* 21 - 24 */
-      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u",       /* 25 - 28 */
-      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u", /* 29 - 32 */
-      "yaw_sp", "pitch_sp", "roll_sp"};                    /* 33 - 35 */
+   char *dbg_spec[] = {"dt",                                   /*  1 */
+      "gyro_x", "gyro_y", "gyro_z",                            /*  2 -  4 */
+      "acc_x", "acc_y", "acc_z",                               /*  5 -  7 */
+      "mag_x", "mag_y", "mag_z",                               /*  8 - 10 */
+      "q0", "q1", "q2", "q3",                                  /* 11 - 14 */
+      "yaw", "pitch", "roll",                                  /* 15 - 17 */
+      "acc_e", "acc_n", "acc_u",                               /* 18 - 20 */
+      "raw_e", "raw_n", "raw_ultra_u", "raw_baro_u",           /* 21 - 24 */
+      "pos_e", "pos_n", "pos_ultra_u", "pos_baro_u",           /* 25 - 28 */
+      "speed_e",  "pos_n", "speed_ultra_u", "pos_ultra_u",     /* 29 - 32 */
+      "yaw_sp", "pitch_sp", "roll_sp",                         /* 33 - 35 */
+      "flight_state", "rc_valid",                              /* 36 - 37 */
+      "rc_pitch", "rc_roll", "rc_yaw", "rc_gas", "rc_switch"}; /* 38 - 42 */
    /* send header: */
    msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
    FOR_EACH(i, dbg_spec)
@@ -254,6 +258,9 @@ static void _main(int argc, char *argv[])
 
    calibration_t gyro_cal;
    cal_init(&gyro_cal, 3, 500);
+   
+   calibration_t rc_cal;
+   cal_init(&rc_cal, 3, 500);
    
    feed_forward_t feed_forward;
    feed_forward_init(&feed_forward, REALTIME_PERIOD);
@@ -283,9 +290,12 @@ static void _main(int argc, char *argv[])
    float mag_decl = 0.0f;
    gps_data_t gps_data;
    memset(&gps_data, 0, sizeof(gps_data));
+   
+   Filter1 rc_valid_filter;
+   filter1_lp_init(&rc_valid_filter, 0.5, REALTIME_PERIOD, 1);
+   
    PERIODIC_THREAD_LOOP_BEGIN
    {
-      
       /*******************************************
        * read sensor data and calibrate sensors: *
        *******************************************/
@@ -300,6 +310,22 @@ static void _main(int argc, char *argv[])
       if (!(sensor_status & MARG_VALID))
          continue;
       
+      float rc_valid_f = (sensor_status & RC_VALID) ? 1.0f : 0.0f;
+      filter1_run(&rc_valid_filter, &rc_valid_f, &rc_valid_f);
+      int rc_valid = rc_valid_f > 0.5f;
+      if (!rc_valid)
+      {
+         memset(channels, 0, sizeof(channels));   
+      }
+      else
+      {
+         float cal_channels[3] = {channels[CH_PITCH], channels[CH_ROLL], channels[CH_YAW]};
+         cal_sample_apply(&rc_cal, cal_channels);
+         channels[CH_PITCH] = cal_channels[0];
+         channels[CH_ROLL] = cal_channels[1];
+         channels[CH_YAW] = cal_channels[2];
+      }
+
       if (cal_sample_apply(&gyro_cal, &marg_data.gyro.vec[0]) == 0 && gyro_moved(&marg_data.gyro))
       {
          if (interval_measure(&gyro_move_interval) > 1.0)
@@ -341,15 +367,10 @@ static void _main(int argc, char *argv[])
       euler_t euler;
       quat_to_euler(&euler, &ahrs.quat);
 
-      if (ahrs_state == 1)
-      {
-         start_quat = ahrs.quat;
-         LOG(LL_DEBUG, "initial orientation - yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll);
-      }
       if (ahrs_state < 0 || !cal_complete(&gyro_cal))
          continue;
 
-      ONCE(LOG(LL_INFO, "system initialized"));
+      ONCE(start_quat = ahrs.quat; LOG(LL_DEBUG, "system initialized; orientation = yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll));
       
       /* compute NEU accelerations using quaternion: */
       quat_rot_vec(&pos_in.acc, &marg_data.acc, &ahrs.quat);
@@ -425,7 +446,7 @@ static void _main(int argc, char *argv[])
          norm_gas = auto_stick.gas;
       }
 
-      if ((sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
+      if (rc_valid && channels[CH_SWITCH] > 0.5 && mode != CM_FULL_AUTO)
       {
          /* mix in rc signals: */
          if (manual_mode == M_ATT_REL)
@@ -462,9 +483,9 @@ static void _main(int argc, char *argv[])
  
       /* requirements specification for take-off: */
       int common_require = sensor_status & (VOLTAGE_VALID | ULTRA_VALID);
-      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? (sensor_status & GPS_VALID) : 1) && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
+      int manual_require = common_require && (manual_mode == M_ATT_GPS_SPEED ? (sensor_status & GPS_VALID) : 1) && rc_valid && channels[CH_SWITCH] > 0.5;
       int full_auto_require = common_require && (sensor_status & (BARO_VALID | GPS_VALID));
-      int safe_auto_require = full_auto_require && (sensor_status & RC_VALID) && channels[CH_SWITCH] > 0.5;
+      int safe_auto_require = full_auto_require && rc_valid && channels[CH_SWITCH] > 0.5;
       
       int satisfied = 0; /* initial value applies to CM_DISABLED */
       if (mode == CM_MANUAL)
@@ -479,52 +500,51 @@ static void _main(int argc, char *argv[])
       motostate_update(pos_in.ultra_z, flight_state, norm_gas, dt, satisfied);
       if (!motostate_controllable())
       {
-         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
 
+      int motors_enabled = 0; //motostate_enabled();
+      if (rc_valid)
+      {
+         motors_enabled = mode == CM_MANUAL && channels[CH_SWITCH] > 0.5;
+      }
+      
+      /* emergency landing: */
+      if (!rc_valid || landing_started())
+      {
+         motors_enabled = landing_run(&f_local.gas, pos_estimate.ultra_z.pos, pos_estimate.baro_z.pos, dt);
+      }
+      
       /* write forces to motors: */
-      int mot_status = platform_write_motors(/*motostate_enabled()*/0, f_local.vec, voltage);
+      int mot_status = platform_write_motors(motors_enabled, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
+      /* publish debug data: */
       msgpack_sbuffer_clear(msgpack_buf);
       msgpack_pack_array(pk, ARRAY_SIZE(dbg_spec));
-      msgpack_pack_float(pk, dt);                         /*  1 */
-      msgpack_pack_float(pk, marg_data.gyro.x);           /*  2 */
-      msgpack_pack_float(pk, marg_data.gyro.y);           /*  3 */
-      msgpack_pack_float(pk, marg_data.gyro.z);           /*  4 */
-      msgpack_pack_float(pk, marg_data.acc.x);            /*  5 */
-      msgpack_pack_float(pk, marg_data.acc.y);            /*  6 */
-      msgpack_pack_float(pk, marg_data.acc.z);            /*  7 */
-      msgpack_pack_float(pk, marg_data.mag.x);            /*  8 */
-      msgpack_pack_float(pk, marg_data.mag.y);            /*  9 */
-      msgpack_pack_float(pk, marg_data.mag.z);            /* 10 */
-      msgpack_pack_float(pk, ahrs.quat.q0);               /* 11 */
-      msgpack_pack_float(pk, ahrs.quat.q1);               /* 12 */
-      msgpack_pack_float(pk, ahrs.quat.q2);               /* 13 */
-      msgpack_pack_float(pk, ahrs.quat.q3);               /* 14 */
-      msgpack_pack_float(pk, euler.yaw);                  /* 15 */
-      msgpack_pack_float(pk, euler.pitch);                /* 16 */
-      msgpack_pack_float(pk, euler.roll);                 /* 17 */
-      msgpack_pack_float(pk, pos_in.acc.x);               /* 18 */
-      msgpack_pack_float(pk, pos_in.acc.y);               /* 19 */
-      msgpack_pack_float(pk, pos_in.acc.z);               /* 20 */
-      msgpack_pack_float(pk, pos_in.dx);                  /* 21 */
-      msgpack_pack_float(pk, pos_in.dy);                  /* 22 */
-      msgpack_pack_float(pk, pos_in.ultra_z);             /* 23 */
-      msgpack_pack_float(pk, pos_in.baro_z);              /* 24 */
-      msgpack_pack_float(pk, pos_estimate.x.pos);         /* 25 */
-      msgpack_pack_float(pk, pos_estimate.y.pos);         /* 26 */
-      msgpack_pack_float(pk, pos_estimate.ultra_z.pos);   /* 27 */
-      msgpack_pack_float(pk, pos_estimate.baro_z.pos);    /* 28 */
-      msgpack_pack_float(pk, pos_estimate.x.speed);       /* 29 */
-      msgpack_pack_float(pk, pos_estimate.y.speed);       /* 30 */
-      msgpack_pack_float(pk, pos_estimate.ultra_z.speed); /* 31 */
-      msgpack_pack_float(pk, pos_estimate.baro_z.speed);  /* 32 */
-      msgpack_pack_float(pk, 0.0f);                       /* 33 */
-      msgpack_pack_float(pk, pitch_roll_sp.x);            /* 34 */
-      msgpack_pack_float(pk, pitch_roll_sp.y);            /* 35 */
+      #define PACKI(val) msgpack_pack_int(pk, val) /* pack integer */
+      #define PACKF(val) msgpack_pack_float(pk, val) /* pack float */
+      #define PACKFV(ptr, n) FOR_N(i, n) PACKF(ptr[i]) /* pack float vector */
+      PACKF(dt);
+      PACKFV(marg_data.gyro.vec, 3);
+      PACKFV(marg_data.acc.vec, 3);
+      PACKFV(marg_data.mag.vec, 3);
+      PACKFV(ahrs.quat.vec, 4);
+      PACKFV(euler.vec, 3);
+      PACKFV(pos_in.acc.vec, 3);
+      PACKF(pos_in.dx); PACKF(pos_in.dy);
+      PACKF(pos_in.ultra_z); PACKF(pos_in.baro_z);
+      PACKF(pos_estimate.x.pos); PACKF(pos_estimate.y.pos);
+      PACKF(pos_estimate.ultra_z.pos); PACKF(pos_estimate.baro_z.pos);
+      PACKF(pos_estimate.x.speed); PACKF(pos_estimate.y.speed);
+      PACKF(pos_estimate.ultra_z.speed); PACKF(pos_estimate.baro_z.speed);
+      PACKF(0.0f);
+      PACKFV(pitch_roll_sp.vec, 2);
+      PACKI(flight_state);
+      PACKI(rc_valid);
+      PACKFV(channels, 5);
       scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
    }
    PERIODIC_THREAD_LOOP_END

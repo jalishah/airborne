@@ -21,7 +21,7 @@ except:
    # if we don't have a header, don't care..
    pass
 
-#print data:
+# print data:
 for msg in unpacker:
    try:
       print ' '.join(map(str, msg))
