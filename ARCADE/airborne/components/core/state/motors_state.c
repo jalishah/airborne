@@ -63,6 +63,7 @@ static float gas_start;
 static float gas_stop;
 
 
+/* initializes motor state */
 void motors_state_init(float _gas_start, float _gas_stop)
 {
    gas_start = _gas_start;

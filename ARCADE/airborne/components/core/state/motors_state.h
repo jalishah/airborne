@@ -23,7 +23,7 @@
 #include "flight_state.h"
 
 
-/* initializes motors state tracker */
+/* initializes motor state */
 void motors_state_init(float _gas_start, float _gas_stop);
 
 
