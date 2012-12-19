@@ -10,9 +10,10 @@ ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
 ADD_SUBDIRECTORY(sigproc)
+ADD_SUBDIRECTORY(state)
 ADD_SUBDIRECTORY(behaviors)
 
-ADD_EXECUTABLE(core motostate.c main.c calpub.c)
+ADD_EXECUTABLE(core main.c calpub.c)
 
 
 TARGET_LINK_LIBRARIES(core
@@ -39,6 +40,7 @@ mpu6050
 ms5611
 ms5611_reader
 geometry
+state
 sigproc
 i2c serial logger opcd_params threads ltime scl
 glib-2.0

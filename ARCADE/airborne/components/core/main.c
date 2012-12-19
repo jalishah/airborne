@@ -51,13 +51,14 @@
 #include "control/position/z_ctrl.h"
 #include "control/position/yaw_ctrl.h"
 #include "control/speed/xy_speed.h"
-#include "motostate.h"
+#include "state/motors_state.h"
 #include "calpub.h"
 #include "filters/sliding_var.h"
 #include "behaviors/landing.h"
 
 
 static int calibrate = 0;
+static int motors_locked = 0;
 
 
 void main_calibrate(int enabled)
@@ -226,7 +227,7 @@ static void _main(int argc, char *argv[])
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motostate_init(1.3f, 0.12f, 0.8f);
+   motors_state_init(1.3f, 0.12f, 0.8f);
 
    void *debug_socket = scl_get_socket("debug");
 
@@ -497,15 +498,15 @@ static void _main(int argc, char *argv[])
 
       /* start motors if requirements are met AND conditions apply;
        * stopping the motors does not depend on requirements: */
-      motostate_update(pos_in.ultra_z, flight_state, norm_gas, dt, satisfied);
-      if (!motostate_controllable())
+      motors_state_update(pos_in.ultra_z, flight_state, motors_locked, norm_gas, dt, satisfied);
+      if (!motors_state_controllable())
       {
-         //memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
-         //piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
+         memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */
+         piid_reset(&piid); /* reset piid integrators so that we can move the device manually */
          /* TODO: also reset higher-level controllers */
       }
 
-      int motors_enabled = 0; //motostate_enabled();
+      int motors_enabled = 0;
       if (rc_valid)
       {
          motors_enabled = mode == CM_MANUAL && channels[CH_SWITCH] > 0.5;
@@ -518,6 +519,10 @@ static void _main(int argc, char *argv[])
       }
       
       /* write forces to motors: */
+      if (motors_state_safe())
+      {
+         motors_enabled = 0;
+      }
       int mot_status = platform_write_motors(motors_enabled, f_local.vec, voltage);
       piid.int_enable = mot_status & MOTORS_INT_ENABLE ? 1 : 0;
  
