@@ -83,15 +83,6 @@ f_local_t;
 
 enum
 {
-  MS_EXCLUDED, /* writing the motor controllers is not performed; this might result in a reduced loop time, but is completely safe */
-  MS_ZERO, /* motors are always written with 0, thus disabled (bus errors might start them, careful when working on bus drivers!) */
-  MS_ENABLED /* motors are armed */
-}
-motor_safety = MS_EXCLUDED;
-
-
-enum
-{
    CM_MANUAL,    /* direct remote control without any position control
                     if the RC signal is lost, altitude stabilization is enabled and the GPS setpoint is reset */
    CM_SAFE_AUTO, /* device works autonomously, stick movements disable autonomous operation with some hysteresis */
@@ -427,9 +418,9 @@ static void _main(int argc, char *argv[])
       auto_stick.pitch = pitch_roll_ctrl.x;
       auto_stick.roll = pitch_roll_ctrl.y;
 
-      /*************************************
-       * run basic stabilizing controller: *
-       *************************************/
+      /************************************
+       * combine auto stick and RC stick: *
+       ************************************/
 
       float piid_sp[3] = {0.0f, 0.0f, 0.0f};
       f_local_t f_local = {{0.0f, 0.0f, 0.0f, 0.0f}};
