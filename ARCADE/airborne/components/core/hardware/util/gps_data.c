@@ -1,6 +1,6 @@
 
 /*
-   ARCADE Flight State Tracking
+   ARCADE GPS Data Structure
 
    Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
 
@@ -16,26 +16,14 @@
  */
 
 
-#ifndef __FLIGHT_STATE_H__
-#define __FLIGHT_STATE_H__
+
+#include <string.h>
+
+#include "gps_data.h"
 
 
-#include <stddef.h>
-
-
-typedef enum
+void gps_data_init(gps_data_t *gps_data)
 {
-   FS_STANDING,
-   FS_FLYING
+   memset(&gps_data, 0, sizeof(gps_data));
 }
-flight_state_t;
-
-
-void flight_state_init(size_t window, size_t hysteresis, float fly_tresh, float crash_tresh, float min_ground_z);
-
-
-flight_state_t flight_state_update(float acc[3], float ground_z);
-
-
-#endif /* __FLIGHT_STATE_H__ */
 

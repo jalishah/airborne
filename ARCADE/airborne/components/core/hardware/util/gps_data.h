@@ -1,9 +1,18 @@
 
 /*
- * gps.h
- *
- *  Created on: 11.06.2010
- *      Author: tobi
+   ARCADE GPS Data Structure
+
+   Copyright (C) 2012 Tobias Simon, Ilmenau University of Technology
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
  */
 
 
@@ -28,6 +37,9 @@ typedef struct
    double alt; /* above sea level, in m */
 }
 gps_data_t;
+
+
+void gps_data_init(gps_data_t *gps_data);
 
 
 #endif /* __GPS_DATA_H__ */

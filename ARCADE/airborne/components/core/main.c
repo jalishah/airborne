@@ -290,7 +290,7 @@ static void _main(int argc, char *argv[])
    float mag_bias = 0.0f;
    float mag_decl = 0.0f;
    gps_data_t gps_data;
-   memset(&gps_data, 0, sizeof(gps_data));
+   gps_data_init(&gps_data);
    
    Filter1 rc_valid_filter;
    filter1_lp_init(&rc_valid_filter, 0.5, REALTIME_PERIOD, 1);
