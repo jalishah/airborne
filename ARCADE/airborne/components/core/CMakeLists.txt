@@ -9,7 +9,6 @@ ADD_SUBDIRECTORY(estimators)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
-ADD_SUBDIRECTORY(sigproc)
 ADD_SUBDIRECTORY(state)
 ADD_SUBDIRECTORY(behaviors)
 
@@ -41,7 +40,6 @@ ms5611
 ms5611_reader
 geometry
 state
-sigproc
 i2c serial logger opcd_params threads ltime scl
 glib-2.0
 util network_messages

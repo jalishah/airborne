@@ -227,7 +227,7 @@ static void _main(int argc, char *argv[])
    LOG(LL_INFO, "initializing command interface");
    cmd_init();
 
-   motors_state_init(1.3f, 0.12f, 0.8f);
+   motors_state_init(0.12f, 0.8f);
 
    void *debug_socket = scl_get_socket("debug");
 
@@ -276,7 +276,7 @@ static void _main(int argc, char *argv[])
    gps_util_init(&gps_util);
    gps_rel_data_t gps_rel_data = {0.0, 0.0, 0.0};
 
-   flight_detect_init(50, 20, 2.0, 150.0);
+   flight_state_init(50, 20, 2.0, 150.0, 1.3);
    
    LOG(LL_INFO, "entering main loop");
    interval_t interval, gyro_move_interval;
@@ -358,7 +358,7 @@ static void _main(int argc, char *argv[])
        ********************************/
 
       int ahrs_state = ahrs_update(&ahrs, &marg_data, dt);
-      flight_state_t flight_state = flight_detect(&marg_data.acc.vec[0]);
+      flight_state_t flight_state = flight_state_update(&marg_data.acc.vec[0], pos_in.ultra_z);
       
       /* global z orientation calibration: */
       quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};
@@ -498,7 +498,7 @@ static void _main(int argc, char *argv[])
 
       /* start motors if requirements are met AND conditions apply;
        * stopping the motors does not depend on requirements: */
-      motors_state_update(pos_in.ultra_z, flight_state, motors_locked, norm_gas, dt, satisfied);
+      motors_state_update(flight_state, motors_locked, norm_gas, dt, satisfied);
       if (!motors_state_controllable())
       {
          memset(&f_local, 0, sizeof(f_local)); /* all moments are 0 / minimum motor RPM */

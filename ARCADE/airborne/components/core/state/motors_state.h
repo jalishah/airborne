@@ -1,14 +1,14 @@
 
 
-#ifndef __MOTOSTATE_H__
-#define __MOTOSTATE_H__
+#ifndef __MOTORS_STATE_H__
+#define __MOTORS_STATE_H__
 
 
-#include "../sigproc/flight_detect.h"
+#include "flight_state.h"
 
 
 /* initializes motors state tracker */
-void motors_state_init(float _ground_max, float _gas_start, float _gas_stop);
+void motors_state_init(float _gas_start, float _gas_stop);
 
 
 /* indicates if the motors are safe */
@@ -24,8 +24,8 @@ int motors_state_controllable(void);
 
 
 /* updates the motor state machine */
-void motors_state_update(float ground_z, flight_state_t flight_state, int lock, float gas, float dt, int start_allowed);
+void motors_state_update(flight_state_t flight_state, int lock, float gas, float dt, int start_allowed);
 
 
-#endif /* __MOTOSTATE_H__ */
+#endif /* __MOTORS_STATE_H__ */
 

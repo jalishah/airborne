@@ -7,7 +7,7 @@
 
 
 /* motor states: */
-static enum 
+typedef enum 
 {
    MOTORS_SAFETY =   0x01,
    MOTORS_HALTED =   0x02,
@@ -16,7 +16,11 @@ static enum
    MOTORS_SPINNING = 0x10,
    MOTORS_FLYING =   0x20
 }
-state = MOTORS_SAFETY;
+motors_state_t;
+
+
+static motors_state_t state = MOTORS_SAFETY;
+static motors_state_t prev_state = MOTORS_HALTED;
 
 
 /* state names: */
@@ -41,12 +45,10 @@ static char *state_name(void)
 static timer_t timer;
 static float gas_start;
 static float gas_stop;
-static float ground_max;
 
 
-void motors_state_init(float _ground_max, float _gas_start, float _gas_stop)
+void motors_state_init(float _gas_start, float _gas_stop)
 {
-   ground_max = _ground_max;
    gas_start = _gas_start;
    gas_stop = _gas_stop;
    timer_init(&timer, 4.0);
@@ -74,7 +76,7 @@ int motors_state_controllable(void)
 }
 
 
-void motors_state_update(float ground_z, flight_state_t flight_state, int lock, float gas, float dt, int start_allowed)
+void motors_state_update(flight_state_t flight_state, int lock, float gas, float dt, int start_allowed)
 {
    switch (state)
    {
@@ -89,7 +91,7 @@ void motors_state_update(float ground_z, flight_state_t flight_state, int lock, 
       case MOTORS_FLYING:
          /* in the FLYING state it is not allowed to spin down the motors:
             we have to go down first and go into the SPINNING state */
-         if (flight_state == FS_STANDING && ground_z < ground_max)
+         if (flight_state == FS_STANDING)
          {
             state = MOTORS_SPINNING;   
          }
