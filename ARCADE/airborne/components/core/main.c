@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
    int replay = 1;
    if (replay)
    {
-      main_replay("/home/tobi/debug_data.msgpack");
+      main_replay("/home/tobi/core_debug.msgpack");
    }
    else
    {

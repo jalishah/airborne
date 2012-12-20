@@ -46,12 +46,11 @@ void quat_copy(quat_t *q_out, const quat_t *q_in)
 static float quat_len(const quat_t *quat)
 {
    float sum = 0.0f;
-   int i;
-   for (i = 0; i < 4; i++)
+   FOR_N(i, 4)
    {
       sum += quat->vec[i] * quat->vec[i];
    }
-   return 1.0f / sum;
+   return 1.0f / sqrtf(sum);
 }
 
 
@@ -59,8 +58,7 @@ void quat_inv(quat_t *q_out, const quat_t *q_in)
 {
    float len = quat_len(q_in);
    float table[4] = {len, -len, -len, -len};
-   int i;
-   for (i = 0; i < 4; i++)
+   FOR_N(i, 4)
    {
       q_out->vec[i] = q_in->vec[i] * table[i];
    }
@@ -101,19 +99,23 @@ void quat_normalize(quat_t *q)
 {
    float norm = 0.0f;
    FOR_N(i, 4)
+   {
       norm += q->vec[i] * q->vec[i];
+   }
    norm = 1.0f / sqrt(norm);
    FOR_N(i, 4)
+   {
       q->vec[i] *= norm;
+   }
 }
 
 
 float normalize_euler_0_2pi(float euler_angle)
 {
-   if (euler_angle < 0)
+   /*if (euler_angle < 0)
    {
       euler_angle += (float)(2 * M_PI);
-   }
+   }*/
    return euler_angle;
 }
 

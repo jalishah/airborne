@@ -5,13 +5,16 @@
 
 #include "main_loop.h"
 
+
 static char *names[] = 
 {
-   "dt", "gyro_x", "gyro_y", "gyro_z", "acc_x", "acc_y", "acc_z", 
-   "mag_x", "mag_y", "mag_z", "raw_e", "raw_n", "raw_ultra_u",
-   "raw_baro_u", "yaw_sp", "pitch_sp", "roll_sp",
-   "rc_valid", "rc_pitch", "rc_roll", "rc_yaw", "rc_gas", "rc_switch"
+   "dt",                         /* 0 */
+   "gyro_x", "gyro_y", "gyro_z", /* 1 - 3 */
+   "acc_x", "acc_y", "acc_z",    /* 4 - 6 */
+   "mag_x", "mag_y", "mag_z"     /* 7 - 9 */
 };
+
+
 
 #define INPUT_VARIABLES (sizeof(names) / sizeof(char *))
 
@@ -31,7 +34,8 @@ static int get_index(char *name)
 
 
 static int index_table[1024];
-static float data[INPUT_VARIABLES];
+static float float_data[INPUT_VARIABLES];
+static int int_data[INPUT_VARIABLES];
 
 
 void handle_array(msgpack_object array, int header)
@@ -57,15 +61,15 @@ void handle_array(msgpack_object array, int header)
             switch (p->type)
             {
                case MSGPACK_OBJECT_DOUBLE:
-                  data[idx] = p->via.dec;
+                  float_data[idx] = p->via.dec;
                   break;
             
                case MSGPACK_OBJECT_POSITIVE_INTEGER:
-                  data[idx] = p->via.i64;
+                  int_data[idx] = p->via.i64;
                   break;
             
                case MSGPACK_OBJECT_NEGATIVE_INTEGER:
-                  data[idx] = p->via.u64;
+                  int_data[idx] = p->via.u64;
             }
          }
       }
@@ -77,14 +81,14 @@ void handle_array(msgpack_object array, int header)
 /* a replay of previously recorded flight data */
 void main_replay(char *file_name)
 {
-   main_init(0);
+   main_init(1);
    
    msgpack_sbuffer *buffer = msgpack_sbuffer_new();
    int file = open(file_name, O_RDONLY);
 
    char buffer_data[1024];
    buffer->data = buffer_data;
-   buffer->size = 1000;
+   buffer->size = sizeof(buffer_data);
 
    msgpack_unpacker pac;
    msgpack_unpacker_init(&pac, MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
@@ -102,7 +106,11 @@ void main_replay(char *file_name)
       while (msgpack_unpacker_next(&pac, &result))
       {
          handle_array(result.data, c++ == 0);
-         uint16_t sensor_status;
+         dt = float_data[0];
+         memcpy(&marg_data.gyro.vec[0], &float_data[1], sizeof(float) * 3);
+         memcpy(&marg_data.acc.vec[0],  &float_data[4], sizeof(float) * 3);
+         memcpy(&marg_data.mag.vec[0],  &float_data[7], sizeof(float) * 3);
+         uint16_t sensor_status = 0xFFFF & ~GPS_VALID;
          main_step(dt, &marg_data, &gps_data, ultra_z, baro_z, voltage, channels, sensor_status, 1);
       }
    }
