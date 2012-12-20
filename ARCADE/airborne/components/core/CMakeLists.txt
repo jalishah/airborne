@@ -9,6 +9,7 @@ ADD_SUBDIRECTORY(estimators)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(filters)
 ADD_SUBDIRECTORY(command)
+ADD_SUBDIRECTORY(main_loop)
 ADD_SUBDIRECTORY(state)
 ADD_SUBDIRECTORY(behaviors)
 
@@ -16,6 +17,7 @@ ADD_EXECUTABLE(core main.c calpub.c)
 
 
 TARGET_LINK_LIBRARIES(core
+main_loop
 daemon
 command
 basic_control
@@ -49,6 +51,7 @@ behaviors
 math_util
 cvxgen
 hardware_util
+msgpack
 meschach zmq yaml-cpp rt pthread m protobuf-c)
 INSTALL_TARGETS(/bin core)
 

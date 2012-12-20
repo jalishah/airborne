@@ -17,7 +17,7 @@
 #include "../control/position/z_ctrl.h"
 #include "../control/position/navi.h"
 #include "../control/position/yaw_ctrl.h"
-#include "../main.h"
+#include "../main_loop/main_loop.h"
 
 #define THREAD_NAME     "cmd_interface"
 #define THREAD_PRIORITY 1
