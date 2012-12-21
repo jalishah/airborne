@@ -205,7 +205,7 @@ void main_init(int override_hw)
 
    ahrs_init(&ahrs, 10.0f, 2.0f * REALTIME_PERIOD, 0.02f);
    gps_util_init(&gps_util);
-   flight_state_init(50, 20, 2.0, 150.0, 1.3);
+   flight_state_init(50, 30, 4.0, 150.0, 1.3);
    
    interval_init(&gyro_move_interval);
 

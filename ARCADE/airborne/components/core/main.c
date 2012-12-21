@@ -1,5 +1,5 @@
 
-
+#include <stdlib.h>
 #include <daemon.h>
 
 #include "main_loop/main_util.h"
@@ -9,10 +9,16 @@
 
 int main(int argc, char *argv[])
 {
-   int replay = 1;
-   if (replay)
+   char *file = NULL;
+   if (argc > 1)
    {
-      main_replay("/home/tobi/core_debug.msgpack");
+      file = argv[1];
+   }
+
+   if (file)
+   {
+      printf("replaying %s\n", file);
+      main_replay(file);
    }
    else
    {

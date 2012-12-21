@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <msgpack.h>
-
+#include <sys/stat.h>
 #include "main_loop.h"
 
 
@@ -12,10 +12,10 @@ static char *names[] =
    "dt",                         /* 0 */
    "gyro_x", "gyro_y", "gyro_z", /* 1 - 3 */
    "acc_x", "acc_y", "acc_z",    /* 4 - 6 */
-   "mag_x", "mag_y", "mag_z"     /* 7 - 9 */
+   "mag_x", "mag_y", "mag_z",    /* 7 - 9 */
+   "raw_ultra_u", "raw_baro_u",   /* 10 - 11 */
+   "rc_valid", "rc_pitch", "rc_roll", "rc_yaw", "rc_gas", "rc_switch" /* 12 - 17 */
 };
-
-
 
 #define INPUT_VARIABLES (sizeof(names) / sizeof(char *))
 
@@ -78,7 +78,6 @@ void handle_array(msgpack_object array, int header)
    }
 }
 
-#include <sys/stat.h>
 
 /* a replay of previously recorded flight data */
 void main_replay(char *file_name)
@@ -105,12 +104,13 @@ void main_replay(char *file_name)
       memcpy(&marg_data.gyro.vec[0], &float_data[1], sizeof(float) * 3);
       memcpy(&marg_data.acc.vec[0],  &float_data[4], sizeof(float) * 3);
       memcpy(&marg_data.mag.vec[0],  &float_data[7], sizeof(float) * 3);
+      ultra_z = float_data[10];
+      baro_z = float_data[11];
       uint16_t sensor_status = 0xFFFF & ~GPS_VALID;
       main_step(dt, &marg_data, &gps_data, ultra_z, baro_z, voltage, channels, sensor_status, 1);
    }
    free(buffer);
    msgpack_unpacked_destroy(&msg);
    close(file);
-   die();
 }
 
