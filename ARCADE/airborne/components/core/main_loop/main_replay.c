@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <msgpack.h>
@@ -77,43 +78,39 @@ void handle_array(msgpack_object array, int header)
    }
 }
 
+#include <sys/stat.h>
 
 /* a replay of previously recorded flight data */
 void main_replay(char *file_name)
 {
    main_init(1);
-   
-   msgpack_sbuffer *buffer = msgpack_sbuffer_new();
    int file = open(file_name, O_RDONLY);
+   struct stat st;
+   stat(file_name, &st);
+   size_t size = st.st_size;
 
-   char buffer_data[1024];
-   buffer->data = buffer_data;
-   buffer->size = sizeof(buffer_data);
+   char *buffer = malloc(size);
+   read(file, buffer, size);
 
-   msgpack_unpacker pac;
-   msgpack_unpacker_init(&pac, MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
-   msgpack_unpacked result;
-   msgpack_unpacked_init(&result);
-
+   msgpack_unpacked msg;
+   msgpack_unpacked_init(&msg);
+                
    int c = 0;
-   int len;
+   size_t off = 0;
    DATA_DEFINITION();
-   while ((len = read(file, buffer->data, buffer->size)))
+   while (msgpack_unpack_next(&msg, buffer, size, &off))
    {
-      msgpack_unpacker_reserve_buffer(&pac, len);
-      memcpy(msgpack_unpacker_buffer(&pac), buffer->data, len);
-      msgpack_unpacker_buffer_consumed(&pac, buffer->size);
-      while (msgpack_unpacker_next(&pac, &result))
-      {
-         handle_array(result.data, c++ == 0);
-         dt = float_data[0];
-         memcpy(&marg_data.gyro.vec[0], &float_data[1], sizeof(float) * 3);
-         memcpy(&marg_data.acc.vec[0],  &float_data[4], sizeof(float) * 3);
-         memcpy(&marg_data.mag.vec[0],  &float_data[7], sizeof(float) * 3);
-         uint16_t sensor_status = 0xFFFF & ~GPS_VALID;
-         main_step(dt, &marg_data, &gps_data, ultra_z, baro_z, voltage, channels, sensor_status, 1);
-      }
+      handle_array(msg.data, c++ == 0);
+      dt = float_data[0];
+      memcpy(&marg_data.gyro.vec[0], &float_data[1], sizeof(float) * 3);
+      memcpy(&marg_data.acc.vec[0],  &float_data[4], sizeof(float) * 3);
+      memcpy(&marg_data.mag.vec[0],  &float_data[7], sizeof(float) * 3);
+      uint16_t sensor_status = 0xFFFF & ~GPS_VALID;
+      main_step(dt, &marg_data, &gps_data, ultra_z, baro_z, voltage, channels, sensor_status, 1);
    }
+   free(buffer);
+   msgpack_unpacked_destroy(&msg);
    close(file);
+   die();
 }
 

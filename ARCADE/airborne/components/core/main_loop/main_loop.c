@@ -51,6 +51,7 @@ static ahrs_t ahrs;
 static quat_t start_quat;
 static gps_util_t gps_util;
 static interval_t gyro_move_interval;
+static int init = 0;
 static char *dbg_spec[] = {"dt",                           /*  1 */
    "gyro_x", "gyro_y", "gyro_z",                           /*  2 -  4 */
    "acc_x", "acc_y", "acc_z",                              /*  5 -  7 */
@@ -64,7 +65,7 @@ static char *dbg_spec[] = {"dt",                           /*  1 */
    "yaw_sp", "pitch_sp", "roll_sp",                        /* 33 - 35 */
    "flight_state", "rc_valid",                             /* 36 - 37 */
    "rc_pitch", "rc_roll", "rc_yaw", "rc_gas", "rc_switch", /* 38 - 42 */
-   "sensor_status"};
+   "sensor_status", "init"};
 
 
 void main_calibrate(int enabled)
@@ -280,19 +281,20 @@ void main_step(float dt, marg_data_t *marg_data, gps_data_t *gps_data, float ult
    
    /* global z orientation calibration: */
    quat_t zrot_quat = {{mag_decl + mag_bias, 0, 0, -1}};
-   quat_mul(&ahrs.quat, &zrot_quat, &ahrs.quat);
+   quat_t quat;
+   quat_mul(&quat, &zrot_quat, &ahrs.quat);
    
    /* compute euler angles from quaternion: */
    euler_t euler;
-   quat_to_euler(&euler, &ahrs.quat);
+   quat_to_euler(&euler, &quat);
 
    if (ahrs_state < 0 || !cal_complete(&gyro_cal))
       goto out;
 
-   ONCE(start_quat = ahrs.quat; LOG(LL_DEBUG, "system initialized; orientation = yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll));
+   ONCE(start_quat = quat; init = 1; LOG(LL_DEBUG, "system initialized; orientation = yaw: %f pitch: %f roll: %f", euler.yaw, euler.pitch, euler.roll));
    
    /* compute NEU accelerations using quaternion: */
-   quat_rot_vec(&pos_in.acc, &marg_data->acc, &ahrs.quat);
+   quat_rot_vec(&pos_in.acc, &marg_data->acc, &quat);
    pos_in.acc.z *= -1.0f; /* <-- transform from NED to NEU frame */
    
    /* compute next 3d position estimate: */
@@ -459,7 +461,7 @@ out:
    PACKFV(marg_data->gyro.vec, 3);
    PACKFV(marg_data->acc.vec, 3);
    PACKFV(marg_data->mag.vec, 3);
-   PACKFV(ahrs.quat.vec, 4);
+   PACKFV(quat.vec, 4);
    PACKFV(euler.vec, 3);
    PACKFV(pos_in.acc.vec, 3);
    PACKF(pos_in.dx); PACKF(pos_in.dy);
@@ -474,6 +476,7 @@ out:
    PACKI(rc_valid);
    PACKFV(channels, 5);
    PACKI(sensor_status);
+   PACKI(init);
    scl_copy_send_dynamic(debug_socket, msgpack_buf->data, msgpack_buf->size);
 }
 
