@@ -134,12 +134,6 @@ components:
       - aircomm_in: sub
       - aircomm_out: pub
 
-   - name: aircomm
-     gates:
-      - in: sub
-      - out: pub
-      - opcd_ctrl: req
-
 #
 # component connections (component_a.gate_x -- component_b.gate_y)
 #
