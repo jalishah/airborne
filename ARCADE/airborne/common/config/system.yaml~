@@ -1,0 +1,189 @@
+
+#
+# SYSTEM CONFIGURATION FILE
+# #########################
+#
+# purpose: definition of intercomponent communication relations
+# 
+
+
+#
+# component definitions:
+# - each component needs to define:
+#    - its name
+#    -  a list of gates
+# - every gate consists of a name mapped to a type 
+#   [pub, sub, req, rep]
+#
+
+components:
+
+
+   - name: demo_mission
+     gates:
+      - gps: sub
+      - net: sub
+      - ctrl: req
+      - state: sub
+
+   - name: gps_sensor
+     gates:
+      - opcd_ctrl: req
+      - gps: pub
+
+   - name: gps_test
+     gates:
+      - gps: sub
+
+   - name: gpx_logger
+     gates:
+      - gps: sub
+
+   - name: core_logger
+     gates:
+      - log: sub
+
+   - name: remote
+     gates:
+      - ctrl: req
+
+   - name: ferry_ctrl
+     gates:
+      - state: sub
+      - ctrl: req
+
+   - name: blackbox
+     gates:
+      - state_machine: sub
+      - core_log: sub
+
+   - name: icarus
+     gates:
+      - mon: sub
+      - state: pub
+      - core: req
+      - ctrl: rep
+      - power_ctrl: req
+      - power_mon: sub
+
+   - name: icarus_shell
+     gates:
+      - ctrl: req
+ 
+   - name: wifi_sensor
+     gates:
+      - networks: pub
+
+   - name: wifi_logger
+     gates:
+      - networks: sub
+      - mon: sub
+   
+   - name: core
+     gates:
+      - log: pub
+      - gps: sub
+      - ctrl: rep
+      - mon: pub
+      - opcd_ctrl: req
+      - opcd_event: sub
+
+   - name: core_shell
+     gates:
+      - ctrl: req
+      - mon: sub
+ 
+   - name: mavlink
+     gates:
+      - core_mon: sub
+      - power_mon: sub
+      - ctrl: req # opcd
+      - gps: sub
+      - icarus_ctrl: req
+      - state: sub
+
+   - name: powerman
+     gates:
+      - ctrl: rep
+      - mon: pub
+      - opcd_ctrl: req
+
+   - name: opcd
+     gates:
+      - ctrl: rep
+      - event: pub
+
+   - name: opcd_shell
+     gates:
+      - ctrl: req
+
+   - name: imms_sensor
+     gates:
+      - data: pub
+
+   - name: girlscamp
+     gates:
+      - ctrl: req
+      - imms_data: sub
+      - core_data: sub
+
+   - name: aircomm_swarm
+     gates:
+      - ctrl: req
+      - gps: sub
+      - aircomm_in: sub
+      - aircomm_out: pub
+
+   - name: aircomm
+     gates:
+      - in: sub
+      - out: pub
+      - opcd_ctrl: req
+
+#
+# component connections (component_a.gate_x -- component_b.gate_y)
+#
+
+connections:
+   - [ demo_mission.state,       icarus.state]
+   - [ demo_mission.ctrl,        icarus.ctrl]
+   - [ demo_mission.gps,         gps_sensor.gps]
+   - [ demo_mission.net,         wifi_sensor.networks]
+   - [ aircomm.in,               aircomm_swarm.aircomm_out]
+   - [ aircomm.out,              aircomm_swarm.aircomm_in ]
+   - [ opcd.ctrl,                aircomm.opcd_ctrl    ]
+   - [ icarus.ctrl,              aircomm_swarm.ctrl   ]
+   - [ gps_sensor.gps,           aircomm_swarm.gps    ]
+   - [ imms_sensor.data,         girlscamp.imms_data  ]
+   - [ icarus.ctrl,              girlscamp.ctrl       ]
+   - [ core.mon,                 girlscamp.core_data  ]
+   - [ opcd.event,               core.opcd_event      ]
+   - [ opcd.ctrl,                opcd_shell.ctrl      ]
+   - [ opcd.ctrl,                core.opcd_ctrl       ]
+   - [ opcd.ctrl,                gps_sensor.opcd_ctrl ]
+   - [ opcd.ctrl,                powerman.opcd_ctrl   ]
+   - [ wifi_logger.mon,          core.mon             ]
+   - [ mavlink.core_mon,         core.mon             ]
+   - [ mavlink.power_mon,        powerman.mon         ]
+   - [ mavlink.ctrl,             opcd.ctrl            ]
+   - [ mavlink.icarus_ctrl,      icarus.ctrl          ]
+   - [ mavlink.state,            icarus.state         ]
+   - [ remote.ctrl,              core.ctrl            ]
+   - [ wifi_logger.networks,     wifi_sensor.networks ]
+   - [ core_logger.log,          core.log             ]
+   - [ gps_sensor.gps,           core.gps             ]
+   - [ gps_sensor.gps,           mavlink.gps          ]
+   - [ icarus.ctrl,              ferry_ctrl.ctrl      ]
+   - [ icarus.power_ctrl,        powerman.ctrl        ]
+   - [ icarus.power_mon,         powerman.mon         ]
+   - [ ferry_ctrl.state,         icarus.state         ]
+   - [ blackbox.state_machine,   icarus.state         ]
+   - [ blackbox.core_log,        core.log             ]
+   - [ icarus.ctrl,              icarus_shell.ctrl    ]
+   - [ core.ctrl,                icarus.core          ]
+   - [ core.mon,                 icarus.mon           ]
+   - [ core.ctrl,                core_shell.ctrl      ]
+   - [ core.mon,                 core_shell.mon       ]
+   - [ gpx_logger.gps,           gps_sensor.gps       ]
+   - [ gps_sensor.gps,           gps_test.gps         ]
+   

@@ -1,0 +1,27 @@
+import msgpack
+from aircomm.interface import Interface as ACI
+from time import sleep
+import serial
+i = Interface('/dev/ttyACM0')
+unp = msgpack.Unpacker()
+
+mFlag = 1	
+mType = 'a'
+msenderID = 2
+mspeed = 40.5	
+mheading = 90
+mcounter = 0
+
+while True:
+	data = i.receive()
+	unp.feed(data)
+	for msg in unp:
+		print msg
+	sleep(0.1)
+	myMessage = msgpack.packb([mFlag,mType,msenderID,mspeed,mheading,mcounter])
+	i.send(myMessage)
+	mcounter += 1	 
+
+	
+
+
