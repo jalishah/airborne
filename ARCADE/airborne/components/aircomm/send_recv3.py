@@ -18,14 +18,14 @@ mcounter = 0
 def send_msg():
 	global mcounter	
 	global i	
-	prefix = [0x00,0x00,0x00,0x00,0x00,0x00]
-	payload = "antena3"			
+	prefix = [0x01,0x00,0x00,0x00,0x00,0x00]
+	payload = [11,24]			
 	while 1:
-		prefix[1] = random.randint(2,127)
+		prefix[1] = random.randint(2,8)
 		myMessage = msgpack.packb([prefix,payload])
 		i.send(myMessage)
 		mcounter += 1
-		sleep(0.1)
+		sleep(0.500)
 	
 def receive_msg():
 	unp = msgpack.Unpacker()

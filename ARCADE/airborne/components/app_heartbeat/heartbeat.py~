@@ -1,20 +1,19 @@
-import msgpack
-import routing.rout
 import serial
 import thread
-import yaml
 import zmq
-import random
+import msgpack
+from time import sleep
 
-hbcount = 0
 
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("ipc:///tmp/scl_70014")
 
-def heartbeat():
-	print "hello I am starting heart beat # ", hbcount
-	hbcount += 1
-	# heart beat will gather some sensor data e.g GPS data and will send it after every specific time interval
-	rout(0x11,0x01,"hello")
+mtype = 0;
+mreceiver = 0;
 
-while True:
-	sleep(2)
-	
+while 1:
+	payload = "hello" 
+	my_message = msgpack.packb([mtype,mreceiver,payload])
+	socket.send(my_message)
+	sleep(1.5)

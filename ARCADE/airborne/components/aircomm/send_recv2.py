@@ -18,7 +18,7 @@ mcounter = 0
 def send_msg():
 	global mcounter	
 	global i
-	prefix = [0,0,0,0,0,0]
+	prefix = [0x01,0,0,0,0,0]
 	payload = 'abcd'
 		
 	while 1:

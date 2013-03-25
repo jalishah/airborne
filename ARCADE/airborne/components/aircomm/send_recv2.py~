@@ -9,34 +9,29 @@ import random
 
 
 context = zmq.Context()
-socket = context.socket(zmq.PUB)
-socket.bind("ipc:///tmp/scl_70012")
+pub_socket = context.socket(zmq.PUB)
+pub_socket.bind("ipc:///tmp/scl_70012")
 i = Interface('/dev/ttyACM1')
+
+# get msg from routing component
+sub_socket.connect ("ipc:///tmp/scl_70015")
+sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
 mcounter = 0
 
 def send_msg():
-	global mcounter	
-	global i	
-	prefix = [0,0,0,0,0,0]
-	payload = 'abcd'
-		
 	while 1:
-		myMessage = msgpack.packb([prefix,payload])
-		i.send(myMessage)
+		string = sub_socket.recv()		
+		print "msg received"
+		i.send(string)
 		mcounter += 1
-		sleep(0.1)
+	#	sleep(0.8)
 	
 def receive_msg():
-	unp = msgpack.Unpacker()
 	global i
 	while 1:
 		data = i.receive()
-		socket.send(data)	
-		unp.feed(data)
-		for msg in unp:
-			if type(msg) is tuple:
-				print msg
+		pub_socket.send(data)	
 		
 try:
 	thread.start_new_thread(receive_msg, () )
