@@ -1,0 +1,30 @@
+import msgpack
+from interface import Interface
+from time import sleep
+import serial
+i = Interface('/dev/ttyACM0')
+
+unp = msgpack.Unpacker()
+
+	mFlag = 1	
+	mType = 'a'
+	msenderID = 2
+	mspeed = 40.5	
+	mheading = 90
+	mcounter = 0
+
+while True:
+	data = i.receive()
+	unp.feed(data)
+	for msg in unp:
+		sFlag = msg[0]
+		sType = msg[1]
+		ssenderID = msg[2]
+		sspeed = msg[3]	
+		sheading = msg[4]
+		scounter = msg[5]
+		print 'Flag=' , sFlag ,'  Type =', sType, '  Sender ID =', ssenderID, '  Speed =', sspeed, '  Heading =', sheading, '  Counter =', scounter ;
+	sleep(0.1)
+	myMessage = msgpack.packb([mFlag,mType,senderID,speed,heading,mcounter])
+	i.send(myMessage)
+	mcounter += 1	 

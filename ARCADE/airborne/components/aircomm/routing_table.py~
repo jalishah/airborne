@@ -1,0 +1,9 @@
+from collections import defaultdict
+graph = [(1, 2), (2, 3), (3, 1)]
+alist = defaultdict(list)
+for e in graph:
+    alist[e[0]].append(e[1])  
+    alist[e[1]].append(e[0]) # these edges are bidirectional
+
+for v in alist:
+    print "%d -> %s" % (v,alist[v])

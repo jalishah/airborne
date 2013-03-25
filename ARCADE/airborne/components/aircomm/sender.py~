@@ -1,0 +1,14 @@
+import msgpack
+from interface import Interface
+from time import sleep
+import serial
+i = Interface('/dev/ttyACM0')
+
+msgHeader = {'Flag': 0,'Type': 1,'SenderID': 3,'Speed': 400,'Heading': 360,'payload': 'Hello'};
+ 
+while True:
+	print len(str(msgHeader))
+	myMessage = msgpack.packb(str(msgHeader))
+	i.send(myMessage)
+	sleep(0.1)
+	

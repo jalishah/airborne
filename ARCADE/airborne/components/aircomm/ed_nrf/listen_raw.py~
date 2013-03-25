@@ -1,0 +1,28 @@
+from dev.cdc import CDC_nRF
+import sys
+import time
+import msgpack
+
+myDev=CDC_nRF(sys.argv[1])
+#myDev.setPower(1)
+
+#myDev.setRX_Address(0,[0xc0,0x1d,0xbe,0xef,0x00])
+myDev._bus.setDTR(True)
+myDev._bus.timeout=None;
+unp = msgpack.Unpacker()
+
+while True:
+	data = myDev._bus.read()
+	unp.feed(data)
+	for msg in unp:
+		mFlag = msg[0]
+		mType = msg[1]
+		senderID = msg[2]
+		speed = msg[3]	
+		heading = msg[4]
+		print 'Flag=' , mFlag ,'  Type =', mType, '  Sender ID =', senderID, '  Speed =', speed, '  Heading =', heading;
+
+	#print msgpack.unpackb(data)
+        #sys.stdout.write(myDev._bus.read())
+	#sys.stdout.flush()
+	#print myDev._rx(1024)

@@ -1,0 +1,5 @@
+#Aircomm in out gates 
+aircomm:
+     gates: 
+           gps_out: pub
+           gps_in: in

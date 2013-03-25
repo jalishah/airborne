@@ -1,0 +1,32 @@
+import msgpack
+import send_recv2
+import serial
+import thread
+import yaml
+import zmq
+import sys
+
+print "Collecting updates from node 1"
+socket.connect ("ipc:///tmp/scl_70012")
+socket.setsockopt(zmq.SUBSCRIBE, "")
+
+unp = msgpack.Unpacker()
+
+while True:
+	string = socket.recv()
+	unp.feed(string)
+    	update_route(string)
+	for msg in unp:
+		if type(msg) is tuple:
+		print msg
+
+
+def update_route( string ):
+       print "generate routing table: " , string
+     
+
+def main():
+	pass
+
+#if __name__ == "__main__":
+#   main()
