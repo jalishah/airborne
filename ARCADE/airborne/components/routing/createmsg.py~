@@ -21,7 +21,8 @@ def create_msg(msg):
 	if msg[0] == 0:
 		# broadcast msg directly .....
 		print " i am ok"
-		pub_socket.send(msg)
+		my_message = msgpack.packb([msg[0],msg[1],msg[2]])
+		pub_socket.send(my_message)
 	if msg[0] == 1:
 		# get the routing table entries directly connected to this node and broadcast
 		print " i am not ok"

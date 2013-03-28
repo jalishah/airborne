@@ -17,7 +17,7 @@ sub_socket = context.socket(zmq.SUB)
 sub_socket.connect ("ipc:///tmp/scl_70015")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
-i = Interface('/dev/ttyACM1')
+i = Interface('/dev/ttyACM0')
 mcounter = 0
 
 def send_msg():

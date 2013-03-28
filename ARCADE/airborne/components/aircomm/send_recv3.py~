@@ -25,7 +25,7 @@ def send_msg():
 		myMessage = msgpack.packb([prefix,payload])
 		i.send(myMessage)
 		mcounter += 1
-		sleep(0.1)
+		sleep(0.500)
 	
 def receive_msg():
 	unp = msgpack.Unpacker()

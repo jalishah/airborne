@@ -16,13 +16,14 @@ key_value = 0x00
 my_id = 0x01
 
 context = zmq.Context()
-socket = context.socket(zmq.SUB)
+sub_socket = context.socket(zmq.SUB)
+sub_socket.connect ("ipc:///tmp/scl_70012")
+sub_socket.setsockopt(zmq.SUBSCRIBE, "")
+
 # in dictionary (rout) the keys are the sender ids
 rout = {};
 
-print "Collecting updates from node 1"
-socket.connect ("ipc:///tmp/scl_70012")
-socket.setsockopt(zmq.SUBSCRIBE, "")
+print "Collecting updates from nodes"
 
 unp = msgpack.Unpacker()
 
@@ -71,7 +72,7 @@ def chk_msgtype ( msg ):
 	return
 
 while True:
-	string = socket.recv()
+	string = sub_socket.recv()
 	unp.feed(string)    # unpack the msg 
     	for msg in unp:
 		if type(msg) is tuple:
@@ -81,8 +82,6 @@ while True:
 
      
 
-#def main():
-#	pass
 
 #if __name__ == "__main__":
-#   main()
+

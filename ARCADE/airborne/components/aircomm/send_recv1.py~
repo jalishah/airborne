@@ -5,7 +5,7 @@ import thread
 import yaml
 import zmq
 import random
-
+import msgpack
 
 context = zmq.Context()
 pub_socket = context.socket(zmq.PUB)
@@ -17,7 +17,7 @@ sub_socket = context.socket(zmq.SUB)
 sub_socket.connect ("ipc:///tmp/scl_70015")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
-i = Interface('/dev/ttyACM1')
+i = Interface('/dev/ttyACM2')
 mcounter = 0
 
 def send_msg():
@@ -25,14 +25,18 @@ def send_msg():
 		string = sub_socket.recv()		
 		print "msg received"
 		i.send(string)
-		mcounter += 1
-	#	sleep(0.8)
+		#	sleep(0.8)
 	
 def receive_msg():
 	global i
+	unp = msgpack.Unpacker()
 	while 1:
 		data = i.receive()
 		pub_socket.send(data)	
+		unp.feed(data)
+		for msg in unp:
+			if type(msg) is tuple:
+				print msg
 		
 try:
 	thread.start_new_thread(receive_msg, () )

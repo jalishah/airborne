@@ -5,9 +5,9 @@ from lookup import Lookup
 
 #  Socket to talk to server
 context = zmq.Context()
-sub_socket = context.socket(zmq.SUB)
 
 print "Collecting msg from app_heart_beat"
+sub_socket = context.socket(zmq.SUB)
 sub_socket.connect ("ipc:///tmp/scl_70014")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 

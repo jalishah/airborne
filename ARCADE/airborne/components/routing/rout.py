@@ -16,13 +16,20 @@ key_value = 0x00
 my_id = 0x01
 
 context = zmq.Context()
-socket = context.socket(zmq.SUB)
+# subscribe to Mac layer to receive the message
+sub_socket = context.socket(zmq.SUB)
+sub_socket.connect ("ipc:///tmp/scl_70012")
+sub_socket.setsockopt(zmq.SUBSCRIBE, "")
+
+#forward the message to Application Layer
+pub_socket = context.socket(zmq.PUB)
+pub_socket.bind("ipc:///tmp/scl_70016")
+
+
 # in dictionary (rout) the keys are the sender ids
 rout = {};
 
-print "Collecting updates from node 1"
-socket.connect ("ipc:///tmp/scl_70012")
-socket.setsockopt(zmq.SUBSCRIBE, "")
+print "Collecting updates from nodes"
 
 unp = msgpack.Unpacker()
 
@@ -54,6 +61,8 @@ def add_new_rout_values( key, value):
 def get_rout (): 
 	print "generate routing table: " , rout
 	return
+def pub_msg_to_app()
+	
 
 #check the type of message 
 def chk_msgtype ( msg ):
@@ -67,11 +76,14 @@ def chk_msgtype ( msg ):
 		key_value = msg[0][1]  # to add the sender id in the value part of rout (dict)
 		chk_rout_key(key_value)		# to add the sender id as a key if not exist
 		for k in msg[1]:
-			add_new_rout_values(key_value, k)  		
+			add_new_rout_values(key_value, k)
+
+	if msg[0][0] == 3:
+		pub_socket.send(msg[1])  		
 	return
 
 while True:
-	string = socket.recv()
+	string = sub_socket.recv()
 	unp.feed(string)    # unpack the msg 
     	for msg in unp:
 		if type(msg) is tuple:
