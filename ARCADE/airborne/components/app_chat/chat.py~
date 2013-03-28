@@ -14,7 +14,7 @@ sub_socket.connect ("ipc:///tmp/scl_70016")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
 
-mtype = 0;
+mtype = 3;
 mreceiver = 0;
 
 def send_chat():

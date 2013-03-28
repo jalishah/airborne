@@ -18,12 +18,13 @@ my_id = 0x01
 context = zmq.Context()
 # subscribe to Mac layer to receive the message
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect ("ipc:///tmp/scl_70012")
+sub_socket.connect ("ipc:///tmp/scl_70011")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
 #forward the message to Application Layer
 pub_socket = context.socket(zmq.PUB)
 pub_socket.bind("ipc:///tmp/scl_70016")
+
 
 
 # in dictionary (rout) the keys are the sender ids
@@ -61,8 +62,6 @@ def add_new_rout_values( key, value):
 def get_rout (): 
 	print "generate routing table: " , rout
 	return
-def pub_msg_to_app()
-	
 
 #check the type of message 
 def chk_msgtype ( msg ):

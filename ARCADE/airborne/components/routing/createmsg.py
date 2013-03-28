@@ -11,7 +11,7 @@ sub_socket = context.socket(zmq.SUB)
 sub_socket.connect ("ipc:///tmp/scl_70014")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
-#forward the heartbeat to mac_layer
+#forward the application to mac_layer
 pub_socket = context.socket(zmq.PUB)
 pub_socket.bind("ipc:///tmp/scl_70015")
 
@@ -23,6 +23,12 @@ def create_msg(msg):
 		print " i am ok"
 		my_message = msgpack.packb([msg[0],msg[1],msg[2]])
 		pub_socket.send(my_message)
+	if msg[0] == 3:
+		# broadcast msg directly .....
+		print " i am sending chat"
+		my_message = msgpack.packb([msg[0],msg[1],msg[2]])
+		pub_socket.send(my_message)
+		
 	if msg[0] == 1:
 		# get the routing table entries directly connected to this node and broadcast
 		print " i am not ok"
