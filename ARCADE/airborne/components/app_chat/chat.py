@@ -1,7 +1,8 @@
 import zmq
-import msgpack
 from time import sleep
-
+import thread
+import sys
+import msgpack
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
@@ -16,13 +17,13 @@ sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 mtype = 0;
 mreceiver = 0;
 
-def send_msg():
+def send_chat():
 	while 1:
-		payload = raw_input("enter your short message") 
+		payload = raw_input("enter your short message:    ") 
 		my_message = msgpack.packb([mtype,mreceiver,payload])
 		socket.send(my_message)
 				
-def receive_msg():
+def receive_chat():
 	global i
 	while 1:
 		string = sub_socket.recv()
