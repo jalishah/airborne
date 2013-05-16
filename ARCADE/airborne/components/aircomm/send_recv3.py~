@@ -11,7 +11,7 @@ context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind("ipc:///tmp/scl_70013")
 
-i = Interface('/dev/ttyACM2')
+i = Interface('/dev/ttyACM0')
 
 mcounter = 0
 

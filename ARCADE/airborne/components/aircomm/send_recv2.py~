@@ -18,11 +18,11 @@ mcounter = 0
 def send_msg():
 	global mcounter	
 	global i
-	prefix = [0x01,0,0,0,0,0]
-	payload = 'abcd'
+	prefix = [4,2,2,3,6,0]   # typ, sender, originator incase of batman, ttl , unique msg id , recevier incase of cmd msg
+	payload = ''
 		
 	while 1:
-		myMessage = msgpack.packb([prefix,payload])
+		myMessage = msgpack.packb([prefix,0])
 		i.send(myMessage)
 		mcounter += 1
 		sleep(0.1)
