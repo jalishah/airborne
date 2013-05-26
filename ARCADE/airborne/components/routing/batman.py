@@ -28,11 +28,14 @@ MSg is forward to Module forwader in case of batman if ttl is not 0
 Msg is forward to Module forwader in case the receiver is different  
 
 """
+# to add the self id or receiver id in the key part of rout (dict)
+chk_rout_key(my_id)   # this will be call once in the begining
+
 def chk_msgtype ( msg ):
+	
+		
 	global key_value;
-	key_value = my_id      # to add the self id or receiver id in the key part of rout (dict)
-	chk_rout_key(key_value)   # this will be call once in the begining when it receive its first msg (msg of any type)
-	add_new_rout_values(key_value, msg[0][1])   #add this sender to the key(this receiver)
+	add_new_rout_values(my_id, msg[0][1])   #add this new node to self key (this receiver)
 	
 	if msg[0][0] == 4:
 		key_value = msg[0][1]  # to add the sender id in the value part of rout (dict)
