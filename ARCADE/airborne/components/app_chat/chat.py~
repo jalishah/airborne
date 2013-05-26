@@ -5,8 +5,8 @@ import sys
 import msgpack
 
 context = zmq.Context()
-socket = context.socket(zmq.PUB)
-socket.bind("ipc:///tmp/scl_70014")
+pub_socket = context.socket(zmq.PUB)
+pub_socket.bind("ipc:///tmp/scl_70014")
 
 
 sub_socket = context.socket(zmq.SUB)
@@ -21,7 +21,7 @@ def send_chat():
 	while 1:
 		payload = raw_input("enter your short message:    ") 
 		my_message = msgpack.packb([mtype,mreceiver,payload])
-		socket.send(my_message)
+		pub_socket.send(my_message)
 				
 def receive_chat():
 	global i

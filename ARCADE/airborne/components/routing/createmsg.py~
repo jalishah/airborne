@@ -5,7 +5,6 @@ from lookup import Lookup
 from storage import *
 from forwarder import *
 
-context = zmq.Context()
 
 unp = msgpack.Unpacker()
 

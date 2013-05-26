@@ -1,10 +1,12 @@
 from time import sleep
 from lookup import Lookup
+
 # in dictionary (rout) the keys are the sender ids
 rout = {};
 
 key_value = 0x00
 my_id = 0x01
+
 unique_ids_list = []  # to avoid repeatition of brodcast for batman org msg
 
 
@@ -30,6 +32,10 @@ def add_new_rout_values( key, value):
 
 	return
 
+def find_rout_value(value)
+	look = Lookup(rout)
+	key = find_key(rout, value)
+	return key 
 
 def get_rout (): 
 	print "generate routing table: " , rout

@@ -32,6 +32,10 @@ def add_new_rout_values( key, value):
 
 	return
 
+def find_rout_value(value):
+	look = Lookup(rout)
+	key = find_key(rout, value)
+	return key 
 
 def get_rout (): 
 	print "generate routing table: " , rout

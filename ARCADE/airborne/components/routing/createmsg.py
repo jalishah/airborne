@@ -14,11 +14,13 @@ def create_header(msg):
 		print " i am ok"
 	#	my_message = msgpack.packb([msg[0],msg[1],msg[2]])
 	#	pub_socket.send(my_message)
-	if msg[0] == 3:
-		# broadcast msg directly .....
+	
+	if msg[0] == 2:
+		# chat app .....
 		print " i am sending chat"
-	#	my_message = msgpack.packb([msg[0],msg[1],msg[2]])
-	#	pub_socket.send(my_message)
+		recv_id = find_rout_value(target)   #search for receiver in the routing table if not exit broadcast.
+		prefix = [msg[0],my_id,msg[1],2,2,recv_id]
+
 		
 	if msg[0] == 1:
 		# get the routing table entries directly connected to this node and broadcast
