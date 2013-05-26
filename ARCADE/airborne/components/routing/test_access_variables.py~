@@ -1,0 +1,9 @@
+import test_variables *
+
+
+def function():
+	print a
+	b = a+c
+	print b
+
+function()
