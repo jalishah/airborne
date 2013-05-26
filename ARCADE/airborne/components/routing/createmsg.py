@@ -18,7 +18,7 @@ def create_header(msg):
 	if msg[0] == 2:
 		# chat app .....
 		print " i am sending chat"
-		recv_id = find_rout_value(target)   #search for receiver in the routing table if not exit broadcast.
+		recv_id = find_rout_key(msg[1])   #search for receiver in the routing table if not exit broadcast.
 		prefix = [msg[0],my_id,msg[1],2,2,recv_id]
 
 		

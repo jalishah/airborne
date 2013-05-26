@@ -15,7 +15,7 @@ sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
 
 mtype = 2;
-mreceiver = 5;
+mreceiver = 0x05;
 
 def send_chat():
 	while 1:
