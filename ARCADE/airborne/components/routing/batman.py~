@@ -68,15 +68,6 @@ def sub_to_mac():
 		get_rout()
 
 
-def empty_uniq_id_list():  
-	global unique_ids_list
-	while 1:				
-		sleep(120)
-		del unique_ids_list[:]
-		print  unique_ids_list
-
-
-
 try:
 	thread.start_new_thread(sub_to_mac, () )
 	thread.start_new_thread(create_msg, () )

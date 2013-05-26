@@ -28,9 +28,8 @@ pub_to_mac_socket.bind("ipc:///tmp/scl_70015")
 
 
 
-def forward_msg(typ,org,ttl,msg_unq_id):
-	global my_id
-	prefix = [typ,my_id,org,ttl,msg_unq_id,0]
+def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id):
+	prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
 	my_message = msgpack.packb([prefix,0])
 	pub_to_mac_socket.send(my_message)
 

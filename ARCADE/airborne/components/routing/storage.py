@@ -1,10 +1,12 @@
 from time import sleep
 from lookup import Lookup
+
 # in dictionary (rout) the keys are the sender ids
 rout = {};
 
 key_value = 0x00
 my_id = 0x01
+
 unique_ids_list = []  # to avoid repeatition of brodcast for batman org msg
 
 

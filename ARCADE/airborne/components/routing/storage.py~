@@ -36,5 +36,14 @@ def get_rout ():
 	return
 
 
+
+def empty_uniq_id_list():  
+	global unique_ids_list
+	while 1:				
+		sleep(120)
+		del unique_ids_list[:]
+		print  unique_ids_list
+
+
 # remove the msg unique id's from the list 
 

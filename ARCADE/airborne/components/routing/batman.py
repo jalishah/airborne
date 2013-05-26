@@ -51,7 +51,7 @@ def chk_msgtype ( msg ):
 				new_ttl = msg[0][3] - 1
 				originator = msg[0][2]
 				unq_id = msg[0][4]
-				forward_msg(msg[0][0],originator,new_ttl,unq_id)  # forward the batman rout msg or broadcast again after decrement of ttl by one
+				forward_msg(msg[0][0],my_id,originator,new_ttl,unq_id,0)  # forward the batman rout msg or broadcast again after decrement of ttl by one
 
 	if msg[0][0] == 3:
 		pub_to_app_socket.send(msg[1])  		

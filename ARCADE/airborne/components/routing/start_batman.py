@@ -8,6 +8,6 @@ def start_batman():
 	global my_id
 	while 1:
 		print "batman started"
-		forward_msg(4,my_id,3,unq_id)
+		forward_msg(4,my_id,my_id,3,unq_id,0)
 		unq_id += 1		
-		sleep (30)   
+		sleep (60)   
