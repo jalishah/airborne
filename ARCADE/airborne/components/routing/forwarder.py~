@@ -28,8 +28,16 @@ pub_to_mac_socket.bind("ipc:///tmp/scl_70015")
 
 
 
-def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id):
-	prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
-	my_message = msgpack.packb([prefix,0])
-	pub_to_mac_socket.send(my_message)
+def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id,payload):
+	
+	if typ == 4 :
+		prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
+		my_message = msgpack.packb([prefix,0])
+		pub_to_mac_socket.send(my_message)
 
+	if typ != 4 :
+		prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
+		my_message = msgpack.packb([prefix,payload])
+		print prefix 
+		print payload
+		pub_to_mac_socket.send(my_message)
