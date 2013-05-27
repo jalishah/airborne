@@ -9,23 +9,20 @@ from forwarder import *
 unp = msgpack.Unpacker()
 
 def create_header(msg):
-	if msg[0] == 0:
-		# broadcast msg directly .....
-		print " i am ok"
-	#	my_message = msgpack.packb([msg[0],msg[1],msg[2]])
-	#	pub_socket.send(my_message)
-	
+	unq_id = 0
+	if msg[0] == 4:
+		print "sending batman"
+		forward_msg(msg[0],my_id,my_id,3,unq_id,msg[1],msg[2])
+		unq_id +=1
 	if msg[0] == 2:
 		# chat app .....
 		print " i am sending chat"
 		recv_id = find_rout_key(msg[1])   #search for receiver in the routing table if not exit broadcast.
-		print recv_id
 		forward_msg(msg[0],my_id,msg[1],2,2,recv_id,msg[2])
 		
-	if msg[0] == 1:
-		# get the routing table entries directly connected to this node and broadcast
-		print " i am not ok"
-
+	"""
+		add more condition for more apps and types
+	"""
 # Process 5 updates
 
 def create_msg():

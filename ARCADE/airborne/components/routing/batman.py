@@ -49,16 +49,13 @@ def chk_msgtype ( msg ):
 				add_new_rout_values(key_value,msg[0][2])
 			print unique_ids_list
 			chk_value = unique_ids_list.count(msg[0][4])
-			print chk_value
-		
 			if chk_value == 0 :   # chk the unq_msg_id in list and operate only if not available
 				unique_ids_list.append(msg[0][4])	
-				print unique_ids_list
 				if msg[0][3] != 0 and msg[0][2] != my_id:   # if ttl is not zero and if the receiver is not originator
 					originator = msg[0][2]
 					forward_msg(msg[0][0],my_id,originator,new_ttl,unq_id,0,0)  # forward the batman rout msg or broadcast again after decrement of ttl by one
 
-		if msg[0][0] != 4 and msg[0][2] != my_id:   # if type is not batman and target id is not my_id
+		if msg[0][0] != 4 and msg[0][2] != my_id :   # if type is not batman and target id is not my_id and recv_id = 0
 			recv_id = find_rout_key(msg[0][2])   #search for receiver in the routing table if not exit broadcast.
 			print recv_id
 			forward_msg(msg[0][0],my_id,msg[0][2],new_ttl,unq_id,recv_id,msg[1])
