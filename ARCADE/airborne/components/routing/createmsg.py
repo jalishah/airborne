@@ -20,6 +20,11 @@ def create_header(msg):
 		recv_id = find_rout_key(msg[1])   #search for receiver in the routing table if not exit broadcast.
 		forward_msg(msg[0],my_id,msg[1],2,2,recv_id,msg[2])
 		
+	if msg[0] == 1:
+		# chat app .....
+		print " i am sending chat"
+		recv_id = find_rout_key(msg[1])   #search for receiver in the routing table if not exit broadcast.
+		forward_msg(msg[0],my_id,msg[1],2,2,recv_id,msg[2])
 	"""
 		add more condition for more apps and types
 	"""
