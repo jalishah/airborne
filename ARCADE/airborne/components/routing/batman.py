@@ -32,7 +32,6 @@ in case of batman routing ... the 3rd position is for originator in case of othe
 chk_rout_key(my_id)   # this will be call once in the begining
 
 def chk_msgtype ( msg ):
-	
 		
 	global key_value;
 	add_new_rout_values(my_id, msg[0][1])   #add this new node to self key (this receiver)
@@ -61,7 +60,7 @@ def chk_msgtype ( msg ):
 			forward_msg(msg[0][0],my_id,msg[0][2],new_ttl,unq_id,recv_id,msg[1])
 
 		if msg[0][0] != 4 and msg[0][2] == my_id:
-			pub_to_app_socket.send(msg[1])  		
+			pub_to_app_socket.send("%s %s" % (str(msg[0][0]),msg[1]) )   		
 	return
 
 def sub_to_mac():
