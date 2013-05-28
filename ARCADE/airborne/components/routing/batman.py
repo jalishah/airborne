@@ -60,7 +60,7 @@ def chk_msgtype ( msg ):
 			forward_msg(msg[0][0],my_id,msg[0][2],new_ttl,unq_id,recv_id,msg[1])
 
 		if msg[0][0] != 4 and msg[0][2] == my_id:
-			pub_to_app_socket.send("%s %s" % (str(msg[0][0]),msg[1]) )   		
+			pub_to_app_socket.send("%s %s" % (str(msg[0][0]),msg[1]) )	
 	return
 
 def sub_to_mac():

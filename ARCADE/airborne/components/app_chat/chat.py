@@ -15,16 +15,17 @@ sub_socket.setsockopt(zmq.SUBSCRIBE, "2")
 
 
 mtype = 0;
-mreceiver = 0x0;
+mreceiver = 0;
 
 def send_chat():
 	global mreceiver
+	global mtype
 	while 1:
 		payload = raw_input("enter your short message:    ")
 		recv_id = raw_input("enter receiver id:     ")
 		mreceiver = int(recv_id)		
 		typ_id = raw_input("enter message type:     ")
-		mtyp =  int(typ_id) 		
+		mtype =  int(typ_id) 		
 		my_message = msgpack.packb([mtype,mreceiver,payload])
 		pub_socket.send(my_message)
 				
