@@ -1,10 +1,3 @@
-
-while 1:
-	string = sub_socket.recv()
-	print string
-	
-
-
 import zmq
 from time import sleep
 import thread
@@ -53,8 +46,8 @@ def receive_command():
 			call(["pwd"])
 
 try:
-	thread.start_new_thread(receive_chat, () )
-	thread.start_new_thread(send_chat, () )
+	thread.start_new_thread(receive_command, () )
+	thread.start_new_thread(send_command, () )
 
 except:
 	print "Error: unable to start thread"

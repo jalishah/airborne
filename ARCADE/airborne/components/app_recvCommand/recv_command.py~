@@ -29,7 +29,7 @@ def send_command():
 	global mreceiver
 	global mtype
 	while 1:
-		payload = raw_input("enter your short message:    ")
+		payload = raw_input("enter Command:    ")
 		recv_id = raw_input("enter receiver id:     ")
 		mreceiver = int(recv_id)		
 		typ_id = raw_input("enter message type:     ")
@@ -53,8 +53,8 @@ def receive_command():
 			call(["pwd"])
 
 try:
-	thread.start_new_thread(receive_chat, () )
-	thread.start_new_thread(send_chat, () )
+	thread.start_new_thread(receive_command, () )
+	thread.start_new_thread(send_command, () )
 
 except:
 	print "Error: unable to start thread"
