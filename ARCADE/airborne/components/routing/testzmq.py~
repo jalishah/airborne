@@ -1,4 +1,7 @@
 from forwarder import *
+from time import sleep
 
 while 1:
-	pub_to_app_socket.send("%s %s" % ((str(2),"hi") )  
+	comnd = raw_input("enter your short message:    ")
+	pub_to_app_socket.send("%s %s" % (str(1) , comnd) )  	
+	sleep(10)

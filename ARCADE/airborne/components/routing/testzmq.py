@@ -1,4 +1,5 @@
 from forwarder import *
 
 while 1:
-	pub_to_app_socket.send("%s hello" % (str(5)) )  
+	comnd = raw_input("enter your short message:    ")
+	pub_to_app_socket.send("%s %s" % (str(1) , comnd) ) 
