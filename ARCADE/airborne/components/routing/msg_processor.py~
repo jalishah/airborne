@@ -15,15 +15,13 @@ MSg is forward to Module forwader in case of batman if ttl is not 0
 Msg is forward to Module forwader in case the receiver is different  
 in case of batman routing ... the 3rd position is for originator in case of other msgz its for target node id
 """
-
+my_id = yaml_conf['header']['my_id']
 # to add the self id or receiver id in the key part of rout (dict)
-chk_rout_key(yaml_conf['header']['my_id'])   # this will be call once in the begining
+chk_rout_key(my_id)   # this will be call once in the begining
 
 def chk_msgtype ( msg ):
 		
 	global key_value;
-	my_id = doc['header']['my_id']
-
 	try:
 		add_new_rout_values(my_id, msg[0][1])   #add this new node to self key (this receiver)
 	
@@ -46,7 +44,7 @@ def chk_msgtype ( msg ):
 						forward_msg(msg[0][0],my_id,originator,new_ttl,unq_id,0,0)  # forward the batman rout msg or broadcast again after decrement of ttl by one
 
 			if msg[0][0] != 4 and msg[0][2] != my_id :   # if type is not batman and target id is not my_id and recv_id = 0
-				recv_id = find_rout_key(msg[0][2])   #search for receiver in the routing table if not exit broadcast.
+				recv_id = find_rout_keys(msg[0][2])   #search for receiver in the routing table if not exit broadcast.
 				print recv_id
 				forward_msg(msg[0][0],my_id,msg[0][2],new_ttl,unq_id,recv_id,msg[1])
 

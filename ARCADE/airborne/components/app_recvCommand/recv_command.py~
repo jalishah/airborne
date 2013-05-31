@@ -44,7 +44,8 @@ def receive_command():
 	
 		if sp_string[1] == 'pwd':
 			call(["pwd"])
-		
+		else :
+			call([sp_string[1]])
 
 try:
 	thread.start_new_thread(receive_command, () )

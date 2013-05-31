@@ -23,7 +23,7 @@ def send_chat():
 	while 1:
 		payload = raw_input("enter your short message:    ")
 		try:
-			recv_id = int(raw_input("enter receiver id:     "))
+			mreceiver = int(raw_input("enter receiver id:     "))
 		except ValueError:
 			print "Oops! That was not a valid number. Try again.."
  		

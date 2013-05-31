@@ -1,5 +1,5 @@
 from time import sleep
-from lookup import Lookup
+from lookup import *
 import yaml
 
 yaml_conf = {}
@@ -12,6 +12,7 @@ rout = {};
 
 unique_ids_list = []  # to avoid repeatition of brodcast for batman org msg
 
+my_id = yaml_conf['header']['my_id']
 
 # To check weather the key already exist in the routing table
 def chk_rout_key( key ):
@@ -29,20 +30,25 @@ def add_new_rout_values( key, value):
 	global rout
 	look = Lookup(rout)
 	links = look.get_value(key)
-
 	if value not in links:
 		rout[key].append(value)
-
 	return
 
-def find_rout_key(value):
+def find_rout(value):
 	global rout
-	look = Lookup(rout)
-	if not look.get_key(value): 
+	keys = get_key_from_value(rout,value)
+	print keys
+	
+	if not keys:
 		return 0
+
+
 	else:
-		key =  look.get_key(value)
-		return key[0]
+		if my_id in keys:
+			return value
+		else: 
+			return keys[0]
+	
 	
 def get_rout (): 
 	print "generate routing table: " , rout

@@ -1,12 +1,10 @@
-
-
-def find_key(dic, val):
-    """return the key of dictionary dic given the value"""
-    return [k for k, v in symbol_dic.iteritems() if v == val][0]
-
-def find_value(dic, key):
-    """return the value of dictionary dic given the key"""
-    return dic[key]
+def get_key_from_value(my_dict, v):
+	keys = my_dict.keys()
+	key_list = []
+	for i in keys:
+		if v in my_dict[i]:
+			key_list.append(i)
+	return key_list
 
 
 class Lookup(dict):
@@ -22,18 +20,3 @@ class Lookup(dict):
     def get_value(self, key):
         """find the value given a key"""
         return self[key]
-
-
-# test it out
-if __name__ == '__main__':
-    
-    # dictionary of chemical symbols
-    rout = {1: (86,), 2: (86,), 3: (86,), 4: (0,), 5: (86,78,56), 86: (0,), 22: (0,), 37: (0,),81:()}
-    look = Lookup(rout)
-    links = look.get_value(2)
-    k = 24	
-    if k not in links:
-	rout[2] = rout[2] + (k,)
-    print rout
-
-
