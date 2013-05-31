@@ -14,7 +14,7 @@ sub_socket.connect ("ipc:///tmp/scl_70016")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "2")
 
 
-mtype = 0;
+mtype = 'chat';
 mreceiver = 0;
 
 def send_chat():
@@ -24,7 +24,6 @@ def send_chat():
 		payload = raw_input("enter your short message:    ")
 		try:
 			recv_id = int(raw_input("enter receiver id:     "))
-			typ_id = int(raw_input("enter message type:     "))
 		except ValueError:
 			print "Oops! That was not a valid number. Try again.."
  		

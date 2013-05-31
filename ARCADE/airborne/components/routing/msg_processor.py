@@ -22,7 +22,7 @@ chk_rout_key(yaml_conf['header']['my_id'])   # this will be call once in the beg
 def chk_msgtype ( msg ):
 		
 	global key_value;
-	my_id = doc['header']['my_id']
+	my_id = yaml_conf['header']['my_id']
 
 	try:
 		add_new_rout_values(my_id, msg[0][1])   #add this new node to self key (this receiver)

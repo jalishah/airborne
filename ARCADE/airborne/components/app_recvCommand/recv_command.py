@@ -15,17 +15,15 @@ sub_socket.connect ("ipc:///tmp/scl_70016")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "1")
 
 
-mtype = 0;
+mtype = 'command';
 mreceiver = 0;
 
 def send_command():
 	global mreceiver
-	global mtype
 	while 1:
 		payload = raw_input("enter Command:    ")
 		try:
 			recv_id = int(raw_input("enter receiver id:     "))
-			typ_id = int(raw_input("enter message type:     "))
 		except ValueError:
 			print "Oops! That was not a valid number. Try again.."
 
@@ -46,7 +44,8 @@ def receive_command():
 	
 		if sp_string[1] == 'pwd':
 			call(["pwd"])
-		
+		else :
+			call([sp_string[1]])
 
 try:
 	thread.start_new_thread(receive_command, () )
