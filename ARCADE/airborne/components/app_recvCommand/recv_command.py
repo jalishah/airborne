@@ -37,15 +37,12 @@ def receive_command():
 		print string
 		sp_string = string.split( );
 		
-# list of commands to be executed are provided here 
-
 		if sp_string[1] == 'ls'	:
 			call(["ls", "-l"])
 	
 		if sp_string[1] == 'pwd':
 			call(["pwd"])
-		else :
-			call([sp_string[1]])
+		
 
 try:
 	thread.start_new_thread(receive_command, () )
