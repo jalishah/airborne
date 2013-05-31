@@ -22,10 +22,12 @@ def send_chat():
 	global mtype
 	while 1:
 		payload = raw_input("enter your short message:    ")
-		recv_id = raw_input("enter receiver id:     ")
-		mreceiver = int(recv_id)		
-		typ_id = raw_input("enter message type:     ")
-		mtype =  int(typ_id) 		
+		try:
+			recv_id = int(raw_input("enter receiver id:     "))
+			typ_id = int(raw_input("enter message type:     "))
+		except ValueError:
+			print "Oops! That was not a valid number. Try again.."
+ 		
 		my_message = msgpack.packb([mtype,mreceiver,payload])
 		pub_socket.send(my_message)
 				

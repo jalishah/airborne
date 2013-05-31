@@ -1,11 +1,14 @@
 from time import sleep
 from lookup import Lookup
+import yaml
+
+yaml_conf = {}
+
+with open('config.yaml') as f:
+	yaml_conf = yaml.load(f)
 
 # in dictionary (rout) the keys are the sender ids
 rout = {};
-
-key_value = 0
-my_id = 1
 
 unique_ids_list = []  # to avoid repeatition of brodcast for batman org msg
 

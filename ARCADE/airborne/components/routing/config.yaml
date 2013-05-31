@@ -1,0 +1,2 @@
+'header' :
+   {'my_id' : 1 , 'ttl_batman' : 2 ,'ttl_command' : 3 ,'ttl_chat' : 3 , 'seq_id_batman' : 6  ,'seq_id_command' : 1  , 'seq_id_chat' : 5 }
