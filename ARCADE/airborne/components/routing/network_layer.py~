@@ -28,8 +28,7 @@ def sub_to_mac():
 def sub_to_app():
 	global sub_to_app_socket
 	while 1:
-		print "Hello i m here to create ur msg"	
-	    	string = sub_to_app_socket.recv()
+		string = sub_to_app_socket.recv()
 		unp.feed(string)    # unpack the msg 
 	    	for msg in unp:
 			if type(msg) is tuple:

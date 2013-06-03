@@ -6,13 +6,13 @@ import msgpack
 
 context = zmq.Context()
 pub_socket = context.socket(zmq.PUB)
-pub_socket.bind("ipc:///tmp/scl_70014")
+pub_socket.bind("ipc:///tmp/scl_70015")
+
 
 
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect ("ipc:///tmp/scl_70016")
+sub_socket.connect ("ipc:///tmp/scl_70003")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "2")
-
 
 mtype = 'chat';
 mreceiver = 0;
@@ -29,6 +29,7 @@ def send_chat():
  		
 		my_message = msgpack.packb([mtype,mreceiver,payload])
 		pub_socket.send(my_message)
+		
 				
 def receive_chat():
 	global i

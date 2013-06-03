@@ -44,9 +44,8 @@ def find_rout(value):
 
 
 	else:
-		for i in keys:
-			if my_id in keys[i]:
-				return value
+		if my_id in keys:
+			return value
 		else: 
 			return keys[0]
 	

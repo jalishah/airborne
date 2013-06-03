@@ -26,7 +26,6 @@ def sub_to_mac():
 		get_rout()
 
 def sub_to_app():
-	global sub_to_app_socket
 	while 1:
 		string = sub_to_app_socket.recv()
 		unp.feed(string)    # unpack the msg 

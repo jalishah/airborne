@@ -11,7 +11,7 @@ pub_socket.bind("ipc:///tmp/scl_70014")
 
 
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect ("ipc:///tmp/scl_70016")
+sub_socket.connect ("ipc:///tmp/scl_70003")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "1")
 
 
@@ -27,9 +27,10 @@ def send_command():
 		except ValueError:
 			print "Oops! That was not a valid number. Try again.."
 
-		my_message = msgpack.packb([mtype,mreceiver,payload])
-		pub_socket.send(my_message)
-				
+		#my_message = msgpack.packb([mtype,mreceiver,payload])
+		#pub_socket.send(my_message)
+		pub_socket.send("%s %s" % (mtype,payload))
+		
 def receive_command():
 	global i
 	while 1:
@@ -37,15 +38,12 @@ def receive_command():
 		print string
 		sp_string = string.split( );
 		
-# list of commands to be executed are provided here 
-
 		if sp_string[1] == 'ls'	:
 			call(["ls", "-l"])
 	
 		if sp_string[1] == 'pwd':
 			call(["pwd"])
-		else :
-			call([sp_string[1]])
+		
 
 try:
 	thread.start_new_thread(receive_command, () )

@@ -2,4 +2,5 @@ import yaml
 
 with open('config.yaml') as f:
 	doc = yaml.load(f)
-	print doc['app_chat']['prefix']
+	for k in doc['appSubscriber']:
+		print doc['appSubscriber'][k]

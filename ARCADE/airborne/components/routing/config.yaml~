@@ -1,2 +1,9 @@
-'header' :
-   {'my_id' : 1 , 'ttl_batman' : 2 ,'ttl_command' : 3 ,'ttl_chat' : 3 , 'seq_id_batman' : 6  ,'seq_id_command' : 1  , 'seq_id_chat' : 5 }
+'general' :
+   {'my_id' : 1 , 'max_length' : 32}
+'batman' :
+   {'typ' : 4 , 'ttl' : 2 , 'seq_id' : 6 }
+
+'command' :
+   {'typ' : 1 , 'ttl' : 3 , 'seq_id' : 1 , 'pub_to' :  'ipc:///tmp/scl_70014' }
+'chat' :
+   {'typ' : 2 , 'ttl' : 2 , 'seq_id' : 3 , 'pub_to' :  'ipc:///tmp/scl_70015'}

@@ -11,7 +11,7 @@ pub_socket.bind("ipc:///tmp/scl_70014")
 
 
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect ("ipc:///tmp/scl_70016")
+sub_socket.connect ("ipc:///tmp/scl_70003")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "1")
 
 
@@ -29,7 +29,8 @@ def send_command():
 
 		my_message = msgpack.packb([mtype,mreceiver,payload])
 		pub_socket.send(my_message)
-				
+		
+		
 def receive_command():
 	global i
 	while 1:

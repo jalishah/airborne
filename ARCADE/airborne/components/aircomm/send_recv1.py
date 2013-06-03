@@ -9,12 +9,12 @@ import random
 
 context = zmq.Context()
 pub_socket = context.socket(zmq.PUB)
-pub_socket.bind("ipc:///tmp/scl_70011")
+pub_socket.bind("ipc:///tmp/scl_70001")
 
 
-# get msg from routing component
+# get msg from network Layer
 sub_socket = context.socket(zmq.SUB)
-sub_socket.connect ("ipc:///tmp/scl_70015")
+sub_socket.connect ("ipc:///tmp/scl_70002")
 sub_socket.setsockopt(zmq.SUBSCRIBE, "")
 
 i = Interface('/dev/ttyACM0')
