@@ -1,9 +1,11 @@
 'general' :
    {'my_id' : 1 , 'max_length' : 32}
+
 'batman' :
    {'typ' : 4 , 'ttl' : 2 , 'seq_id' : 6 }
 
 'command' :
-   {'typ' : 1 , 'ttl' : 3 , 'seq_id' : 1 , 'pub_to' :  'ipc:///tmp/scl_70014' }
+   {'typ' : 1 , 'ttl' : 3 , 'seq_id' : 1 , 'sub_to' :  'ipc:///tmp/scl_70014' }
+
 'chat' :
-   {'typ' : 2 , 'ttl' : 2 , 'seq_id' : 3 , 'pub_to' :  'ipc:///tmp/scl_70015'}
+   {'typ' : 2 , 'ttl' : 2 , 'seq_id' : 3 , 'sub_to' :  'ipc:///tmp/scl_70015'}

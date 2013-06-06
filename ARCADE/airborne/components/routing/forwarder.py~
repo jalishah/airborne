@@ -26,26 +26,20 @@ pub_to_app_socket.bind("ipc:///tmp/scl_70003")
 
 #subscribe to application layer
 sub_to_app_socket = context.socket(zmq.SUB)
-for k in yaml_conf['appSubscriber']:
-	sub_to_app_socket.connect (yaml_conf['appSubscriber'][k])
+sub_to_app_socket.connect (yaml_conf['command']['sub_to'])
+sub_to_app_socket.connect (yaml_conf['chat']['sub_to'])
 sub_to_app_socket.setsockopt(zmq.SUBSCRIBE, "")
-
-
-
-
-
-
 
 
 
 def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id,payload):
 	
-	if typ == 4 :
-		prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
-		my_message = msgpack.packb([prefix,0])
-		pub_to_mac_socket.send(my_message)
+	prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
+	print len(prefix)
+	print sys.getsizeof(prefix)
+	my_message = msgpack.packb([prefix,payload])
+	print sys.getsizeof(my_message)
+	print len(my_message)
+	pub_to_mac_socket.send(my_message)
 
-	if typ != 4 :
-		prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
-		my_message = msgpack.packb([prefix,payload])
-		pub_to_mac_socket.send(my_message)
+	
