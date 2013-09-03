@@ -12,7 +12,7 @@ rout = {};
 
 unique_ids_list = []  # to avoid repeatition of brodcast for batman org msg
 
-my_id = yaml_conf['header']['my_id']
+my_id = yaml_conf['general']['my_id']
 
 # To check weather the key already exist in the routing table
 def chk_rout_key( key ):
