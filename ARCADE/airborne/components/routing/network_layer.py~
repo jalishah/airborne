@@ -5,7 +5,7 @@ from msg_processor import chk_msgtype
 from createmsg import create_header
 from start_batman import start_batman
 from receiver import *
-
+from storage import empty_uniq_id_list
 
 try:
 	thread.start_new_thread(sub_to_mac, () )
@@ -17,4 +17,4 @@ except:
 	print "Error: unable to start thread"
 
 while True:
-	sleep(1)
+	sleep(0)

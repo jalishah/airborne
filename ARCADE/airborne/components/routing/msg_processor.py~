@@ -15,7 +15,7 @@ MSg is forward to Module forwader in case of batman if ttl is not 0
 Msg is forward to Module forwader in case the receiver is different  
 in case of batman routing ... the 3rd position is for originator in case of other msgz its for target node id
 """
-my_id = yaml_conf['header']['my_id']
+my_id = yaml_conf['general']['my_id']
 # to add the self id or receiver id in the key part of rout (dict)
 chk_rout_key(my_id)   # this will be call once in the begining
 

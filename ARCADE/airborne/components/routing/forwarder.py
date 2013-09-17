@@ -35,9 +35,9 @@ sub_to_app_socket.setsockopt(zmq.SUBSCRIBE, "")
 def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id,payload):
 	
 	prefix = [typ,self_id,org,ttl,msg_unq_id,recv_id]
-	print len(prefix)
-	print sys.getsizeof(prefix)
+	#print len(prefix)
+	#print sys.getsizeof(prefix)
 	my_message = msgpack.packb([prefix,payload])
-	print sys.getsizeof(my_message)
-	print len(my_message)
+	#print sys.getsizeof(my_message)
+	#print len(my_message)
 	pub_to_mac_socket.send(my_message)

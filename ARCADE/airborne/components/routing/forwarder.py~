@@ -41,5 +41,3 @@ def forward_msg(typ,self_id,org,ttl,msg_unq_id,recv_id,payload):
 	print sys.getsizeof(my_message)
 	print len(my_message)
 	pub_to_mac_socket.send(my_message)
-
-	

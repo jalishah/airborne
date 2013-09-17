@@ -14,9 +14,9 @@ def sub_to_mac():
 		unp.feed(string)    # unpack the msg 
 	    	for msg in unp:
 			if type(msg) is tuple:
-				print msg
+				#print msg
 				chk_msgtype(msg)   # check the msg type  
-		get_rout()
+		#get_rout()
 
 def sub_to_app():
 	while 1:

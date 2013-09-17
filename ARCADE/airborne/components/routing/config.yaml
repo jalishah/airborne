@@ -1,5 +1,5 @@
 'general' :
-   {'my_id' : 1 , 'max_length' : 32}
+   {'my_id' : 3 , 'max_length' : 32}
 
 'batman' :
    {'typ' : 4 , 'ttl' : 2 , 'seq_id' : 6 }

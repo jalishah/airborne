@@ -37,7 +37,7 @@ def add_new_rout_values( key, value):
 def find_rout(value):
 	global rout
 	keys = get_key_from_value(rout,value)
-	print keys
+	#print keys
 	
 	if not keys:
 		return 0
@@ -59,9 +59,9 @@ def get_rout ():
 def empty_uniq_id_list():  
 	global unique_ids_list
 	while 1:				
-		sleep(120)
+		sleep(60)
 		del unique_ids_list[:]
-		print  unique_ids_list
+		#print  unique_ids_list
 
 
 # remove the msg unique id's from the list 

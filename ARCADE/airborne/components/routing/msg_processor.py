@@ -35,7 +35,7 @@ def chk_msgtype ( msg ):
 
 				if key_value is not msg [0][2]:		# to avoid connecting same id's incase of sender and org is same
 					add_new_rout_values(key_value,msg[0][2])
-				print unique_ids_list
+				#print unique_ids_list
 				chk_value = unique_ids_list.count(msg[0][4])
 				if chk_value == 0 :   # chk the unq_msg_id in list and operate only if not available
 					unique_ids_list.append(msg[0][4])	
@@ -45,7 +45,7 @@ def chk_msgtype ( msg ):
 
 			if msg[0][0] != 4 and msg[0][2] != my_id :   # if type is not batman and target id is not my_id and recv_id = 0
 				recv_id = find_rout(msg[0][2])   #search for receiver in the routing table if not exit broadcast.
-				print recv_id
+				#print recv_id
 				forward_msg(msg[0][0],my_id,msg[0][2],new_ttl,unq_id,recv_id,msg[1])
 
 			if msg[0][0] != 4 and msg[0][2] == my_id:

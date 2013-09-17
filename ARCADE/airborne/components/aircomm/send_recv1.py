@@ -23,7 +23,7 @@ mcounter = 0
 def send_msg():
 	while 1:
 		string = sub_socket.recv()		
-		print "msg received"
+		#print "msg received"
 		i.send(string)
 		#	sleep(0.8)
 	

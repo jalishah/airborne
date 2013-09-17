@@ -20,6 +20,7 @@ mreceiver = 0;
 def send_chat():
 	global mreceiver
 	global mtype
+	
 	while 1:
 		payload = raw_input("enter your short message:    ")
 		try:
@@ -32,14 +33,19 @@ def send_chat():
 		
 				
 def receive_chat():
+	mtype = 'chat';
+	mreceiver = 2;
 	global i
 	while 1:
 		string = sub_socket.recv()
-		print string
+		#print string
+		payload = "ACKlkjhgfdsaqwertzuiopn"
+		my_message = msgpack.packb([mtype,mreceiver,payload])
+		pub_socket.send(my_message)
 
 try:
 	thread.start_new_thread(receive_chat, () )
-	thread.start_new_thread(send_chat, () )
+	#thread.start_new_thread(send_chat, () )
 
 except:
 	print "Error: unable to start thread"

@@ -1,7 +1,6 @@
 import msgpack
 import yaml
 import zmq
-import sys
 from forwarder import *
 from msg_processor import chk_msgtype
 from createmsg import create_header
